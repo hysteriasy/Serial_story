@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网页项目 - GitHub Pages</title>
+    <meta name="description" content="使用GitHub Pages部署的个人网页项目">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>我的网站</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#home" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#about" class="nav-link">关于</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#projects" class="nav-link">项目</a>
+                </li>
+                <li class="nav-item">
+                    <a href="welcome-linlin.html" class="nav-link special-link">欢迎Linlin</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#contact" class="nav-link">联系</a>
+                </li>
+            </ul>
+            <div class="nav-toggle" id="mobile-menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main>
+        <!-- 首页部分 -->
+        <section id="home" class="hero">
+            <div class="hero-container">
+                <h1 class="hero-title">欢迎来到我的网站</h1>
+                <p class="hero-description">这是一个使用GitHub Pages部署的现代化网页项目</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="scrollToSection('projects')">查看项目</button>
+                    <button class="btn btn-secondary" onclick="scrollToSection('about')">了解更多</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 关于部分 -->
+        <section id="about" class="about">
+            <div class="container">
+                <h2 class="section-title">关于我们</h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <p>这是一个演示项目，展示如何使用GitHub Pages部署静态网站。</p>
+                        <p>项目包含了现代化的HTML5、CSS3和JavaScript技术，具有响应式设计和交互功能。</p>
+                        <ul class="feature-list">
+                            <li>响应式设计，适配各种设备</li>
+                            <li>现代化的用户界面</li>
+                            <li>平滑滚动和动画效果</li>
+                            <li>GitHub Pages自动部署</li>
+                        </ul>
+                    </div>
+                    <div class="about-image">
+                        <div class="placeholder-image">
+                            <span>项目展示图</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 项目部分 -->
+        <section id="projects" class="projects">
+            <div class="container">
+                <h2 class="section-title">我的项目</h2>
+                <div class="projects-grid">
+                    <div class="project-card">
+                        <div class="project-image">
+                            <div class="placeholder-image">项目1</div>
+                        </div>
+                        <div class="project-content">
+                            <h3>网页设计项目</h3>
+                            <p>使用HTML、CSS和JavaScript创建的响应式网页</p>
+                            <div class="project-links">
+                                <a href="#" class="btn btn-small">查看详情</a>
+                                <a href="#" class="btn btn-small btn-outline">GitHub</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="project-card">
+                        <div class="project-image">
+                            <div class="placeholder-image">项目2</div>
+                        </div>
+                        <div class="project-content">
+                            <h3>GitHub Pages部署</h3>
+                            <p>演示如何使用GitHub Pages进行自动化部署</p>
+                            <div class="project-links">
+                                <a href="#" class="btn btn-small">查看详情</a>
+                                <a href="#" class="btn btn-small btn-outline">GitHub</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="project-card">
+                        <div class="project-image">
+                            <div class="placeholder-image">项目3</div>
+                        </div>
+                        <div class="project-content">
+                            <h3>交互式组件</h3>
+                            <p>包含各种交互效果和动画的前端组件</p>
+                            <div class="project-links">
+                                <a href="#" class="btn btn-small">查看详情</a>
+                                <a href="#" class="btn btn-small btn-outline">GitHub</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 联系部分 -->
+        <section id="contact" class="contact">
+            <div class="container">
+                <h2 class="section-title">联系我们</h2>
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <h3>获取联系</h3>
+                        <p>如果您对这个项目有任何问题或建议，欢迎与我们联系。</p>
+                        <div class="contact-item">
+                            <strong>邮箱:</strong> example@email.com
+                        </div>
+                        <div class="contact-item">
+                            <strong>GitHub:</strong> <a href="https://github.com">github.com/username</a>
+                        </div>
+                    </div>
+                    <div class="contact-form">
+                        <form id="contactForm">
+                            <div class="form-group">
+                                <label for="name">姓名</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">邮箱</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="message">消息</label>
+                                <textarea id="message" name="message" rows="5" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">发送消息</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 我的网站. 使用 GitHub Pages 部署.</p>
+                <div class="footer-links">
+                    <a href="https://github.com">GitHub</a>
+                    <a href="#privacy">隐私政策</a>
+                    <a href="#terms">使用条款</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 返回顶部按钮 -->
+    <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
+        ↑
+    </button>
+
+    <!-- JavaScript文件 -->
+    <script src="js/script.js"></script>
+</body>
+</html>

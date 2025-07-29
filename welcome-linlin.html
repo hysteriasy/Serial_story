@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欢迎 Linlin - 科幻世界</title>
+    <meta name="description" content="专为Linlin设计的科幻风格欢迎页面">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/sci-fi-welcome.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="sci-fi-body">
+    <!-- 背景粒子效果 -->
+    <div id="particles-container"></div>
+    
+    <!-- 科幻网格背景 -->
+    <div class="grid-background"></div>
+    
+    <!-- 主容器 -->
+    <div class="sci-fi-container">
+        <!-- 返回导航 -->
+        <nav class="sci-fi-nav">
+            <a href="index.html" class="back-link">
+                <span class="nav-icon">◀</span>
+                <span class="nav-text">返回主页</span>
+            </a>
+        </nav>
+
+        <!-- 主要内容区域 -->
+        <main class="welcome-main">
+            <!-- 标题区域 -->
+            <section class="hero-section">
+                <div class="title-container">
+                    <h1 class="main-title">
+                        <span class="title-line">WELCOME</span>
+                        <span class="title-name">LINLIN</span>
+                        <span class="title-subtitle">TO THE FUTURE</span>
+                    </h1>
+                    
+                    <!-- 全息投影效果 -->
+                    <div class="hologram-frame">
+                        <div class="hologram-content">
+                            <div class="avatar-placeholder">
+                                <div class="avatar-glow"></div>
+                                <div class="avatar-text">L</div>
+                            </div>
+                        </div>
+                        <div class="hologram-scanlines"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 欢迎信息区域 -->
+            <section class="message-section">
+                <div class="message-container">
+                    <div class="message-panel">
+                        <div class="panel-header">
+                            <span class="panel-title">个人档案 - PERSONAL PROFILE</span>
+                            <div class="status-indicator">
+                                <span class="status-dot"></span>
+                                <span class="status-text">ONLINE</span>
+                            </div>
+                        </div>
+                        
+                        <div class="panel-content">
+                            <div class="welcome-text">
+                                <p class="greeting">你好，Linlin！</p>
+                                <p class="description">
+                                    欢迎来到这个为你特别设计的科幻世界。在这里，未来与现在交汇，
+                                    科技与想象融合。每一个像素都闪烁着对你的欢迎之光。
+                                </p>
+                                <p class="special-message">
+                                    愿你在这个数字宇宙中找到属于自己的星辰大海。
+                                </p>
+                            </div>
+                            
+                            <!-- 数据统计 -->
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value" data-target="2024">0</div>
+                                    <div class="stat-label">当前年份</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" data-target="100">0</div>
+                                    <div class="stat-label">欢迎指数</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" data-target="∞">0</div>
+                                    <div class="stat-label">可能性</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 交互按钮区域 -->
+            <section class="action-section">
+                <div class="button-container">
+                    <button class="sci-fi-button primary" onclick="activateWelcome()">
+                        <span class="button-text">启动欢迎程序</span>
+                        <div class="button-glow"></div>
+                    </button>
+                    
+                    <button class="sci-fi-button secondary" onclick="showMessage()">
+                        <span class="button-text">显示特殊信息</span>
+                        <div class="button-glow"></div>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部信息 -->
+        <footer class="sci-fi-footer">
+            <div class="footer-content">
+                <div class="system-info">
+                    <span class="system-text">SYSTEM STATUS: </span>
+                    <span class="system-status">OPERATIONAL</span>
+                </div>
+                <div class="timestamp">
+                    <span id="current-time"></span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 特殊消息弹窗 -->
+    <div id="special-message" class="message-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>特殊传输 - SPECIAL TRANSMISSION</h3>
+                <button class="close-button" onclick="closeMessage()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>亲爱的Linlin，</p>
+                <p>这个页面承载着对你的特别祝福。愿你的每一天都如星光般闪耀，
+                每一个梦想都能在未来的科技中实现。</p>
+                <p class="signature">—— 来自未来的问候</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 -->
+    <script src="js/script.js"></script>
+    <script src="js/sci-fi-welcome.js"></script>
+</body>
+</html>
