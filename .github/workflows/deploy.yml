@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Static Website to GitHub Pages
 
 # 触发条件：当推送到main分支时
 on:
@@ -17,20 +17,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 构建和部署任务
+  # 静态网站部署任务
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Pages
+      - name: Setup GitHub Pages
         uses: actions/configure-pages@v4
 
-      - name: Upload artifact
+      - name: Upload static files
         uses: actions/upload-pages-artifact@v3
         with:
-          # 直接上传根目录的静态文件
+          # 上传整个仓库作为静态网站
           path: '.'
 
       - name: Deploy to GitHub Pages
