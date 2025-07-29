@@ -41,18 +41,15 @@ jobs:
             echo "No package.json found, skipping npm install"
           fi
 
-      # 如果有构建脚本，运行构建
+      # 直接使用静态文件，不进行构建
       - name: Build
         run: |
-          if [ -f package.json ] && npm run build --if-present; then
-            echo "Build completed"
-          else
-            echo "No build script found, using static files"
-            mkdir -p dist
-            cp -r * dist/ 2>/dev/null || :
-            # 移除不需要的文件
-            rm -rf dist/.git dist/.github dist/node_modules dist/package*.json 2>/dev/null || :
-          fi
+          echo "Using static files directly"
+          mkdir -p dist
+          cp -r * dist/ 2>/dev/null || :
+          # 移除不需要的文件
+          rm -rf dist/.git dist/.github dist/node_modules dist/package*.json dist/test_website.js 2>/dev/null || :
+          ls -la dist/
 
       # 设置Pages
       - name: Setup Pages
