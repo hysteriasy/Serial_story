@@ -56,23 +56,83 @@
     animation: neonGridPulse 6s ease-in-out infinite;
 }
 
-/* 全息扫描线 */
+/* 数字雨背景容器 */
 .hologram-scanlines {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 3;
+    z-index: 5;
     pointer-events: none;
-    background: linear-gradient(
-        transparent 50%,
-        rgba(0, 212, 255, 0.03) 50%,
-        rgba(0, 212, 255, 0.05) 51%,
-        transparent 52%
-    );
-    background-size: 100% 4px;
-    animation: scanlines 2s linear infinite;
+    overflow: hidden;
+}
+
+/* 数字雨列容器 */
+.matrix-rain {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.2;
+    color: #00d4ff;
+}
+
+/* 数字雨列 */
+.matrix-column {
+    position: absolute;
+    top: -100vh;
+    left: 0;
+    white-space: nowrap;
+    writing-mode: vertical-lr;
+    text-orientation: upright;
+    opacity: 0.35 !important;
+    text-shadow: 0 0 5px currentColor;
+    -webkit-animation: matrixFall linear infinite;
+    -moz-animation: matrixFall linear infinite;
+    -o-animation: matrixFall linear infinite;
+    animation: matrixFall linear infinite;
+    font-size: 12px;
+    line-height: 1.1;
+    will-change: transform, opacity;
+}
+
+/* 数字雨字符 */
+.matrix-char {
+    display: block !important;
+    margin: 2px 0;
+    transition: opacity 0.1s ease;
+    font-size: inherit;
+    color: inherit;
+}
+
+/* 数字雨颜色变体 */
+.matrix-column.cyan {
+    color: #00d4ff !important;
+    text-shadow: 0 0 5px rgba(0, 212, 255, 0.6);
+}
+
+.matrix-column.pink {
+    color: #ff0080 !important;
+    text-shadow: 0 0 5px rgba(255, 0, 128, 0.6);
+}
+
+.matrix-column.green {
+    color: #00ff88 !important;
+    text-shadow: 0 0 5px rgba(0, 255, 136, 0.6);
+}
+
+.matrix-column.yellow {
+    color: #ffaa00 !important;
+    text-shadow: 0 0 5px rgba(255, 170, 0, 0.6);
+}
+
+.matrix-column.purple {
+    color: #8800ff !important;
+    text-shadow: 0 0 5px rgba(136, 0, 255, 0.6);
 }
 
 /* 动画定义 */
@@ -86,9 +146,54 @@
     50% { opacity: 0.8; }
 }
 
-@keyframes scanlines {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(4px); }
+/* 数字雨下落动画 */
+@keyframes matrixFall {
+    0% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.4;
+    }
+    85% {
+        opacity: 0.4;
+    }
+    100% {
+        transform: translateY(calc(200vh));
+        opacity: 0;
+    }
+}
+
+/* 添加浏览器前缀支持 */
+@-webkit-keyframes matrixFall {
+    0% {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+        opacity: 0;
+    }
+    15% {
+        opacity: 0.4;
+    }
+    85% {
+        opacity: 0.4;
+    }
+    100% {
+        -webkit-transform: translateY(calc(200vh));
+        transform: translateY(calc(200vh));
+        opacity: 0;
+    }
+}
+
+/* 数字雨字符闪烁效果 */
+@keyframes matrixGlow {
+    0%, 100% {
+        opacity: 0.3;
+        text-shadow: 0 0 5px currentColor;
+    }
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+    }
 }
 
 /* 主容器 */
@@ -98,7 +203,6 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    backdrop-filter: blur(1px);
 }
 
 /* 顶部导航 */
@@ -499,33 +603,12 @@
 }
 
 .platform-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    display: flex;
+    justify-content: center;
     align-items: start;
 }
 
-/* 统计面板 */
-.stats-panel {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    border-radius: 20px;
-    padding: 30px;
-    backdrop-filter: blur(15px);
-    position: relative;
-    overflow: hidden;
-}
-
-.stats-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
-    animation: panelSweep 3s ease-in-out infinite;
-}
+/* 统计面板样式已移除 */
 
 .panel-header {
     display: flex;
@@ -577,68 +660,19 @@
     font-weight: 600;
 }
 
-/* 统计网格 */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-.stat-card {
-    background: rgba(0, 212, 255, 0.05);
-    border: 1px solid rgba(0, 212, 255, 0.2);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    background: rgba(0, 212, 255, 0.1);
-    border-color: rgba(0, 212, 255, 0.4);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
-}
-
-.stat-value {
-    font-family: 'Orbitron', monospace;
-    font-size: 2.2rem;
-    font-weight: 900;
-    color: #00d4ff;
-    margin-bottom: 8px;
-    text-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
-}
-
-.stat-label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 0.9rem;
-    color: #ffffff;
-    opacity: 0.8;
-    margin-bottom: 5px;
-}
-
-.stat-trend {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    color: #00ff88;
-    font-weight: 600;
-}
-
-@keyframes panelSweep {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
+/* 统计网格和相关样式已移除 */
 
 /* 欢迎面板 */
 .welcome-panel {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 0, 128, 0.3);
     border-radius: 20px;
-    padding: 30px;
+    padding: 40px;
     backdrop-filter: blur(15px);
     position: relative;
     overflow: hidden;
+    max-width: 800px;
+    width: 100%;
 }
 
 .welcome-panel::before {
@@ -1183,8 +1217,12 @@
 /* 响应式设计 */
 @media (max-width: 1024px) {
     .platform-container {
-        grid-template-columns: 1fr;
-        gap: 30px;
+        padding: 0 20px;
+    }
+
+    .welcome-panel {
+        max-width: 100%;
+        padding: 30px;
     }
 
     .story-cards {
@@ -1199,6 +1237,15 @@
     .neon-button {
         width: 100%;
         max-width: 300px;
+    }
+
+    /* 数字雨在中等屏幕上的优化 */
+    .matrix-rain {
+        font-size: 10px;
+    }
+
+    .matrix-column {
+        opacity: 0.25 !important;
     }
 }
 
@@ -1223,9 +1270,8 @@
         font-size: 1rem;
     }
 
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
+    .welcome-panel {
+        padding: 25px;
     }
 
     .feature-highlights {
@@ -1298,7 +1344,6 @@
         line-height: 1.5;
     }
 
-    .stats-panel,
     .welcome-panel,
     .preview-container {
         padding: 20px;
@@ -1343,6 +1388,19 @@
     .logo-subtitle {
         font-size: 0.7rem;
     }
+
+    /* 数字雨在小屏幕上的优化 */
+    .matrix-rain {
+        font-size: 8px;
+    }
+
+    .matrix-column {
+        opacity: 0.2 !important;
+    }
+
+    .matrix-char {
+        margin: 1px 0;
+    }
 }
 
 /* 超小屏幕优化 */
@@ -1372,6 +1430,15 @@
         padding: 12px 20px;
         font-size: 0.8rem;
         min-width: 180px;
+    }
+
+    /* 数字雨在超小屏幕上的优化 */
+    .matrix-rain {
+        font-size: 6px;
+    }
+
+    .matrix-column {
+        opacity: 0.15 !important;
     }
 }
 
@@ -1550,27 +1617,7 @@
     position: relative;
 }
 
-.hologram-scanlines {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 255, 255, 0.1) 2px,
-        rgba(0, 255, 255, 0.1) 4px
-    );
-    border-radius: 50%;
-    animation: scanlines 2s linear infinite;
-}
-
-@keyframes scanlines {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100%); }
-}
+/* 旧的扫描线样式已删除，现在使用数字雨效果 */
 
 /* 消息面板区域 */
 .message-section {
