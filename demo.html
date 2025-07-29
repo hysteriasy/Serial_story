@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欢迎页面功能演示 - Serial_story</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .demo-title {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .demo-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .feature-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .feature-description {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        .demo-buttons {
+            text-align: center;
+            margin: 50px 0;
+        }
+        .demo-button {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin: 10px;
+            font-weight: 600;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .demo-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .demo-button.primary {
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+        }
+        .demo-button.primary:hover {
+            background: white;
+        }
+        .tech-specs {
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 50px;
+        }
+        .tech-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .tech-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .tech-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        .tech-item::before {
+            content: '✓';
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        @media (max-width: 768px) {
+            .demo-title {
+                font-size: 2rem;
+            }
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            .demo-container {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1 class="demo-title">🚀 欢迎页面功能演示</h1>
+            <p class="demo-subtitle">为 Serial_story 项目实现的现代化欢迎页面功能</p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🎭</span>
+                <h3 class="feature-title">全屏覆盖</h3>
+                <p class="feature-description">
+                    欢迎页面以全屏覆盖的方式显示，完全阻止用户直接看到主页内容，
+                    创造出色的第一印象和沉浸式体验。
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">👆</span>
+                <h3 class="feature-title">点击交互</h3>
+                <p class="feature-description">
+                    用户可以点击欢迎页面的任意位置来关闭它，同时支持键盘交互，
+                    按任意键也能关闭欢迎页面。
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">🔄</span>
+                <h3 class="feature-title">智能记忆</h3>
+                <p class="feature-description">
+                    使用 sessionStorage 技术，确保欢迎页面在同一会话中只显示一次，
+                    避免重复打扰用户体验。
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">✨</span>
+                <h3 class="feature-title">动画效果</h3>
+                <p class="feature-description">
+                    包含多种精美的CSS动画效果，如渐变背景、浮动粒子、
+                    文字动画等，提升视觉体验。
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">📱</span>
+                <h3 class="feature-title">响应式设计</h3>
+                <p class="feature-description">
+                    完全适配各种设备和屏幕尺寸，从桌面到移动设备都能
+                    提供一致的优秀体验。
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <h3 class="feature-title">性能优化</h3>
+                <p class="feature-description">
+                    采用硬件加速、事件优化、内存管理等技术，
+                    确保流畅的动画效果和快速的响应速度。
+                </p>
+            </div>
+        </div>
+
+        <div class="demo-buttons">
+            <a href="index.html" class="demo-button primary">🏠 体验欢迎页面</a>
+            <a href="test/welcome_test.html" class="demo-button">🧪 功能测试</a>
+            <a href="javascript:void(0)" onclick="resetDemo()" class="demo-button">🔄 重置演示</a>
+        </div>
+
+        <div class="tech-specs">
+            <h3 class="tech-title">🛠️ 技术特性</h3>
+            <div class="tech-list">
+                <div class="tech-item">纯原生 HTML/CSS/JavaScript</div>
+                <div class="tech-item">CSS3 动画和过渡效果</div>
+                <div class="tech-item">SessionStorage 状态管理</div>
+                <div class="tech-item">事件委托和性能优化</div>
+                <div class="tech-item">响应式设计和移动端适配</div>
+                <div class="tech-item">硬件加速和GPU优化</div>
+                <div class="tech-item">错误处理和降级方案</div>
+                <div class="tech-item">自定义事件和扩展性</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 重置演示状态
+        function resetDemo() {
+            if (typeof(Storage) !== "undefined") {
+                sessionStorage.removeItem('hasVisitedWelcome');
+                alert('✅ 演示状态已重置！\n现在访问主页将重新显示欢迎页面。');
+            } else {
+                alert('❌ 浏览器不支持 sessionStorage');
+            }
+        }
+
+        // 页面加载动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
