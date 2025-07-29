@@ -1,5 +1,11 @@
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
+    // 启动性能监控
+    monitorWelcomeScreenPerformance();
+
+    // 初始化欢迎页面
+    initWelcomeScreen();
+
     // 初始化所有功能
     initMobileMenu();
     initScrollEffects();
@@ -295,6 +301,155 @@ window.addEventListener('error', function(e) {
     // 可以在这里添加错误报告功能
 });
 
+// 欢迎页面功能
+function initWelcomeScreen() {
+    try {
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+
+        if (!welcomeOverlay) {
+            console.warn('欢迎页面元素未找到');
+            return;
+        }
+
+        // 检查是否是首次访问或页面刷新
+        const hasVisited = sessionStorage.getItem('hasVisitedWelcome');
+
+        if (hasVisited) {
+            // 如果已经访问过，直接隐藏欢迎页面
+            welcomeOverlay.classList.add('hidden');
+            document.body.style.overflow = ''; // 确保页面可以滚动
+            return;
+        }
+
+        // 防止页面滚动
+        document.body.style.overflow = 'hidden';
+
+        // 使用事件委托优化性能
+        let isHidden = false;
+
+        // 点击任意位置隐藏欢迎页面
+        welcomeOverlay.addEventListener('click', function(e) {
+            if (!isHidden) {
+                hideWelcomeScreen();
+                isHidden = true;
+            }
+        }, { once: true }); // 只执行一次
+
+        // 键盘事件支持（按任意键隐藏）
+        const keydownHandler = function(e) {
+            if (!isHidden && !welcomeOverlay.classList.contains('hidden')) {
+                hideWelcomeScreen();
+                isHidden = true;
+                document.removeEventListener('keydown', keydownHandler);
+            }
+        };
+        document.addEventListener('keydown', keydownHandler);
+
+        // 自动隐藏（可选，10秒后自动隐藏）
+        const autoHideTimer = setTimeout(() => {
+            if (!isHidden && !welcomeOverlay.classList.contains('hidden')) {
+                hideWelcomeScreen();
+                isHidden = true;
+            }
+        }, 10000);
+
+        // 清理定时器的函数
+        welcomeOverlay.addEventListener('click', () => {
+            clearTimeout(autoHideTimer);
+        }, { once: true });
+
+    } catch (error) {
+        console.error('初始化欢迎页面时发生错误:', error);
+        // 发生错误时确保页面可以正常使用
+        document.body.style.overflow = '';
+    }
+}
+
+function hideWelcomeScreen() {
+    try {
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+
+        if (!welcomeOverlay || welcomeOverlay.classList.contains('hidden')) {
+            return;
+        }
+
+        // 添加隐藏类
+        welcomeOverlay.classList.add('hidden');
+
+        // 恢复页面滚动
+        document.body.style.overflow = '';
+
+        // 标记已访问（使用try-catch处理可能的存储错误）
+        try {
+            sessionStorage.setItem('hasVisitedWelcome', 'true');
+        } catch (storageError) {
+            console.warn('无法保存访问状态到sessionStorage:', storageError);
+        }
+
+        // 触发主页面动画
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                triggerMainPageAnimations();
+            }, 300);
+        });
+
+        // 触发自定义事件，允许其他代码监听欢迎页面关闭
+        const welcomeHiddenEvent = new CustomEvent('welcomeScreenHidden', {
+            detail: { timestamp: Date.now() }
+        });
+        document.dispatchEvent(welcomeHiddenEvent);
+
+    } catch (error) {
+        console.error('隐藏欢迎页面时发生错误:', error);
+        // 确保页面可以正常使用
+        document.body.style.overflow = '';
+    }
+}
+
+function triggerMainPageAnimations() {
+    // 触发主页面的入场动画
+    const heroSection = document.querySelector('.hero');
+    if (heroSection) {
+        heroSection.style.animation = 'fadeInUp 0.8s ease forwards';
+    }
+
+    // 触发导航栏动画
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        navbar.style.animation = 'slideInFromTop 0.6s ease forwards';
+    }
+}
+
+// 重置欢迎页面状态（用于测试）
+function resetWelcomeScreen() {
+    try {
+        sessionStorage.removeItem('hasVisitedWelcome');
+        location.reload();
+    } catch (error) {
+        console.error('重置欢迎页面状态时发生错误:', error);
+        alert('重置失败，请手动刷新页面');
+    }
+}
+
+// 性能监控
+function monitorWelcomeScreenPerformance() {
+    if (typeof performance !== 'undefined' && performance.mark) {
+        performance.mark('welcome-screen-start');
+
+        // 监听欢迎页面隐藏事件
+        document.addEventListener('welcomeScreenHidden', function() {
+            performance.mark('welcome-screen-end');
+            performance.measure('welcome-screen-duration', 'welcome-screen-start', 'welcome-screen-end');
+
+            const measures = performance.getEntriesByName('welcome-screen-duration');
+            if (measures.length > 0) {
+                console.log(`欢迎页面显示时长: ${measures[0].duration.toFixed(2)}ms`);
+            }
+        }, { once: true });
+    }
+}
+
 // 导出函数供全局使用
 window.scrollToSection = scrollToSection;
 window.scrollToTop = scrollToTop;
+window.resetWelcomeScreen = resetWelcomeScreen;
