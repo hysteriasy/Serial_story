@@ -40,24 +40,33 @@ function initMobileMenu() {
 function initScrollEffects() {
     const navbar = document.querySelector('.navbar');
     const backToTopBtn = document.getElementById('backToTop');
-    
+
+    // 只有当元素存在时才添加滚动监听器
+    if (!navbar && !backToTopBtn) {
+        return; // 如果两个元素都不存在，直接返回
+    }
+
     window.addEventListener('scroll', function() {
         const scrollTop = window.pageYOffset;
-        
-        // 导航栏滚动效果
-        if (scrollTop > 100) {
-            navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-            navbar.style.backdropFilter = 'blur(10px)';
-        } else {
-            navbar.style.backgroundColor = '#fff';
-            navbar.style.backdropFilter = 'none';
+
+        // 导航栏滚动效果 - 只有当navbar存在时才执行
+        if (navbar) {
+            if (scrollTop > 100) {
+                navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                navbar.style.backdropFilter = 'blur(10px)';
+            } else {
+                navbar.style.backgroundColor = '#fff';
+                navbar.style.backdropFilter = 'none';
+            }
         }
-        
-        // 返回顶部按钮显示/隐藏
-        if (scrollTop > 300) {
-            backToTopBtn.classList.add('show');
-        } else {
-            backToTopBtn.classList.remove('show');
+
+        // 返回顶部按钮显示/隐藏 - 只有当backToTopBtn存在时才执行
+        if (backToTopBtn) {
+            if (scrollTop > 300) {
+                backToTopBtn.classList.add('show');
+            } else {
+                backToTopBtn.classList.remove('show');
+            }
         }
     });
 }

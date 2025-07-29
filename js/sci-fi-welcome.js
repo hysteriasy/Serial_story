@@ -11,6 +11,10 @@ let ctx;
 let typewriterIndex = 0;
 let typewriterText = '';
 let isTyping = false;
+let matrixColumns = [];
+let matrixContainer;
+let isUserInteracting = false;
+let interactionTimeout;
 
 // 欢迎消息文本
 const welcomeMessages = [
@@ -25,8 +29,9 @@ const welcomeMessages = [
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     initStarfield();
+    initMatrixRain();
+    initPerformanceOptimization(); // 添加性能优化
     initTimeDisplay();
-    initStatCounters();
     initTypewriter();
     initInteractions();
     initStoryCards();
@@ -154,6 +159,150 @@ function animateStarfield() {
 
     // 继续动画
     animationId = requestAnimationFrame(animateStarfield);
+}
+
+// 初始化数字雨效果
+function initMatrixRain() {
+    const container = document.querySelector('.hologram-scanlines');
+    if (!container) {
+        console.error('未找到 .hologram-scanlines 容器');
+        return;
+    }
+
+    // 创建数字雨容器
+    matrixContainer = document.createElement('div');
+    matrixContainer.className = 'matrix-rain';
+    container.appendChild(matrixContainer);
+
+    // 创建数字雨列
+    createMatrixColumns();
+
+    // 防抖的窗口大小变化处理
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            clearMatrixColumns();
+            createMatrixColumns();
+        }, 250); // 250ms 防抖延迟
+    });
+}
+
+// 创建数字雨列
+function createMatrixColumns() {
+    if (!matrixContainer) {
+        console.error('matrixContainer 不存在');
+        return;
+    }
+
+    // 性能优化：减少列数和字符数
+    const columnWidth = 35; // 增加列宽度，减少列数
+    const screenWidth = window.innerWidth;
+    const maxColumns = screenWidth < 768 ? 20 : screenWidth < 1200 ? 35 : 50; // 响应式列数限制
+    const columnCount = Math.min(Math.floor(screenWidth / columnWidth), maxColumns);
+
+    const colors = ['cyan', 'pink', 'green', 'yellow', 'purple'];
+    // 简化字符集以提高性能
+    const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+    for (let i = 0; i < columnCount; i++) {
+        const column = document.createElement('div');
+        column.className = `matrix-column ${colors[Math.floor(Math.random() * colors.length)]}`;
+        column.style.left = (i * columnWidth) + 'px';
+
+        // 优化动画持续时间和延迟
+        const duration = Math.random() * 2 + 3; // 3-5秒，稍微延长以减少更新频率
+        const delay = Math.random() * 3; // 0-3秒延迟，增加错落感
+
+        // 设置动画属性
+        column.style.animationDuration = duration + 's';
+        column.style.animationDelay = delay + 's';
+
+        // 性能优化：减少字符数量
+        const charCount = Math.floor(Math.random() * 8) + 5; // 5-12个字符，显著减少
+        for (let j = 0; j < charCount; j++) {
+            const char = document.createElement('span');
+            char.className = 'matrix-char';
+            char.textContent = characters[Math.floor(Math.random() * characters.length)];
+
+            // 渐变透明度效果（进一步降低）
+            const opacity = Math.max(0.05, 0.6 - (j / charCount * 0.5));
+            char.style.opacity = opacity;
+
+            // 大幅减少闪烁效果以提高性能
+            if (Math.random() < 0.1) {
+                char.style.animation = `matrixGlow ${Math.random() * 3 + 2}s ease-in-out infinite`;
+            }
+
+            column.appendChild(char);
+        }
+
+        matrixContainer.appendChild(column);
+        matrixColumns.push(column);
+
+        // 动画结束后重新创建列
+        column.addEventListener('animationiteration', () => {
+            updateMatrixColumn(column, characters, colors);
+        });
+    }
+}
+
+// 更新数字雨列内容
+function updateMatrixColumn(column, characters, colors) {
+    // 随机更换颜色
+    if (Math.random() < 0.3) {
+        const currentClasses = column.className.split(' ');
+        const colorClass = colors[Math.floor(Math.random() * colors.length)];
+        column.className = `matrix-column ${colorClass}`;
+    }
+
+    // 更新字符内容
+    const chars = column.querySelectorAll('.matrix-char');
+    chars.forEach(char => {
+        if (Math.random() < 0.4) {
+            char.textContent = characters[Math.floor(Math.random() * characters.length)];
+        }
+    });
+}
+
+// 清理数字雨列
+function clearMatrixColumns() {
+    matrixColumns.forEach(column => {
+        if (column.parentNode) {
+            column.parentNode.removeChild(column);
+        }
+    });
+    matrixColumns = [];
+}
+
+// 性能优化：用户交互时降低数字雨复杂度
+function handleUserInteraction() {
+    isUserInteracting = true;
+
+    // 降低数字雨透明度
+    matrixColumns.forEach(column => {
+        column.style.opacity = '0.15';
+    });
+
+    // 清除之前的超时
+    clearTimeout(interactionTimeout);
+
+    // 2秒后恢复正常
+    interactionTimeout = setTimeout(() => {
+        isUserInteracting = false;
+        matrixColumns.forEach(column => {
+            column.style.opacity = '0.35';
+        });
+    }, 2000);
+}
+
+// 监听用户交互事件
+function initPerformanceOptimization() {
+    const events = ['scroll', 'mousemove', 'click', 'keydown', 'touchstart'];
+
+    events.forEach(event => {
+        document.addEventListener(event, handleUserInteraction, { passive: true });
+    });
 }
 
 // 初始化打字机效果
@@ -292,56 +441,7 @@ function initTimeDisplay() {
     setInterval(updateTime, 1000);
 }
 
-// 初始化统计数字动画
-function initStatCounters() {
-    const statValues = document.querySelectorAll('.stat-value');
-
-    // 使用Intersection Observer来触发动画
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const stat = entry.target;
-                const target = stat.getAttribute('data-target');
-
-                if (target === '∞') {
-                    stat.textContent = '∞';
-                    return;
-                }
-
-                animateCounter(stat, parseInt(target));
-                observer.unobserve(stat);
-            }
-        });
-    }, { threshold: 0.5 });
-
-    statValues.forEach(stat => {
-        observer.observe(stat);
-    });
-}
-
-// 数字计数动画
-function animateCounter(element, target) {
-    let current = 0;
-    const increment = target / 60; // 60帧动画
-    const duration = 2000; // 2秒
-    const stepTime = duration / 60;
-
-    const timer = setInterval(() => {
-        current += increment;
-        if (current >= target) {
-            current = target;
-            clearInterval(timer);
-        }
-
-        // 添加数字格式化
-        const displayValue = Math.floor(current);
-        if (displayValue >= 1000) {
-            element.textContent = (displayValue / 1000).toFixed(1) + 'K';
-        } else {
-            element.textContent = displayValue;
-        }
-    }, stepTime);
-}
+// 统计计数器相关函数已移除
 
 // 初始化交互功能
 function initInteractions() {
@@ -710,6 +810,8 @@ window.addEventListener('beforeunload', () => {
     if (animationId) {
         cancelAnimationFrame(animationId);
     }
+    // 清理数字雨效果
+    clearMatrixColumns();
 });
 
 // 页面可见性变化时暂停/恢复动画
@@ -718,10 +820,20 @@ document.addEventListener('visibilitychange', () => {
         if (animationId) {
             cancelAnimationFrame(animationId);
         }
+        // 完全暂停数字雨动画以节省性能
+        matrixColumns.forEach(column => {
+            column.style.animationPlayState = 'paused';
+            column.style.display = 'none'; // 隐藏以节省渲染资源
+        });
     } else {
         if (canvas && ctx && stars.length > 0) {
             animateStarfield();
         }
+        // 恢复数字雨动画
+        matrixColumns.forEach(column => {
+            column.style.animationPlayState = 'running';
+            column.style.display = 'block';
+        });
     }
 });
 
@@ -730,3 +842,5 @@ window.enterPlatform = enterPlatform;
 window.showPersonalMessage = showPersonalMessage;
 window.closePersonalMessage = closePersonalMessage;
 window.exploreStories = exploreStories;
+window.createMatrixColumns = createMatrixColumns;
+window.clearMatrixColumns = clearMatrixColumns;
