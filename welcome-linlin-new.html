@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欢迎来到我们的故事世界，Linlin ❤️</title>
+    <meta name="description" content="专为Linlin设计的温馨小说分享平台 - 我们共同创作和分享的温馨小屋">
+    <link rel="stylesheet" href="css/warm-welcome.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 背景装饰元素 -->
+    <div class="background-decorations">
+        <div class="floating-hearts"></div>
+        <div class="floating-books"></div>
+        <div class="gradient-orbs"></div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 导航栏 - 采用主页风格 -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <h2>我们的故事世界</h2>
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">返回主页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#stories" class="nav-link">我的故事</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#linlin-stories" class="nav-link">Linlin的故事</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#favorites" class="nav-link">我们的收藏</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#create" class="nav-link special-link">开始创作</a>
+                    </li>
+                </ul>
+                <div class="nav-toggle" id="mobile-menu">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要内容 -->
+        <main>
+            <!-- 英雄区域 - 采用主页风格 -->
+            <section id="home" class="hero">
+                <div class="hero-container">
+                    <h1 class="hero-title">欢迎来到我们的故事世界，Linlin</h1>
+                    <p class="hero-description">这里是我们共同创作和分享的温馨小屋，每一个故事都承载着我们的情感和梦想</p>
+                    <div class="hero-buttons">
+                        <button class="btn btn-primary" onclick="scrollToSection('stories')">开始阅读</button>
+                        <button class="btn btn-secondary" onclick="scrollToSection('create')">开始创作</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 关于部分 - 采用主页风格 -->
+            <section id="about" class="about">
+                <div class="container">
+                    <h2 class="section-title">亲爱的Linlin</h2>
+                    <div class="about-content">
+                        <div class="about-text">
+                            <p>欢迎来到我们的创作分享平台！这里是创意与想象力的交汇点，每一个故事都承载着我们的情感和梦想。</p>
+                            <p>在这个属于我们的文字世界里，让我们一起创造更多美好的故事，分享彼此的创意灵感，记录生活中的点点滴滴。</p>
+                            <ul class="feature-list">
+                                <li>共同创作温馨的爱情故事</li>
+                                <li>分享彼此的创意灵感</li>
+                                <li>记录生活中的美好时光</li>
+                                <li>探索无限的想象空间</li>
+                            </ul>
+                        </div>
+                        <div class="about-image">
+                            <div class="placeholder-image">
+                                <span>💕 我们的故事世界 💕</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 故事项目部分 - 采用主页风格 -->
+            <section id="stories" class="projects">
+                <div class="container">
+                    <h2 class="section-title">我们的故事</h2>
+                    <div class="projects-grid">
+                        <div class="project-card">
+                            <div class="project-image">
+                                <div class="placeholder-image">📚 我的故事</div>
+                            </div>
+                            <div class="project-content">
+                                <h3>我的创作集</h3>
+                                <p>探索我创作的精彩故事，每一个故事都承载着独特的情感和想象</p>
+                                <div class="project-links">
+                                    <a href="#" class="btn btn-small">阅读故事</a>
+                                    <a href="#" class="btn btn-small btn-outline">查看更多</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-card">
+                            <div class="project-image">
+                                <div class="placeholder-image">✨ Linlin的故事</div>
+                            </div>
+                            <div class="project-content">
+                                <h3>Linlin的创作集</h3>
+                                <p>欣赏Linlin的创意作品，感受她独特的文字魅力和创作灵感</p>
+                                <div class="project-links">
+                                    <a href="#" class="btn btn-small">阅读故事</a>
+                                    <a href="#" class="btn btn-small btn-outline">查看更多</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="project-card">
+                            <div class="project-image">
+                                <div class="placeholder-image">💖 我们的收藏</div>
+                            </div>
+                            <div class="project-content">
+                                <h3>共同收藏</h3>
+                                <p>我们一起收藏的精彩故事，记录着我们共同的阅读时光</p>
+                                <div class="project-links">
+                                    <a href="#" class="btn btn-small">查看收藏</a>
+                                    <a href="#" class="btn btn-small btn-outline">添加收藏</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 联系部分 - 采用主页风格 -->
+            <section id="create" class="contact">
+                <div class="container">
+                    <h2 class="section-title">开始创作</h2>
+                    <div class="contact-content">
+                        <div class="contact-info">
+                            <h3>创作工具</h3>
+                            <p>准备好开始你的创作之旅了吗？这里为你提供了完整的创作工具和分享平台。</p>
+                            <div class="contact-item">
+                                <strong>最新更新:</strong> 星空下的约定 - 第15章
+                            </div>
+                            <div class="contact-item">
+                                <strong>创作统计:</strong> 我们已经创作了20个精彩故事
+                            </div>
+                        </div>
+                        <div class="contact-form">
+                            <form id="storyForm">
+                                <div class="form-group">
+                                    <label for="title">故事标题</label>
+                                    <input type="text" id="title" name="title" placeholder="给你的故事起个好听的名字" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="genre">故事类型</label>
+                                    <input type="text" id="genre" name="genre" placeholder="浪漫、奇幻、科幻..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="content">故事内容</label>
+                                    <textarea id="content" name="content" rows="5" placeholder="开始你的创作..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">发布故事</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 页脚 - 采用主页风格 -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <p>&copy; 2024 我们的故事世界. 专为Linlin打造的创作分享平台.</p>
+                    <div class="footer-links">
+                        <a href="index.html">返回主页</a>
+                        <a href="#about">关于我们</a>
+                        <a href="#stories">故事集</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- 返回顶部按钮 -->
+        <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
+            ↑
+        </button>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/warm-welcome.js"></script>
+</body>
+</html>
