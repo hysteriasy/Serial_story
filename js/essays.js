@@ -76,8 +76,25 @@ function loadEssayContent(index) {
 
     const essay = essays[index];
     essayTitle.textContent = essay.title;
-    essayBody.innerHTML = `<p class="essay-meta">发布日期: ${formatDate(essay.date)}</p>
+
+    // 处理内容和图片
+    let contentHtml = `<p class="essay-meta">发布日期: ${formatDate(essay.date)}</p>
 ${convertMarkdownToHtml(essay.content)}`;
+
+    // 如果有图片，添加到内容中
+    if (essay.images && essay.images.length > 0) {
+        contentHtml += '<div class="essay-images">';
+        essay.images.forEach(image => {
+            contentHtml += `
+<div class="essay-image-container">
+    <img src="${image.data}" alt="${image.name}" class="essay-image">
+    <p class="image-caption">${image.name}</p>
+</div>`;
+        });
+        contentHtml += '</div>';
+    }
+
+    essayBody.innerHTML = contentHtml;
 
     // 滚动到内容区域
     document.getElementById('essayContent').scrollIntoView({ behavior: 'smooth' });
@@ -115,31 +132,70 @@ function initUploadModal() {
 
         const title = document.getElementById('essayTitleInput').value;
         const content = document.getElementById('essayContentInput').value;
+        const imageInput = document.getElementById('essayImagesInput');
+        const files = imageInput.files;
 
         if (!title || !content) {
             showNotification('请填写标题和内容', 'error');
             return;
         }
 
-        // 创建新随笔
-        const newEssay = {
-            title: title,
-            content: content,
-            date: new Date().toISOString()
+        // 处理图片上传
+        const processImages = () => {
+            return new Promise((resolve) => {
+                if (files.length === 0) {
+                    resolve([]);
+                    return;
+                }
+
+                const images = [];
+                let processedCount = 0;
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        images.push({
+                            name: file.name,
+                            type: file.type,
+                            data: e.target.result
+                        });
+
+                        processedCount++;
+                        if (processedCount === files.length) {
+                            resolve(images);
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            });
         };
 
-        // 保存到本地存储
-        saveEssayToStorage(newEssay);
+        // 处理图片并创建新随笔
+        processImages().then(images => {
+            // 创建新随笔
+            const newEssay = {
+                title: title,
+                content: content,
+                images: images,
+                date: new Date().toISOString()
+            };
 
-        // 关闭模态框并重置表单
-        uploadModal.style.display = 'none';
-        uploadForm.reset();
+            // 保存到本地存储
+            saveEssayToStorage(newEssay);
 
-        // 更新随笔列表
-        loadEssaysList();
+            // 关闭模态框并重置表单
+            uploadModal.style.display = 'none';
+            uploadForm.reset();
 
-        // 显示成功通知
-        showNotification('随笔上传成功！', 'success');
+            // 更新随笔列表
+            loadEssaysList();
+
+            // 显示成功通知
+            showNotification('随笔上传成功！', 'success');
+        });
     });
 }
 
@@ -317,6 +373,48 @@ style.textContent = `
     .essays-controls {
         margin: 20px 0;
         text-align: right;
+    }
+
+    /* 随笔图片样式 */
+    .essay-images {
+        margin-top: 30px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .essay-image-container {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .essay-image-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .essay-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .image-caption {
+        padding: 12px 15px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #6c757d;
+        background-color: white;
+    }
+
+    .help-text {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 5px;
     }
 
     .essays-container {

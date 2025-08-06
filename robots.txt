@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://yourusername.github.io/Serial_story/sitemap.xml
+Sitemap: https://hysteriasy.github.io/Serial_story/sitemap.xml
