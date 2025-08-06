@@ -128,6 +128,11 @@ function initUploadModal() {
 
     // 提交表单
     uploadForm.addEventListener('submit', function(e) {
+      if (!verifyPassword('上传')) {
+        showNotification('密码错误，操作终止', 'error');
+        e.preventDefault();
+        return;
+      }
         e.preventDefault();
 
         const title = document.getElementById('essayTitleInput').value;
@@ -199,8 +204,24 @@ function initUploadModal() {
     });
 }
 
+// 密码配置
+const PASSWORD_MAP = {
+  'admin': '030117'
+};
+
+// 密码验证函数
+function verifyPassword(action) {
+  const password = prompt(`请输入${action}密码:`);
+  if (!password) return false;
+  return Object.values(PASSWORD_MAP).includes(password);
+}
+
 // 删除随笔
 function deleteEssay(index) {
+  if (!verifyPassword('删除')) {
+    showNotification('密码错误，操作终止', 'error');
+    return;
+  }
     console.log('deleteEssay function called with index:', index);
     if (!confirm('确定要删除这篇随笔吗？')) {
         console.log('Delete cancelled by user');

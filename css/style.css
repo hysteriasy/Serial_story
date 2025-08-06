@@ -332,6 +332,16 @@ section {
     background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
 }
 
+.index-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 150px;
+    background: url('../images/cec38ab95d65588029620c44d93ac499.jpg') center/cover;
+}
+
 .project-card.art .project-image {
     background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
 }
