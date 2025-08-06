@@ -277,7 +277,8 @@ section {
 }
 
 .placeholder-image {
-    background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+    background: transparent;
+    z-index: 1;
     height: 300px;
     display: flex;
     align-items: center;
@@ -329,7 +330,10 @@ section {
 
 /* 媒体卡片特殊样式 */
 .project-card.literature .project-image {
-    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    background: url('../images/cec38ab95d65588029620c44d93ac499.jpg') center/cover;
+    position: relative;
+    overflow: hidden;
+    height: 300px;
 }
 
 .index-card::before {
