@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桑梓 - 生活随笔</title>
+    <meta name="description" content="个人生活随笔集，记录生活中的点滴感悟和思考">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>桑梓</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html#home" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#about" class="nav-link">关于我</a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#works" class="nav-link">文学作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html#contact" class="nav-link">联系我</a>
+                </li>
+            </ul>
+            <div class="nav-toggle" id="mobile-menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main>
+        <!-- 随笔标题区域 -->
+        <section class="hero">
+            <div class="hero-container">
+                <h1 class="hero-title">生活随笔</h1>
+                <p class="hero-description">记录生活中的点滴感悟，用文字捕捉生活的美好瞬间</p>
+            </div>
+        </section>
+
+        <!-- 随笔内容区域 -->
+        <section id="essays" class="container">
+            <div class="essays-controls">
+                <button class="btn btn-primary" id="uploadBtn">上传新随笔</button>
+            </div>
+
+            <div class="essays-container">
+                <!-- 左侧目录 -->
+                <div class="essays-sidebar">
+                    <h3>随笔目录</h3>
+                    <ul id="essaysList" class="essays-list">
+                        <!-- 目录将通过JavaScript动态生成 -->
+                    </ul>
+                </div>
+
+                <!-- 右侧内容 -->
+                <div class="essays-content">
+                    <div id="essayContent" class="essay-content">
+                        <h3 id="essayTitle">请选择一篇随笔开始阅读</h3>
+                        <div id="essayBody" class="essay-body">
+                            <p>点击左侧目录中的标题来查看随笔内容</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
+                <div class="footer-links">
+                    <a href="index.html#home">首页</a>
+                    <a href="index.html#about">关于作者</a>
+                    <a href="index.html#works">文学作品</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 上传弹窗 -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3>上传新随笔</h3>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="essayTitleInput">标题</label>
+                    <input type="text" id="essayTitleInput" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="essayContentInput">内容</label>
+                    <textarea id="essayContentInput" name="content" rows="10" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">上传</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script src="js/essays.js"></script>
+</body>
+</html>
