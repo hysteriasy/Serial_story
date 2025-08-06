@@ -44,7 +44,7 @@
                     <a href="#about" class="nav-link">关于我</a>
                 </li>
                 <li class="nav-item">
-                    <a href="#works" class="nav-link">文学作品</a>
+                    <a href="#works" class="nav-link">我的作品</a>
                 </li>
 
                 <li class="nav-item">
@@ -99,12 +99,19 @@
             </div>
         </section>
 
-        <!-- 文学作品部分 -->
+        <!-- 作品展示部分 -->
         <section id="works" class="projects">
             <div class="container">
-                <h2 class="section-title">文学作品</h2>
-                <div class="projects-grid">
-                    <div class="project-card">
+                <h2 class="section-title">我的作品</h2>
+                <div class="media-filter">
+                        <button class="filter-btn active" data-filter="all">全部作品</button>
+                        <button class="filter-btn" data-filter="literature">文学作品</button>
+                        <button class="filter-btn" data-filter="art">绘画作品</button>
+                        <button class="filter-btn" data-filter="music">音乐作品</button>
+                        <button class="filter-btn" data-filter="video">视频作品</button>
+                    </div>
+                    <div class="projects-grid">
+                    <div class="project-card literature" data-category="literature">
                         <div class="project-image">
                             <div class="placeholder-image">📝 随笔</div>
                         </div>
@@ -112,13 +119,13 @@
                             <h3>生活随笔</h3>
                             <p>记录日常生活中的感悟与思考，用文字捕捉生活的美好瞬间</p>
                             <div class="project-links">
-                                <a href="#" class="btn btn-small">阅读随笔</a>
+                                <a href="essays.html" class="btn btn-small">阅读随笔</a>
                                 <a href="#" class="btn btn-small btn-outline">更多作品</a>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="project-card">
+                    <div class="project-card literature" data-category="literature">
                         <div class="project-image">
                             <div class="placeholder-image">🌸 诗歌</div>
                         </div>
@@ -132,7 +139,7 @@
                         </div>
                     </div>
 
-                    <div class="project-card">
+                    <div class="project-card literature" data-category="literature">
                         <div class="project-image">
                             <div class="placeholder-image">📖 小说</div>
                         </div>
@@ -142,6 +149,54 @@
                             <div class="project-links">
                                 <a href="#" class="btn btn-small">阅读连载</a>
                                 <a href="#" class="btn btn-small btn-outline">作品目录</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card art" data-category="art">
+                        <div class="project-image">
+                            <div class="placeholder-image">🎨 绘画</div>
+                        </div>
+                        <div class="project-content">
+                            <h3>绘画作品</h3>
+                            <p>水彩、素描与数字绘画，用色彩和线条表达情感与创意</p>
+                            <div class="project-links">
+                                <a href="#" class="btn btn-small">浏览画廊</a>
+                                <a href="#" class="btn btn-small btn-outline">更多作品</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card music" data-category="music">
+                        <div class="project-image">
+                            <div class="placeholder-image">🎵 音乐</div>
+                        </div>
+                        <div class="project-content">
+                            <h3>音乐创作</h3>
+                            <p>原创音乐作品，融合多种风格与情感表达</p>
+                            <div class="audio-player">
+                                <audio controls>您的浏览器不支持音频播放。</audio>
+                            </div>
+                            <div class="project-links">
+                                <a href="#" class="btn btn-small">收听更多</a>
+                                <a href="#" class="btn btn-small btn-outline">音乐主页</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card video" data-category="video">
+                        <div class="project-image">
+                            <div class="placeholder-image">🎬 视频</div>
+                        </div>
+                        <div class="project-content">
+                            <h3>视频作品</h3>
+                            <p>创意短片、纪录片与旅行影像，用镜头讲述故事</p>
+                            <div class="video-container">
+                                <iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                            <div class="project-links">
+                                <a href="#" class="btn btn-small">观看更多</a>
+                                <a href="#" class="btn btn-small btn-outline">视频主页</a>
                             </div>
                         </div>
                     </div>
