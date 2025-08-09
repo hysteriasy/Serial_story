@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 桑梓</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 用户管理页面专用样式 */
+        .management-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .users-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .users-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .user-role {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .role-admin {
+            background: #dc3545;
+            color: white;
+        }
+
+        .role-editor {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .role-user {
+            background: #6c757d;
+            color: white;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #0056b3;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .btn-reset {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-reset:hover {
+            background: #e0a800;
+        }
+
+        .controls-panel {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            display: block;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .logs-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .log-entry {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid #007bff;
+            font-size: 0.9rem;
+        }
+
+        .log-time {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .access-denied-icon {
+            font-size: 4rem;
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+
+        .access-denied-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .access-denied-message {
+            color: #6c757d;
+            margin-bottom: 2rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .users-table {
+                font-size: 0.8rem;
+            }
+
+            .users-table th,
+            .users-table td {
+                padding: 8px 12px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">桑梓</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="essays.html" class="nav-link">生活随笔</a>
+                </li>
+                <li class="nav-item">
+                    <a href="poetry.html" class="nav-link">诗歌创作</a>
+                </li>
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link">作品上传</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- 权限不足提示（默认隐藏） -->
+        <div id="accessDenied" class="management-container access-denied" style="display: none;">
+            <div class="access-denied-icon">🔒</div>
+            <h1 class="access-denied-title">访问被拒绝</h1>
+            <p class="access-denied-message">抱歉，您没有权限访问用户管理页面。<br>此页面仅限管理员使用。</p>
+            <a href="index.html" class="btn-primary" style="display: inline-block; width: auto; padding: 12px 24px; text-decoration: none;">返回首页</a>
+        </div>
+
+        <!-- 用户管理主界面（默认隐藏） -->
+        <div id="managementInterface" class="management-container" style="display: none;">
+            <div class="page-header">
+                <h1 class="page-title">👥 用户管理</h1>
+                <p class="page-subtitle">管理系统用户、权限设置和操作日志</p>
+            </div>
+
+            <!-- 统计信息 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalUsers">0</span>
+                    <span class="stat-label">总用户数</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="adminCount">0</span>
+                    <span class="stat-label">管理员</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="friendCount">0</span>
+                    <span class="stat-label">好友</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="visitorCount">0</span>
+                    <span class="stat-label">访客</span>
+                </div>
+            </div>
+
+            <div class="management-grid">
+                <!-- 用户列表 -->
+                <div class="users-section">
+                    <h2 class="section-title">👤 用户列表</h2>
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>角色</th>
+                                <th>注册时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- 用户数据将在这里动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 控制面板 -->
+                <div class="controls-panel">
+                    <h2 class="section-title">⚙️ 操作面板</h2>
+                    
+                    <div class="control-group">
+                        <label for="selectedUser">选择用户</label>
+                        <select id="selectedUser" class="form-select">
+                            <option value="">请选择用户</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="newRole">新角色</label>
+                        <select id="newRole" class="form-select">
+                            <option value="visitor">访客</option>
+                            <option value="friend">好友</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <button class="btn-primary" onclick="changeUserRole()">修改角色</button>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="newPassword">新密码</label>
+                        <input type="password" id="newPassword" class="form-input" placeholder="输入新密码">
+                    </div>
+
+                    <div class="control-group">
+                        <button class="btn-primary" onclick="resetUserPassword()">重置密码</button>
+                    </div>
+
+                    <div class="control-group">
+                        <button class="btn-primary" onclick="deleteUser()" style="background: #dc3545;">删除用户</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作日志 -->
+            <div class="logs-section">
+                <h2 class="section-title">📋 操作日志</h2>
+                <div id="operationLogs">
+                    <!-- 日志条目将在这里动态加载 -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
+                <div class="footer-links">
+                    <a href="index.html" class="home-button">首页</a>
+                    <div class="works-dropdown">
+                        <span class="dropdown-trigger">作品展示 ▼</span>
+                        <div class="dropdown-menu">
+                            <a href="essays.html">生活随笔</a>
+                            <a href="poetry.html">诗歌创作</a>
+                            <a href="novels.html">小说连载</a>
+                            <a href="artworks.html">绘画作品</a>
+                            <a href="music.html">音乐作品</a>
+                            <a href="videos.html">视频作品</a>
+                        </div>
+                    </div>
+                    <a href="upload.html">上传作品</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/admin-logger.js"></script>
+
+    <style>
+        /* 页脚下拉菜单样式 */
+        .works-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-trigger {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .works-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+
+    <script>
+        // 用户管理页面主要功能
+        class UserManagement {
+            constructor() {
+                this.users = [];
+                this.currentUser = null;
+                this.init();
+            }
+
+            async init() {
+                console.log('🔧 初始化用户管理页面...');
+
+                // 等待auth模块加载
+                await this.waitForAuth();
+
+                // 检查权限
+                if (!this.checkPermissions()) {
+                    this.showAccessDenied();
+                    return;
+                }
+
+                // 显示管理界面
+                this.showManagementInterface();
+
+                // 加载用户数据
+                this.loadUsers();
+
+                // 加载操作日志
+                this.loadOperationLogs();
+
+                console.log('✅ 用户管理页面初始化完成');
+            }
+
+            async waitForAuth() {
+                return new Promise((resolve) => {
+                    const checkAuth = () => {
+                        if (typeof auth !== 'undefined') {
+                            resolve();
+                        } else {
+                            setTimeout(checkAuth, 100);
+                        }
+                    };
+                    checkAuth();
+                });
+            }
+
+            checkPermissions() {
+                if (!auth.currentUser) {
+                    console.log('❌ 用户未登录');
+                    return false;
+                }
+
+                if (!auth.isAdmin || !auth.isAdmin()) {
+                    console.log('❌ 用户不是管理员');
+                    return false;
+                }
+
+                console.log('✅ 管理员权限验证通过');
+                return true;
+            }
+
+            showAccessDenied() {
+                document.getElementById('accessDenied').style.display = 'block';
+                document.getElementById('managementInterface').style.display = 'none';
+            }
+
+            showManagementInterface() {
+                document.getElementById('accessDenied').style.display = 'none';
+                document.getElementById('managementInterface').style.display = 'block';
+            }
+
+            loadUsers() {
+                // 从localStorage加载用户数据
+                const savedUsers = localStorage.getItem('users');
+                if (savedUsers) {
+                    this.users = JSON.parse(savedUsers);
+                } else {
+                    // 创建默认用户数据
+                    this.users = [
+                        {
+                            username: 'hysteria',
+                            role: 'admin',
+                            registeredAt: '2024-01-01T00:00:00Z',
+                            lastLogin: new Date().toISOString()
+                        },
+                        {
+                            username: 'friend1',
+                            role: 'friend',
+                            registeredAt: '2024-02-01T00:00:00Z',
+                            lastLogin: '2024-08-01T00:00:00Z'
+                        },
+                        {
+                            username: 'visitor1',
+                            role: 'visitor',
+                            registeredAt: '2024-03-01T00:00:00Z',
+                            lastLogin: '2024-07-15T00:00:00Z'
+                        }
+                    ];
+                    this.saveUsers();
+                }
+
+                this.renderUsers();
+                this.updateStats();
+                this.populateUserSelect();
+            }
+
+            saveUsers() {
+                localStorage.setItem('users', JSON.stringify(this.users));
+            }
+
+            renderUsers() {
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+
+                this.users.forEach((user, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.username}</td>
+                        <td><span class="user-role role-${user.role}">${this.getRoleDisplayName(user.role)}</span></td>
+                        <td>${new Date(user.registeredAt).toLocaleDateString()}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-action btn-edit" onclick="userManagement.selectUser('${user.username}')">编辑</button>
+                                <button class="btn-action btn-reset" onclick="userManagement.resetPassword('${user.username}')">重置密码</button>
+                                ${user.username !== auth.currentUser.username ?
+                                    `<button class="btn-action btn-delete" onclick="userManagement.confirmDeleteUser('${user.username}')">删除</button>` :
+                                    ''
+                                }
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            getRoleDisplayName(role) {
+                const roleNames = {
+                    'admin': '管理员',
+                    'friend': '好友',
+                    'visitor': '访客'
+                };
+                return roleNames[role] || role;
+            }
+
+            updateStats() {
+                const stats = {
+                    total: this.users.length,
+                    admin: this.users.filter(u => u.role === 'admin').length,
+                    friend: this.users.filter(u => u.role === 'friend').length,
+                    visitor: this.users.filter(u => u.role === 'visitor').length
+                };
+
+                document.getElementById('totalUsers').textContent = stats.total;
+                document.getElementById('adminCount').textContent = stats.admin;
+                document.getElementById('friendCount').textContent = stats.friend;
+                document.getElementById('visitorCount').textContent = stats.visitor;
+            }
+
+            populateUserSelect() {
+                const select = document.getElementById('selectedUser');
+                select.innerHTML = '<option value="">请选择用户</option>';
+
+                this.users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.username;
+                    option.textContent = user.username;
+                    select.appendChild(option);
+                });
+            }
+
+            selectUser(username) {
+                const user = this.users.find(u => u.username === username);
+                if (user) {
+                    document.getElementById('selectedUser').value = username;
+                    document.getElementById('newRole').value = user.role;
+                    this.currentUser = user;
+                }
+            }
+
+            loadOperationLogs() {
+                const logsContainer = document.getElementById('operationLogs');
+
+                // 获取管理员操作日志
+                let logs = [];
+                if (typeof adminLogger !== 'undefined') {
+                    logs = adminLogger.getLogs().slice(0, 10); // 最近10条
+                }
+
+                if (logs.length === 0) {
+                    logsContainer.innerHTML = '<p style="text-align: center; color: #6c757d;">暂无操作日志</p>';
+                    return;
+                }
+
+                logsContainer.innerHTML = '';
+                logs.forEach(log => {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = 'log-entry';
+                    logEntry.innerHTML = `
+                        <div><strong>${log.operator}</strong> - ${log.operation}</div>
+                        <div style="margin: 0.5rem 0; font-size: 0.8rem;">${JSON.stringify(log.details, null, 2)}</div>
+                        <div class="log-time">${new Date(log.timestamp).toLocaleString()}</div>
+                    `;
+                    logsContainer.appendChild(logEntry);
+                });
+            }
+        }
+
+        // 用户管理操作函数
+        function changeUserRole() {
+            const selectedUsername = document.getElementById('selectedUser').value;
+            const newRole = document.getElementById('newRole').value;
+
+            if (!selectedUsername) {
+                alert('请选择要修改的用户');
+                return;
+            }
+
+            if (selectedUsername === auth.currentUser.username && newRole !== 'admin') {
+                alert('不能修改自己的管理员权限');
+                return;
+            }
+
+            if (confirm(`确定要将用户 ${selectedUsername} 的角色修改为 ${userManagement.getRoleDisplayName(newRole)} 吗？`)) {
+                const user = userManagement.users.find(u => u.username === selectedUsername);
+                if (user) {
+                    const oldRole = user.role;
+                    user.role = newRole;
+                    userManagement.saveUsers();
+                    userManagement.renderUsers();
+                    userManagement.updateStats();
+
+                    // 记录操作日志
+                    if (typeof adminLogger !== 'undefined') {
+                        adminLogger.logUserManagement('role_change', selectedUsername, {
+                            oldRole: oldRole,
+                            newRole: newRole
+                        });
+                    }
+
+                    alert('角色修改成功！');
+                    userManagement.loadOperationLogs();
+                }
+            }
+        }
+
+        function resetUserPassword() {
+            const selectedUsername = document.getElementById('selectedUser').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            if (!selectedUsername) {
+                alert('请选择要重置密码的用户');
+                return;
+            }
+
+            if (!newPassword) {
+                alert('请输入新密码');
+                return;
+            }
+
+            if (confirm(`确定要重置用户 ${selectedUsername} 的密码吗？`)) {
+                // 这里应该调用实际的密码重置逻辑
+                // 由于是演示版本，我们只记录操作日志
+
+                // 记录操作日志
+                if (typeof adminLogger !== 'undefined') {
+                    adminLogger.logUserManagement('password_reset', selectedUsername, {
+                        resetBy: auth.currentUser.username
+                    });
+                }
+
+                document.getElementById('newPassword').value = '';
+                alert('密码重置成功！');
+                userManagement.loadOperationLogs();
+            }
+        }
+
+        function confirmDeleteUser() {
+            const selectedUsername = document.getElementById('selectedUser').value;
+
+            if (!selectedUsername) {
+                alert('请选择要删除的用户');
+                return;
+            }
+
+            if (selectedUsername === auth.currentUser.username) {
+                alert('不能删除自己的账户');
+                return;
+            }
+
+            if (confirm(`确定要删除用户 ${selectedUsername} 吗？此操作不可撤销！`)) {
+                deleteUser();
+            }
+        }
+
+        function deleteUser() {
+            const selectedUsername = document.getElementById('selectedUser').value;
+
+            const userIndex = userManagement.users.findIndex(u => u.username === selectedUsername);
+            if (userIndex !== -1) {
+                userManagement.users.splice(userIndex, 1);
+                userManagement.saveUsers();
+                userManagement.renderUsers();
+                userManagement.updateStats();
+                userManagement.populateUserSelect();
+
+                // 记录操作日志
+                if (typeof adminLogger !== 'undefined') {
+                    adminLogger.logUserManagement('delete', selectedUsername, {
+                        deletedBy: auth.currentUser.username
+                    });
+                }
+
+                // 清空选择
+                document.getElementById('selectedUser').value = '';
+                document.getElementById('newRole').value = 'user';
+                document.getElementById('newPassword').value = '';
+
+                alert('用户删除成功！');
+                userManagement.loadOperationLogs();
+            }
+        }
+
+        // 创建全局实例
+        let userManagement;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            userManagement = new UserManagement();
+        });
+    </script>
+</body>
+</html>

@@ -1,5 +1,56 @@
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
+    // Firebase initialization - 使用演示配置，在实际部署时需要替换为真实配置
+    const firebaseConfig = {
+      apiKey: 'demo-api-key',
+      authDomain: 'demo-project.firebaseapp.com',
+      databaseURL: 'https://demo-project-default-rtdb.firebaseio.com',
+      projectId: 'demo-project',
+      storageBucket: 'demo-project.appspot.com',
+      messagingSenderId: '123456789',
+      appId: '1:123456789:web:demo-app-id'
+    };
+
+    // 全局Firebase状态标志
+    window.firebaseAvailable = false;
+
+    // 检查Firebase是否可用
+    if (typeof firebase !== 'undefined') {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        console.log('🔧 Firebase配置已加载（演示模式）');
+
+        // 测试数据库连接（设置超时）
+        const connectionTimeout = setTimeout(() => {
+          console.warn('⚠️ Firebase连接超时，切换到离线模式');
+          window.firebaseAvailable = false;
+        }, 3000);
+
+        firebase.database().ref('.info/connected').on('value', (snapshot) => {
+          clearTimeout(connectionTimeout);
+          if (snapshot.val() === true) {
+            console.log('✅ Firebase数据库连接正常');
+            window.firebaseAvailable = true;
+          } else {
+            console.warn('⚠️ Firebase数据库连接断开，使用离线模式');
+            window.firebaseAvailable = false;
+          }
+        });
+
+      } catch (error) {
+        console.warn('⚠️ Firebase初始化失败:', error.message);
+        console.info('📱 系统将在离线模式下运行');
+        window.firebaseAvailable = false;
+      }
+    } else {
+      console.info('📱 Firebase库未加载，使用离线模式');
+      window.firebaseAvailable = false;
+    }
+
+    // 管理员用户初始化已移至auth.js中处理
+
+
+
     // 启动性能监控
     monitorWelcomeScreenPerformance();
 
@@ -13,6 +64,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initSmoothScrolling();
     initAnimations();
     initMediaFilter();
+
+    // 添加上传按钮事件监听
+    const uploadBtn = document.getElementById('uploadBtn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', async function() {
+            // 上传处理逻辑
+        });
+    }
 });
 
 // 媒体筛选功能
@@ -350,72 +409,94 @@ window.addEventListener('load', function() {
 
 // 错误处理
 window.addEventListener('error', function(e) {
-    console.error('页面发生错误:', e.error);
+    console.error('页面发生错误:', e.error || e.message || '未知错误');
     // 可以在这里添加错误报告功能
 });
 
-// 欢迎页面功能
+// 欢迎页面功能 - 仅在首页初始化
 function initWelcomeScreen() {
-    try {
-        const welcomeOverlay = document.getElementById('welcome-overlay');
+  // 检查当前页面是否为首页
+  if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+    console.log('非首页，跳过欢迎页面初始化');
+    return;
+  }
 
-        if (!welcomeOverlay) {
-            console.warn('欢迎页面元素未找到');
-            return;
-        }
+  try {
+    const welcomeOverlay = document.getElementById('welcome-overlay');
 
-        // 检查是否是首次访问或页面刷新
-        const hasVisited = sessionStorage.getItem('hasVisitedWelcome');
-
-        if (hasVisited) {
-            // 如果已经访问过，直接隐藏欢迎页面
-            welcomeOverlay.classList.add('hidden');
-            document.body.style.overflow = ''; // 确保页面可以滚动
-            return;
-        }
-
-        // 防止页面滚动
-        document.body.style.overflow = 'hidden';
-
-        // 使用事件委托优化性能
-        let isHidden = false;
-
-        // 点击任意位置隐藏欢迎页面
-        welcomeOverlay.addEventListener('click', function(e) {
-            if (!isHidden) {
-                hideWelcomeScreen();
-                isHidden = true;
-            }
-        }, { once: true }); // 只执行一次
-
-        // 键盘事件支持（按任意键隐藏）
-        const keydownHandler = function(e) {
-            if (!isHidden && !welcomeOverlay.classList.contains('hidden')) {
-                hideWelcomeScreen();
-                isHidden = true;
-                document.removeEventListener('keydown', keydownHandler);
-            }
-        };
-        document.addEventListener('keydown', keydownHandler);
-
-        // 自动隐藏（可选，10秒后自动隐藏）
-        const autoHideTimer = setTimeout(() => {
-            if (!isHidden && !welcomeOverlay.classList.contains('hidden')) {
-                hideWelcomeScreen();
-                isHidden = true;
-            }
-        }, 10000);
-
-        // 清理定时器的函数
-        welcomeOverlay.addEventListener('click', () => {
-            clearTimeout(autoHideTimer);
-        }, { once: true });
-
-    } catch (error) {
-        console.error('初始化欢迎页面时发生错误:', error);
-        // 发生错误时确保页面可以正常使用
-        document.body.style.overflow = '';
+    if (!welcomeOverlay) {
+      console.log('欢迎页面元素未找到，跳过初始化');
+      return;
     }
+
+    // 检查是否是首次访问
+    const hasVisited = sessionStorage.getItem('hasVisitedWelcome');
+    if (hasVisited) {
+      welcomeOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
+      return;
+    }
+
+    // 初始化逻辑
+    welcomeOverlay.style.opacity = '1';
+
+    // 添加点击事件监听器以关闭欢迎页面
+    welcomeOverlay.addEventListener('click', hideWelcomeScreen);
+  } catch (error) {
+    console.error('欢迎页面初始化失败:', error);
+  }
+}
+
+// 导航功能初始化
+function initNavigation() {
+  try {
+    const navToggle = document.querySelector('.nav-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    if (!navToggle || !navMenu) {
+      console.error('导航元素未找到:', { navToggle, navMenu });
+      return;
+    }
+
+    // 移动端菜单切换
+    navToggle.addEventListener('click', () => {
+      navMenu.classList.toggle('active');
+    });
+
+    // 导航链接点击事件
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navMenu.classList.remove('active');
+      });
+    });
+  } catch (error) {
+    console.error('导航初始化失败:', error);
+  }
+}
+
+// 确保所有模块初始化
+function initializeAllModules() {
+  try {
+    initWelcomeScreen();
+    
+    // 上传模块已集成到upload.js中，无需额外加载
+    
+    // 初始化导航
+    initNavigation();
+  } catch (error) {
+    console.error('模块初始化失败:', error);
+  }
+}
+
+// 统一加载检测
+if (document.readyState === 'complete') {
+  initializeAllModules();
+} else {
+  window.addEventListener('DOMContentLoaded', initializeAllModules);
+  window.addEventListener('load', () => {
+    console.log('所有资源加载完成');
+  });
 }
 
 function hideWelcomeScreen() {

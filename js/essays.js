@@ -1,5 +1,15 @@
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
+    // 确保auth对象已加载并检查登录状态
+    if (typeof auth !== 'undefined') {
+        auth.checkAuthStatus();
+        if (auth.currentUser) {
+            console.log(`📋 Essays页面：当前登录用户 ${auth.currentUser.username} (${auth.currentUser.role})`);
+        } else {
+            console.log('📋 Essays页面：当前未登录');
+        }
+    }
+
     // 初始化随笔页面
     initEssaysPage();
 });
@@ -7,61 +17,63 @@ document.addEventListener('DOMContentLoaded', function() {
 // 初始化随笔页面
 function initEssaysPage() {
     // 加载随笔列表
-    loadEssaysList();
-
-    // 初始化上传模态框
-    initUploadModal();
+    loadEssaysList().catch(error => {
+        console.error('初始化随笔列表失败:', error);
+    });
 
     // 初始化移动端菜单
     initMobileMenu();
 }
 
-// 加载随笔列表
-function loadEssaysList() {
+
+
+// 加载随笔列表 - 改为async函数
+async function loadEssaysList() {
     const essaysList = document.getElementById('essaysList');
     if (!essaysList) return;
 
     // 清空列表
     essaysList.innerHTML = '';
 
-    // 从本地存储获取随笔数据
-    const essays = getEssaysFromStorage();
+    try {
+        // 从文件系统获取随笔数据
+        const essays = await loadEssaysFromFiles();
 
-    if (essays.length === 0) {
-        essaysList.innerHTML = '<li class="no-essays">暂无随笔，请上传新随笔</li>';
-        return;
+        if (essays.length === 0) {
+            essaysList.innerHTML = '<li class="no-essays">暂无随笔，请上传新随笔</li>';
+            return;
+        }
+
+        // 遍历随笔数据并生成列表
+        essays.forEach((essay, index) => {
+            const li = document.createElement('li');
+            li.className = 'essay-item';
+            li.innerHTML = `
+                <div class="essay-item-content" data-index="${index}">
+                    <span class="essay-title">${essay.title}</span>
+                    <span class="essay-date">${formatDate(essay.date)}</span>
+                </div>
+                <button class="delete-btn" data-index="${index}">删除</button>
+            `;
+            essaysList.appendChild(li);
+
+            // 添加点击事件监听器
+            const essayItemContent = li.querySelector('.essay-item-content');
+            essayItemContent.addEventListener('click', () => {
+                loadEssayContent(index);
+            });
+
+            // 添加删除事件监听器
+            const deleteBtn = li.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 防止触发随笔项的点击事件
+                deleteEssay(index);
+            });
+        });
+    } catch (error) {
+        console.error('加载随笔列表失败:', error);
+        essaysList.innerHTML = '<li class="error-message">加载随笔失败，请重试</li>';
     }
-
-    // 遍历随笔数据并生成列表
-    essays.forEach((essay, index) => {
-        const li = document.createElement('li');
-        li.className = 'essay-item';
-        li.innerHTML = `
-            <div class="essay-item-content" data-index="${index}">
-                <span class="essay-title">${essay.title}</span>
-                <span class="essay-date">${formatDate(essay.date)}</span>
-            </div>
-            <button class="delete-btn" data-index="${index}">删除</button>
-        `;
-        essaysList.appendChild(li);
-
-        // 添加点击事件以加载随笔内容
-        const essayItemContent = li.querySelector('.essay-item-content');
-        essayItemContent.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'));
-            loadEssayContent(index);
-        });
-
-        // 添加删除按钮事件
-        const deleteBtn = li.querySelector('.delete-btn');
-        console.log('Delete button created:', deleteBtn);
-        deleteBtn.addEventListener('click', function(e) {
-            e.stopPropagation(); // 阻止事件冒泡
-            const index = parseInt(this.getAttribute('data-index'));
-            console.log('Delete button clicked for index:', index);
-            deleteEssay(index);
-        });
-    });
 }
 
 // 加载随笔内容
@@ -96,141 +108,355 @@ ${convertMarkdownToHtml(essay.content)}`;
 
     essayBody.innerHTML = contentHtml;
 
+    // 初始化评论系统
+    if (typeof commentSystem !== 'undefined') {
+        commentSystem.init(`essay_${index}`, 'essays');
+    }
+
     // 滚动到内容区域
     document.getElementById('essayContent').scrollIntoView({ behavior: 'smooth' });
 }
 
-// 初始化上传模态框
-function initUploadModal() {
-    const uploadBtn = document.getElementById('uploadBtn');
-    const uploadModal = document.getElementById('uploadModal');
-    const closeBtn = document.querySelector('.close-btn');
-    const uploadForm = document.getElementById('uploadForm');
 
-    if (!uploadBtn || !uploadModal || !closeBtn || !uploadForm) return;
 
-    // 打开模态框
-    uploadBtn.addEventListener('click', function() {
-        uploadModal.style.display = 'block';
-    });
-
-    // 关闭模态框
-    closeBtn.addEventListener('click', function() {
-        uploadModal.style.display = 'none';
-    });
-
-    // 点击模态框外部关闭
-    window.addEventListener('click', function(event) {
-        if (event.target === uploadModal) {
-            uploadModal.style.display = 'none';
-        }
-    });
-
-    // 提交表单
-    uploadForm.addEventListener('submit', function(e) {
-      if (!verifyPassword('上传')) {
-        showNotification('密码错误，操作终止', 'error');
-        e.preventDefault();
-        return;
+// 获取存储的随笔
+function getEssaysFromStorage() {
+  try {
+    // 首先尝试从essays键获取数据（兼容格式）
+    const essays = localStorage.getItem('essays');
+    if (essays) {
+      const essayList = JSON.parse(essays);
+      if (essayList.length > 0) {
+        console.log(`✅ 从essays存储加载了 ${essayList.length} 篇随笔`);
+        return essayList;
       }
-        e.preventDefault();
+    }
 
-        const title = document.getElementById('essayTitleInput').value;
-        const content = document.getElementById('essayContentInput').value;
-        const imageInput = document.getElementById('essayImagesInput');
-        const files = imageInput.files;
+    // 如果essays为空，尝试从新格式的存储中获取随笔
+    const publicWorks = localStorage.getItem('publicWorks_literature');
+    if (publicWorks) {
+      const worksList = JSON.parse(publicWorks);
+      const essayWorks = [];
 
-        if (!title || !content) {
-            showNotification('请填写标题和内容', 'error');
-            return;
+      worksList.forEach(workRef => {
+        if (workRef.subcategory === 'essay') {
+          const fullWorkData = localStorage.getItem(`work_${workRef.id}`);
+          if (fullWorkData) {
+            const workInfo = JSON.parse(fullWorkData);
+            if (workInfo.permissions?.isPublic) {
+              // 转换为essays格式
+              essayWorks.push({
+                title: workInfo.title,
+                content: workInfo.content,
+                date: workInfo.uploadTime,
+                author: workInfo.uploadedBy
+              });
+            }
+          }
         }
+      });
 
-        // 处理图片上传
-        const processImages = () => {
-            return new Promise((resolve) => {
-                if (files.length === 0) {
-                    resolve([]);
-                    return;
-                }
+      if (essayWorks.length > 0) {
+        console.log(`✅ 从新格式存储转换了 ${essayWorks.length} 篇随笔`);
+        // 将转换后的数据保存到essays格式中，以便下次直接使用
+        localStorage.setItem('essays', JSON.stringify(essayWorks));
+        return essayWorks;
+      }
+    }
 
-                const images = [];
-                let processedCount = 0;
-
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const reader = new FileReader();
-
-                    reader.onload = function(e) {
-                        images.push({
-                            name: file.name,
-                            type: file.type,
-                            data: e.target.result
-                        });
-
-                        processedCount++;
-                        if (processedCount === files.length) {
-                            resolve(images);
-                        }
-                    };
-
-                    reader.readAsDataURL(file);
-                }
-            });
-        };
-
-        // 处理图片并创建新随笔
-        processImages().then(images => {
-            // 创建新随笔
-            const newEssay = {
-                title: title,
-                content: content,
-                images: images,
-                date: new Date().toISOString()
-            };
-
-            // 保存到本地存储
-            saveEssayToStorage(newEssay);
-
-            // 关闭模态框并重置表单
-            uploadModal.style.display = 'none';
-            uploadForm.reset();
-
-            // 更新随笔列表
-            loadEssaysList();
-
-            // 显示成功通知
-            showNotification('随笔上传成功！', 'success');
-        });
-    });
+    console.log('📝 没有找到随笔数据');
+    return [];
+  } catch (error) {
+    console.error('❌ 获取随笔数据失败:', error);
+    return [];
+  }
 }
 
-// 密码配置
-const PASSWORD_MAP = {
-  'admin': '030117'
-};
+// 格式化日期
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
 
-// 密码验证函数
-function verifyPassword(action) {
-  const password = prompt(`请输入${action}密码:`);
-  if (!password) return false;
-  return Object.values(PASSWORD_MAP).includes(password);
+// 显示随笔通知
+function showEssayNotification(message, type = 'info') {
+  // 创建通知元素
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+
+  // 添加到页面
+  document.body.appendChild(notification);
+
+  // 自动移除
+  setTimeout(() => {
+    notification.classList.add('fade-out');
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+
+// 初始化移动端菜单
+function initMobileMenu() {
+  const mobileMenuBtn = document.getElementById('mobile-menu');
+  const navMenu = document.querySelector('.nav-menu');
+
+  if (mobileMenuBtn && navMenu) {
+    mobileMenuBtn.addEventListener('click', () => {
+      navMenu.classList.toggle('active');
+      mobileMenuBtn.classList.toggle('active');
+    });
+  }
+}
+
+// 从本地存储加载随笔
+async function loadEssaysFromFiles() {
+  try {
+    // 首先尝试从新格式的本地存储获取随笔
+    const essays = getEssaysFromStorage();
+
+    // 如果有数据，直接返回
+    if (essays && essays.length > 0) {
+      console.log(`✅ 从本地存储加载了 ${essays.length} 篇随笔`);
+      return essays.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+
+    // 如果没有数据，尝试从文件系统加载（兼容旧版本）
+    try {
+      const response = await fetch('essays/_list.json');
+      const fileList = await response.json();
+
+      const fileEssays = await Promise.all(fileList.map(async filename => {
+        const res = await fetch(`essays/${filename}`);
+        return await res.json();
+      }));
+
+      console.log(`✅ 从文件系统加载了 ${fileEssays.length} 篇随笔`);
+      return fileEssays.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } catch (fileError) {
+      console.log('📁 文件系统中没有随笔数据，这是正常的');
+      return [];
+    }
+  } catch (error) {
+    console.error('❌ 加载随笔失败:', error);
+    return [];
+  }
+}
+
+// 转换Markdown为HTML - 简化版
+function convertMarkdownToHtml(markdown) {
+  // 这里是一个简化版的Markdown转换
+  // 实际应用中可以使用第三方库
+  let html = markdown
+    .replace(/(#{1,6})\s+([^\n]+)/g, function(match, p1, p2) {
+      const headingLevel = Math.min(p1.length, 6);
+      return `<h${headingLevel}>${p2}</h${headingLevel}>`;
+    })
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/\n\n/g, '</p><p>');
+
+  return `<p>${html}</p>`;
+}
+
+// 检查用户是否可以管理指定作品
+function canManageWork(workAuthor, action) {
+  // 确保auth对象已加载并检查登录状态
+  if (typeof auth !== 'undefined') {
+    // 如果auth.currentUser为空，尝试从sessionStorage恢复登录状态
+    if (!auth.currentUser) {
+      console.log('🔄 auth.currentUser为空，尝试恢复登录状态...');
+      auth.checkAuthStatus();
+    }
+
+    if (auth.currentUser) {
+      console.log(`🔐 检查用户权限: ${auth.currentUser.username} (${auth.currentUser.role}) 对作品作者 ${workAuthor} 的${action}权限`);
+
+      // 管理员可以管理所有用户的作品
+      if (auth.isAdmin && auth.isAdmin()) {
+        console.log('✅ 管理员用户，对所有作品拥有完全控制权限');
+        return true;
+      }
+
+      // 作品作者可以管理自己的作品
+      if (auth.currentUser.username === workAuthor) {
+        console.log('✅ 作品作者，可以管理自己的作品');
+        return true;
+      }
+
+      // 编辑员可以编辑自己的作品，但不能删除其他人的作品
+      if (action === '编辑' && auth.isEditor && auth.isEditor()) {
+        if (auth.currentUser.username === workAuthor) {
+          console.log('✅ 编辑员用户，可以编辑自己的作品');
+          return true;
+        } else {
+          console.log('⚠️ 编辑员不能编辑其他人的作品');
+          return false;
+        }
+      }
+
+      console.log(`⚠️ 用户 ${auth.currentUser.username} 没有对此作品的${action}权限`);
+      return false;
+    } else {
+      console.log('⚠️ 用户未登录');
+      return false;
+    }
+  } else {
+    console.log('⚠️ auth对象未定义');
+    return false;
+  }
+}
+
+// 密码验证函数（保留用于向后兼容）
+async function verifyPassword(action, workAuthor = null) {
+  // 如果提供了作品作者信息，先检查权限
+  if (workAuthor && canManageWork(workAuthor, action)) {
+    return true;
+  }
+
+  // 确保auth对象已加载并检查登录状态
+  if (typeof auth !== 'undefined') {
+    // 如果auth.currentUser为空，尝试从sessionStorage恢复登录状态
+    if (!auth.currentUser) {
+      console.log('🔄 auth.currentUser为空，尝试恢复登录状态...');
+      auth.checkAuthStatus();
+    }
+
+    if (auth.currentUser) {
+      console.log(`🔐 检查用户权限: ${auth.currentUser.username} (${auth.currentUser.role})`);
+
+      // 检查管理员权限（管理员可以执行所有操作）
+      if (auth.isAdmin && auth.isAdmin()) {
+        console.log('✅ 管理员用户，直接授权');
+        console.log(`管理员用户 ${auth.currentUser.username} 已授权执行${action}操作`);
+        return true;
+      }
+
+      // 检查编辑员权限（编辑员可以编辑，但不能删除）
+      if (action === '编辑' && auth.isEditor && auth.isEditor()) {
+        console.log('✅ 编辑员用户，授权编辑操作');
+        console.log(`编辑员用户 ${auth.currentUser.username} 已授权执行编辑操作`);
+        return true;
+      }
+
+      // 检查特定权限
+      if (auth.hasPermission) {
+        const permissionMap = {
+          '删除': 'delete',
+          '编辑': 'edit'
+        };
+
+        const requiredPermission = permissionMap[action];
+        if (requiredPermission && auth.hasPermission(requiredPermission)) {
+          console.log(`✅ 用户具有${action}权限，直接授权`);
+          console.log(`用户 ${auth.currentUser.username} 已授权执行${action}操作`);
+          return true;
+        }
+      }
+
+      console.log(`⚠️ 用户 ${auth.currentUser.username} 没有${action}权限，需要密码验证`);
+    } else {
+      console.log('⚠️ 用户未登录，使用密码验证');
+    }
+  } else {
+    console.log('⚠️ auth对象未定义，使用密码验证');
+  }
+
+  // 对于已登录但权限不足的用户，提供更友好的提示
+  if (typeof auth !== 'undefined' && auth.currentUser) {
+    const message = `当前用户 ${auth.currentUser.username} 没有${action}权限。\n如需执行此操作，请输入管理员密码：`;
+    const password = prompt(message);
+    if (!password) {
+      console.log('用户取消了密码输入');
+      return false;
+    }
+
+    // 验证管理员密码
+    try {
+      // 使用auth模块的管理员密码验证
+      if (auth.verifyAdminPassword) {
+        await auth.verifyAdminPassword(password);
+        console.log(`✅ 管理员密码验证通过，授权${action}操作`);
+        return true;
+      }
+    } catch (error) {
+      console.log(`❌ 管理员密码验证失败: ${error.message}`);
+      alert(`密码验证失败: ${error.message}`);
+      return false;
+    }
+  }
+
+  // 回退到原有的密码验证机制（用于未登录用户或备用验证）
+  const envKey = {
+    '删除': 'VITE_ADMIN_PASSWORD',
+    '编辑': 'VITE_EDITOR_PASSWORD'
+  }[action];
+
+  const password = prompt(`请输入${action}密码（请联系管理员获取）:`);
+  if (!password) {
+    console.log('用户取消了密码输入');
+    return false;
+  }
+
+  // 从localStorage获取密码，如果没有则使用默认密码
+  const storedPassword = localStorage.getItem(envKey);
+  const defaultPassword = action === '删除' ? 'admin123' : 'editor123';
+  const isValid = password === (storedPassword || defaultPassword);
+
+  if (isValid) {
+    console.log(`✅ 密码验证通过，授权${action}操作`);
+  } else {
+    console.log(`❌ 密码验证失败，拒绝${action}操作`);
+  }
+
+  return isValid;
 }
 
 // 删除随笔
-function deleteEssay(index) {
-  if (!verifyPassword('删除')) {
-    showNotification('密码错误，操作终止', 'error');
-    return;
-  }
+async function deleteEssay(index) {
+  try {
     console.log('deleteEssay function called with index:', index);
-    if (!confirm('确定要删除这篇随笔吗？')) {
-        console.log('Delete cancelled by user');
-        return;
-    }
 
     // 从本地存储获取随笔数据
     let essays = getEssaysFromStorage();
     console.log('Current essays:', essays);
+
+    if (index < 0 || index >= essays.length) {
+      showNotification('无效的随笔索引', 'error');
+      return;
+    }
+
+    const essay = essays[index];
+    const workAuthor = essay.author || '未知作者';
+
+    // 检查权限：管理员可以删除所有作品，作者可以删除自己的作品
+    if (!canManageWork(workAuthor, '删除')) {
+      // 如果没有直接权限，尝试密码验证
+      const hasPermission = await verifyPassword('删除', workAuthor);
+      if (!hasPermission) {
+        showNotification('您没有权限删除此随笔', 'error');
+        return;
+      }
+    }
+
+    if (!confirm(`确定要删除随笔《${essay.title}》吗？\n作者：${workAuthor}`)) {
+      console.log('Delete cancelled by user');
+      return;
+    }
+
+    // 记录管理员操作日志
+    if (auth.currentUser && auth.isAdmin() && auth.currentUser.username !== workAuthor) {
+      console.log(`🔒 管理员 ${auth.currentUser.username} 删除了用户 ${workAuthor} 的随笔《${essay.title}》`);
+      // 记录操作日志
+      if (typeof adminLogger !== 'undefined') {
+        adminLogger.logWorkManagement('delete', essay, workAuthor);
+      }
+    }
 
     // 删除指定索引的随笔
     essays.splice(index, 1);
@@ -249,19 +475,35 @@ function deleteEssay(index) {
 
     // 显示成功通知
     showNotification('随笔删除成功！', 'success');
+  } catch (error) {
+    console.error('删除随笔时发生错误:', error);
+    showNotification('删除失败：' + error.message, 'error');
+  }
 }
 
-// 从本地存储获取随笔数据
-function getEssaysFromStorage() {
-    const essays = localStorage.getItem('essays');
-    return essays ? JSON.parse(essays) : [];
-}
 
-// 保存随笔到本地存储
-function saveEssayToStorage(essay) {
-    let essays = getEssaysFromStorage();
-    essays.unshift(essay); // 添加到数组开头
-    localStorage.setItem('essays', JSON.stringify(essays));
+
+// 保存随笔到文件系统
+async function saveEssayToFile(essay) {
+    try {
+        // 生成符合GitHub Pages要求的文件名
+        const filename = `essay_${Date.now()}.json`;
+        
+        // 使用GitHub Pages兼容的保存方式
+        localStorage.setItem(filename, JSON.stringify(essay));
+        
+        // 更新文件列表
+        const fileList = JSON.parse(localStorage.getItem('_list') || '[]');
+        fileList.unshift(filename);
+        localStorage.setItem('_list', JSON.stringify(fileList));
+        
+        showNotification('成功保存到本地存储（预览模式）', 'success');
+        return { status: 'success' };
+    } catch (error) {
+        console.error('保存失败:', error);
+        showNotification('自动保存失败：' + error.message, 'error');
+        throw error;
+    }
 }
 
 // 格式化日期
