@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作品上传 - 桑梓</title>
+  <meta name="description" content="桑梓个人创作平台 - 上传和管理您的文学、艺术、音乐、视频作品">
+  <link rel="stylesheet" href="css/style.css?v=20240807">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    /* 上传页面专用样式 - 与主页风格保持一致 */
+    body {
+      padding-top: 70px; /* 为固定导航栏留出空间 */
+    }
+
+    .upload-hero {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 80px 0;
+      text-align: center;
+      margin-bottom: 0;
+    }
+
+    .hero-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .hero-title {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    .hero-description {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+
+    .user-info {
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 30px auto;
+      max-width: 1200px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border-left: 4px solid #007bff;
+    }
+
+    .current-user {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #333;
+    }
+
+    .auth-required {
+      text-align: center;
+      padding: 60px 40px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      margin: 30px auto;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .auth-required h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .login-form {
+      max-width: 300px;
+      margin: 20px auto;
+    }
+
+    .login-form input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    .upload-section {
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      padding: 40px;
+      margin: 30px auto;
+      max-width: 1200px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .section-title {
+      font-size: 2rem;
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .file-type-selector {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 30px 0;
+      flex-wrap: wrap;
+    }
+
+    .file-type-selector .btn {
+      padding: 12px 24px;
+      border: 2px solid #007bff;
+      background: transparent;
+      color: #007bff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .file-type-selector .btn.active,
+    .file-type-selector .btn:hover {
+      background: #007bff;
+      color: white;
+    }
+
+    .drop-zone {
+      border: 2px dashed #007bff;
+      border-radius: 12px;
+      padding: 60px 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+      margin: 30px 0;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #0056b3;
+      background: #e3f2fd;
+      transform: translateY(-2px);
+    }
+
+    .drop-zone-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .drop-zone-icon {
+      font-size: 48px;
+      color: #007bff;
+    }
+
+    .drop-zone-text p {
+      margin: 5px 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .drop-zone-hint {
+      font-size: 14px;
+      color: #6c757d;
+    }
+
+    .upload-progress {
+      margin: 20px 0;
+      background: #e9ecef;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 25px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #007bff, #0056b3);
+      width: 0%;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .upload-info {
+      background: #e7f3ff;
+      padding: 25px;
+      border-radius: 12px;
+      margin: 30px 0;
+    }
+
+    .upload-info h4 {
+      margin-top: 0;
+      color: #0056b3;
+      font-size: 1.2rem;
+    }
+
+    .upload-info ul {
+      margin: 15px 0;
+      padding-left: 25px;
+    }
+
+    .upload-info li {
+      margin: 8px 0;
+      color: #495057;
+      line-height: 1.6;
+    }
+
+    .file-list-container {
+      margin-top: 40px;
+      padding-top: 40px;
+      border-top: 2px solid #dee2e6;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 25px;
+      margin-top: 25px;
+    }
+
+    .file-item {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .file-item:hover {
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .file-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .file-name {
+      font-weight: 600;
+      margin-bottom: 8px;
+      word-break: break-word;
+      color: #333;
+    }
+
+    .file-meta {
+      font-size: 0.9em;
+      color: #6c757d;
+      margin-bottom: 15px;
+    }
+
+    .file-meta span {
+      margin-right: 15px;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 0.875em;
+      border-radius: 6px;
+    }
+
+    .no-files {
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+      padding: 60px;
+      font-size: 1.1rem;
+    }
+
+    /* 管理员面板样式 */
+    .admin-panel {
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      padding: 30px;
+      margin: 30px auto;
+      max-width: 1200px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border-left: 4px solid #dc3545;
+    }
+
+    .admin-panel h3 {
+      color: #dc3545;
+      margin-bottom: 20px;
+    }
+
+    .admin-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .admin-tab {
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-weight: 600;
+      color: #6c757d;
+      transition: all 0.3s ease;
+    }
+
+    .admin-tab.active {
+      color: #dc3545;
+      border-bottom-color: #dc3545;
+    }
+
+    .admin-content {
+      display: none;
+    }
+
+    .admin-content.active {
+      display: block;
+    }
+
+    .user-management-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .user-card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+    }
+
+    .user-card h4 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .user-role {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .role-admin {
+      background: #dc3545;
+      color: white;
+    }
+
+    .role-editor {
+      background: #ffc107;
+      color: #212529;
+    }
+
+    .role-user {
+      background: #6c757d;
+      color: white;
+    }
+
+    /* 系统状态样式 */
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1px solid #ddd;
+    }
+
+    .system-status.online {
+      background-color: #d4edda;
+      color: #155724;
+      border-color: #c3e6cb;
+    }
+
+    .system-status.offline {
+      background-color: #fff3cd;
+      color: #856404;
+      border-color: #ffeaa7;
+    }
+
+    .system-status.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border-color: #f5c6cb;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-indicator.online {
+      background-color: #28a745;
+      animation: pulse 2s infinite;
+    }
+
+    .status-indicator.offline {
+      background-color: #ffc107;
+    }
+
+    .status-indicator.error {
+      background-color: #dc3545;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* 存储徽章样式 */
+    .storage-badge {
+      font-size: 16px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .storage-firebase {
+      background-color: #e3f2fd;
+      color: #1976d2;
+      border: 1px solid #bbdefb;
+    }
+
+    .storage-local {
+      background-color: #fff3e0;
+      color: #f57c00;
+      border: 1px solid #ffcc02;
+    }
+
+    .storage-preset {
+      background-color: #f3e5f5;
+      color: #7b1fa2;
+      border: 1px solid #ce93d8;
+    }
+
+    /* 通知动画 */
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    /* 模态框样式 */
+    .modal {
+      position: fixed;
+      z-index: 10002;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* UI组件层级定义 */
+    /*
+    层级规划：
+    - 导航栏: 10000 (最高，始终在顶部)
+    - 通知消息: 10001 (在导航栏之上)
+    - 模态框: 10002 (在通知之上)
+    - 其他浮动元素: 1000以下
+    */
+
+    .modal-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #aaa;
+      transition: color 0.3s ease;
+    }
+
+    .close-btn:hover {
+      color: #333;
+    }
+
+    .modal h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 25px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #545b62;
+    }
+
+    .btn-danger {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #c82333;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+    }
+
+    .form-control.error {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 2px rgba(220,53,69,0.25);
+    }
+
+    .form-error {
+      color: #dc3545;
+      font-size: 14px;
+      margin-top: 5px;
+      display: block;
+      min-height: 20px;
+    }
+
+    .form-success {
+      color: #28a745;
+      font-size: 14px;
+      margin-top: 5px;
+      display: block;
+    }
+
+    /* 新增表单样式 */
+    .upload-form {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin: 20px 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border: 1px solid #e9ecef;
+      display: none;
+    }
+
+    .upload-form.active {
+      display: block;
+    }
+
+    .subcategory-fields {
+      margin-top: 20px;
+    }
+
+    .required {
+      color: #dc3545;
+      font-weight: bold;
+    }
+
+    .file-upload-area {
+      position: relative;
+    }
+
+    .file-upload-hint {
+      font-size: 0.875rem;
+      color: #6c757d;
+      margin-top: 5px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .form-actions .btn {
+      min-width: 120px;
+    }
+
+    /* 文学作品子分类切换动画 */
+    .subcategory-fields {
+      transition: all 0.3s ease;
+    }
+
+    /* 页脚下拉菜单样式 */
+    .works-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-trigger {
+      color: #ffffff;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .dropdown-trigger:hover {
+      background-color: rgba(0, 123, 255, 0.1);
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      min-width: 180px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .works-dropdown:hover .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .dropdown-menu a {
+      display: block;
+      padding: 12px 16px;
+      color: #333;
+      text-decoration: none;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.3s ease;
+    }
+
+    .dropdown-menu a:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-menu a:hover {
+      background-color: #f8f9fa;
+    }
+
+    .dropdown-menu a.current-page {
+      background-color: #007bff;
+      color: white;
+      font-weight: 500;
+    }
+
+    .dropdown-menu a.current-page:hover {
+      background-color: #0056b3;
+    }
+
+    /* 文件上传区域样式优化 */
+    .file-upload-area input[type="file"] {
+      padding: 15px;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+    }
+
+    .file-upload-area input[type="file"]:hover {
+      border-color: #007bff;
+      background: #e3f2fd;
+    }
+
+    .file-upload-area input[type="file"]:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+    }
+
+    /* 表单验证样式 */
+    .form-control.is-invalid {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 2px rgba(220,53,69,0.25);
+    }
+
+    .form-control.is-valid {
+      border-color: #28a745;
+      box-shadow: 0 0 0 2px rgba(40,167,69,0.25);
+    }
+
+    .invalid-feedback {
+      display: block;
+      width: 100%;
+      margin-top: 5px;
+      font-size: 0.875rem;
+      color: #dc3545;
+    }
+
+    .valid-feedback {
+      display: block;
+      width: 100%;
+      margin-top: 5px;
+      font-size: 0.875rem;
+      color: #28a745;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2rem;
+      }
+
+      .hero-description {
+        font-size: 1rem;
+      }
+
+      .upload-section,
+      .user-info,
+      .admin-panel {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      .upload-form {
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .file-type-selector {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .current-user {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+      }
+
+      .admin-tabs {
+        flex-wrap: wrap;
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 20px;
+        padding: 20px;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .form-actions .btn {
+        min-width: auto;
+        width: 100%;
+      }
+
+      /* 移动设备上的通知位置调整 */
+      .notification {
+        top: 70px !important;
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none !important;
+        margin: 0 !important;
+      }
+
+      /* 移动设备上的表单错误提示 */
+      .form-error {
+        font-size: 12px;
+      }
+
+      /* 移动设备上的登录表单 */
+      .login-form {
+        padding: 0 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <h2>桑梓</h2>
+      </div>
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="index.html" class="nav-link">首页</a>
+        </li>
+        <li class="nav-item">
+          <a href="index.html#about" class="nav-link">关于我</a>
+        </li>
+
+        <li class="nav-item">
+          <a href="index.html#contact" class="nav-link">联系我</a>
+        </li>
+
+      </ul>
+      <div class="nav-toggle" id="mobile-menu">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主标题区域 -->
+  <header class="upload-hero">
+    <div class="hero-container">
+      <h1 class="hero-title">作品上传中心</h1>
+      <p class="hero-description">分享您的创作，让文字与艺术在这里绽放</p>
+    </div>
+  </header>
+
+  <!-- 主要内容区域 -->
+  <main>
+    <!-- 用户信息显示区域 -->
+    <div id="userInfoContainer"></div>
+
+    <!-- 管理员面板 -->
+    <div id="adminPanel" class="admin-panel" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>🔧 管理员控制面板</h3>
+        <div id="systemStatus" class="system-status">
+          <span id="statusIndicator" class="status-indicator"></span>
+          <span id="statusText">检查系统状态...</span>
+        </div>
+      </div>
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('users')">用户管理</button>
+        <button class="admin-tab" onclick="switchAdminTab('files')">文件权限</button>
+        <button class="admin-tab" onclick="switchAdminTab('settings')">系统设置</button>
+      </div>
+
+      <!-- 用户管理标签页 -->
+      <div id="adminUsers" class="admin-content active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h4>用户管理</h4>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-info" onclick="loginRecordsManager.showLoginRecordsModal()">📋 登录记录</button>
+            <button class="btn btn-primary" onclick="showCreateUserModal()">➕ 添加用户</button>
+          </div>
+        </div>
+        <div id="usersList" class="user-management-grid">
+          <!-- 用户列表将在这里动态生成 -->
+        </div>
+      </div>
+
+      <!-- 文件权限标签页 -->
+      <div id="adminFiles" class="admin-content">
+        <div id="fileHierarchyContainer">
+          <!-- 文件层级结构将在这里动态生成 -->
+        </div>
+      </div>
+
+      <!-- 系统设置标签页 -->
+      <div id="adminSettings" class="admin-content">
+        <h4>系统设置</h4>
+        <div class="form-group">
+          <label>默认文件权限</label>
+          <select id="defaultFilePermission" class="form-control">
+            <option value="private">私有（仅所有者可见）</option>
+            <option value="public">公开（所有人可见）</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 作品上传区域 -->
+    <section class="upload-section">
+      <h2 class="section-title">📤 作品上传</h2>
+
+      <!-- 作品类型选择器 -->
+      <div class="file-type-selector">
+        <button class="btn active" data-type="literature">📚 文学作品</button>
+        <button class="btn" data-type="art">🎨 绘画作品</button>
+        <button class="btn" data-type="music">🎵 音乐作品</button>
+        <button class="btn" data-type="video">🎬 视频作品</button>
+      </div>
+
+      <!-- 文学作品上传表单 -->
+      <div id="literatureForm" class="upload-form active">
+        <!-- 子分类选择 -->
+        <div class="form-group">
+          <label>文学作品类型</label>
+          <select id="literatureSubcategory" class="form-control">
+            <option value="essay">生活随笔</option>
+            <option value="poetry">诗歌创作</option>
+            <option value="novel">小说连载</option>
+          </select>
+        </div>
+
+        <!-- 生活随笔表单 -->
+        <div id="essayFields" class="subcategory-fields">
+          <div class="form-group">
+            <label>随笔题目 <span class="required">*</span></label>
+            <input type="text" id="essayTitle" class="form-control" placeholder="请输入随笔题目" required>
+          </div>
+          <div class="form-group">
+            <label>随笔内容 <span class="required">*</span></label>
+            <textarea id="essayContent" class="form-control" rows="10" placeholder="请输入随笔内容，支持Markdown格式" required></textarea>
+          </div>
+        </div>
+
+        <!-- 诗歌创作表单 -->
+        <div id="poetryFields" class="subcategory-fields" style="display: none;">
+          <div class="form-group">
+            <label>诗歌题目 <span class="required">*</span></label>
+            <input type="text" id="poetryTitle" class="form-control" placeholder="请输入诗歌题目" required>
+          </div>
+          <div class="form-group">
+            <label>诗歌类型</label>
+            <select id="poetryType" class="form-control">
+              <option value="modern">现代诗</option>
+              <option value="classical">古体诗词</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>诗歌内容 <span class="required">*</span></label>
+            <textarea id="poetryContent" class="form-control" rows="8" placeholder="请输入诗歌内容" required></textarea>
+          </div>
+        </div>
+
+        <!-- 小说连载表单 -->
+        <div id="novelFields" class="subcategory-fields" style="display: none;">
+          <div class="form-group">
+            <label>小说题目 <span class="required">*</span></label>
+            <input type="text" id="novelTitle" class="form-control" placeholder="请输入小说题目" required>
+          </div>
+          <div class="form-group">
+            <label>章节号 <span class="required">*</span></label>
+            <input type="number" id="novelChapter" class="form-control" placeholder="请输入章节号" min="1" required>
+          </div>
+          <div class="form-group">
+            <label>节标题</label>
+            <input type="text" id="novelChapterTitle" class="form-control" placeholder="请输入节标题（可选）">
+          </div>
+          <div class="form-group">
+            <label>章节内容 <span class="required">*</span></label>
+            <textarea id="novelContent" class="form-control" rows="12" placeholder="请输入章节内容" required></textarea>
+          </div>
+        </div>
+
+        <!-- 通用设置 -->
+        <div class="form-group">
+          <label>访问权限</label>
+          <select id="literaturePermission" class="form-control">
+            <option value="public">公开（所有人可见）</option>
+            <option value="private">私有（仅自己可见）</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="submitLiterature" class="btn btn-primary">发布作品</button>
+          <button type="button" id="resetLiterature" class="btn btn-secondary">重置表单</button>
+        </div>
+      </div>
+
+      <!-- 绘画作品上传表单 -->
+      <div id="artForm" class="upload-form" style="display: none;">
+        <div class="form-group">
+          <label>绘画作品类型</label>
+          <select id="artSubcategory" class="form-control">
+            <option value="painting">绘画作品</option>
+            <option value="sketch">素描作品</option>
+            <option value="digital">数字艺术</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>作品题目 <span class="required">*</span></label>
+          <input type="text" id="artTitle" class="form-control" placeholder="请输入作品题目" required>
+        </div>
+        <div class="form-group">
+          <label>作品图片 <span class="required">*</span></label>
+          <div class="file-upload-area">
+            <input type="file" id="artFile" class="form-control" accept="image/*" required>
+            <div class="file-upload-hint">支持 JPG、PNG、GIF、WebP 格式，最大 10MB</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>作品简介</label>
+          <textarea id="artDescription" class="form-control" rows="4" placeholder="请简单介绍一下这幅作品"></textarea>
+        </div>
+        <div class="form-group">
+          <label>访问权限</label>
+          <select id="artPermission" class="form-control">
+            <option value="public">公开（所有人可见）</option>
+            <option value="private">私有（仅自己可见）</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="submitArt" class="btn btn-primary">发布作品</button>
+          <button type="button" id="resetArt" class="btn btn-secondary">重置表单</button>
+        </div>
+      </div>
+
+      <!-- 音乐作品上传表单 -->
+      <div id="musicForm" class="upload-form" style="display: none;">
+        <div class="form-group">
+          <label>音乐作品类型</label>
+          <select id="musicSubcategory" class="form-control">
+            <option value="original">原创音乐</option>
+            <option value="cover">翻唱作品</option>
+            <option value="instrumental">器乐演奏</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>作品题目 <span class="required">*</span></label>
+          <input type="text" id="musicTitle" class="form-control" placeholder="请输入作品题目" required>
+        </div>
+        <div class="form-group">
+          <label>音频文件 <span class="required">*</span></label>
+          <div class="file-upload-area">
+            <input type="file" id="musicFile" class="form-control" accept="audio/*" required>
+            <div class="file-upload-hint">支持 MP3、WAV、FLAC、M4A、AAC 格式，最大 10MB</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>作品简介 <span class="required">*</span></label>
+          <textarea id="musicDescription" class="form-control" rows="4" placeholder="请介绍一下这首音乐作品" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>访问权限</label>
+          <select id="musicPermission" class="form-control">
+            <option value="public">公开（所有人可见）</option>
+            <option value="private">私有（仅自己可见）</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="submitMusic" class="btn btn-primary">发布作品</button>
+          <button type="button" id="resetMusic" class="btn btn-secondary">重置表单</button>
+        </div>
+      </div>
+
+      <!-- 视频作品上传表单 -->
+      <div id="videoForm" class="upload-form" style="display: none;">
+        <div class="form-group">
+          <label>视频作品类型</label>
+          <select id="videoSubcategory" class="form-control">
+            <option value="short">创意短片</option>
+            <option value="documentary">纪录片</option>
+            <option value="travel">旅行影像</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>作品题目 <span class="required">*</span></label>
+          <input type="text" id="videoTitle" class="form-control" placeholder="请输入作品题目" required>
+        </div>
+        <div class="form-group">
+          <label>视频文件 <span class="required">*</span></label>
+          <div class="file-upload-area">
+            <input type="file" id="videoFile" class="form-control" accept="video/*" required>
+            <div class="file-upload-hint">支持 MP4、AVI、MOV、WMV、MKV 格式，最大 10MB</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>作品简介 <span class="required">*</span></label>
+          <textarea id="videoDescription" class="form-control" rows="4" placeholder="请介绍一下这个视频作品" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>访问权限</label>
+          <select id="videoPermission" class="form-control">
+            <option value="public">公开（所有人可见）</option>
+            <option value="private">私有（仅自己可见）</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" id="submitVideo" class="btn btn-primary">发布作品</button>
+          <button type="button" id="resetVideo" class="btn btn-secondary">重置表单</button>
+        </div>
+      </div>
+
+      <!-- 上传说明 -->
+      <div class="upload-info">
+        <h4>📋 上传说明</h4>
+        <ul>
+          <li><strong>文学作品：</strong>支持表单输入，内容支持Markdown格式</li>
+          <li><strong>媒体作品：</strong>需要上传对应的文件，文件大小限制10MB</li>
+          <li><strong>数据安全：</strong>作品按用户分类存储，确保数据隔离</li>
+          <li><strong>权限控制：</strong>您可以设置作品的访问权限</li>
+          <li><strong>分类展示：</strong>上传的作品将在主页对应分类中展示</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
+        <div class="footer-links">
+          <a href="index.html" class="home-button">首页</a>
+          <div class="works-dropdown">
+            <span class="dropdown-trigger">作品展示 ▼</span>
+            <div class="dropdown-menu">
+              <a href="essays.html">生活随笔</a>
+              <a href="poetry.html">诗歌创作</a>
+              <a href="novels.html">小说连载</a>
+              <a href="artworks.html">绘画作品</a>
+              <a href="music.html">音乐作品</a>
+              <a href="videos.html">视频作品</a>
+            </div>
+          </div>
+          <a href="upload.html">上传作品</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 返回顶部按钮 -->
+  <button id="backToTop" class="back-to-top" onclick="scrollToTop()">↑</button>
+
+  <!-- 创建用户模态框 -->
+  <div id="createUserModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeCreateUserModal()">&times;</span>
+      <h3>添加新用户</h3>
+      <form id="createUserForm">
+        <div class="form-group">
+          <label for="newUsername">用户名</label>
+          <input type="text" id="newUsername" placeholder="4-16位字母数字" required>
+          <span id="usernameError" class="form-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="newUserPassword">密码</label>
+          <input type="password" id="newUserPassword" placeholder="至少6位字符" required>
+          <span id="passwordError" class="form-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="newUserRole">用户角色</label>
+          <select id="newUserRole" required>
+            <option value="visitor">访客</option>
+            <option value="friend">好友</option>
+            <option value="admin">管理员</option>
+          </select>
+          <span id="roleError" class="form-error"></span>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">创建用户</button>
+          <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 文件权限设置模态框 -->
+  <div id="filePermissionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeFilePermissionModal()">&times;</span>
+      <h3>设置文件权限</h3>
+      <div id="filePermissionContent">
+        <!-- 文件权限设置内容将在这里动态生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+  <!-- 应用脚本 -->
+  <script src="js/script.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/user-status.js"></script>
+  <script src="js/unified-button-styles.js"></script>
+  <script src="js/file-permissions-system.js"></script>
+  <script src="js/file-hierarchy-manager.js"></script>
+  <script src="js/file-permissions-ui.js"></script>
+  <script src="js/file-details-viewer.js"></script>
+  <script src="js/content-access-control.js"></script>
+  <script src="js/batch-permissions-manager.js"></script>
+  <script src="js/permissions-import-export.js"></script>
+  <script src="js/login-records-manager.js"></script>
+  <script src="js/upload.js"></script>
+
+  <script>
+    // 页面专用JavaScript
+
+    // 管理员标签页切换
+    function switchAdminTab(tabName) {
+      // 隐藏所有标签页内容
+      document.querySelectorAll('.admin-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      // 移除所有标签的active状态
+      document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+
+      // 显示选中的标签页
+      document.getElementById('admin' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+
+      // 设置选中标签的active状态
+      event.target.classList.add('active');
+
+      // 根据标签页加载相应内容
+      if (tabName === 'users') {
+        loadUsersList();
+      } else if (tabName === 'files') {
+        loadFilePermissionsList();
+      }
+    }
+
+    // 显示创建用户模态框
+    function showCreateUserModal() {
+      document.getElementById('createUserModal').style.display = 'block';
+    }
+
+    // 关闭创建用户模态框
+    function closeCreateUserModal() {
+      document.getElementById('createUserModal').style.display = 'none';
+      document.getElementById('createUserForm').reset();
+      clearFormErrors();
+    }
+
+    // 关闭编辑用户模态框
+    function closeEditUserModal() {
+      const modal = document.getElementById('editUserModal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    // 全局函数，供模态框内的按钮调用
+    window.closeEditUserModal = closeEditUserModal;
+
+    // 添加实时验证
+    function setupFormValidation() {
+      const usernameInput = document.getElementById('newUsername');
+      const passwordInput = document.getElementById('newUserPassword');
+      const roleSelect = document.getElementById('newUserRole');
+
+      if (usernameInput) {
+        usernameInput.addEventListener('blur', () => {
+          validateFormField('newUsername', 'usernameError',
+            (value) => value.length >= 4 && value.length <= 16 && /^[a-zA-Z0-9_]+$/.test(value),
+            '用户名需4-16位字母数字或下划线'
+          );
+        });
+
+        usernameInput.addEventListener('input', () => {
+          // 清除错误状态当用户开始输入
+          if (usernameInput.classList.contains('error')) {
+            usernameInput.classList.remove('error');
+            document.getElementById('usernameError').textContent = '';
+          }
+        });
+      }
+
+      if (passwordInput) {
+        passwordInput.addEventListener('blur', () => {
+          validateFormField('newUserPassword', 'passwordError',
+            (value) => value.length >= 6,
+            '密码至少需要6位字符'
+          );
+        });
+
+        passwordInput.addEventListener('input', () => {
+          // 清除错误状态当用户开始输入
+          if (passwordInput.classList.contains('error')) {
+            passwordInput.classList.remove('error');
+            document.getElementById('passwordError').textContent = '';
+          }
+        });
+      }
+
+      if (roleSelect) {
+        roleSelect.addEventListener('change', () => {
+          validateFormField('newUserRole', 'roleError',
+            (value) => ['user', 'editor', 'admin'].includes(value),
+            '请选择有效的用户角色'
+          );
+        });
+      }
+    }
+
+    // 关闭文件权限模态框
+    function closeFilePermissionModal() {
+      document.getElementById('filePermissionModal').style.display = 'none';
+    }
+
+    // 返回顶部功能
+    function scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 显示返回顶部按钮
+    window.addEventListener('scroll', () => {
+      const backToTop = document.getElementById('backToTop');
+      if (window.pageYOffset > 300) {
+        backToTop.style.display = 'block';
+      } else {
+        backToTop.style.display = 'none';
+      }
+    });
+
+    // 创建用户表单提交
+    document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // 清除之前的错误
+      clearFormErrors();
+
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newUserPassword').value;
+      const role = document.getElementById('newUserRole').value;
+
+      // 客户端验证
+      let isValid = true;
+
+      // 验证用户名
+      isValid &= validateFormField('newUsername', 'usernameError',
+        (value) => value.length >= 4 && value.length <= 16 && /^[a-zA-Z0-9_]+$/.test(value),
+        '用户名需4-16位字母数字或下划线'
+      );
+
+      // 验证密码
+      isValid &= validateFormField('newUserPassword', 'passwordError',
+        (value) => value.length >= 6,
+        '密码至少需要6位字符'
+      );
+
+      // 验证角色
+      isValid &= validateFormField('newUserRole', 'roleError',
+        (value) => ['user', 'editor', 'admin'].includes(value),
+        '请选择有效的用户角色'
+      );
+
+      if (!isValid) {
+        showNotification('请修正表单中的错误', 'error');
+        return;
+      }
+
+      try {
+        // 检查存储支持
+        if (!checkStorageSupport()) {
+          showStorageWarning();
+          return;
+        }
+
+        const userData = await auth.createUser(username, password, role);
+
+        // 根据存储类型显示不同的成功消息
+        if (userData.storage_type === 'firebase') {
+          showNotification(`用户 ${username} 创建成功（已保存到云端）`, 'success');
+        } else {
+          showNotification(`用户 ${username} 创建成功（已保存到本地存储）`, 'success');
+        }
+
+        closeCreateUserModal();
+
+        // 延迟刷新用户列表，确保数据已完全写入
+        setTimeout(async () => {
+          try {
+            if (window.fileUploader) {
+              await window.fileUploader.loadUsersList();
+            } else {
+              await loadUsersList();
+            }
+            console.log('✅ 用户列表已刷新');
+          } catch (error) {
+            console.warn('⚠️ 用户列表刷新失败:', error);
+            // 如果第一次刷新失败，再尝试一次
+            setTimeout(async () => {
+              try {
+                if (window.fileUploader) {
+                  await window.fileUploader.loadUsersList();
+                } else {
+                  await loadUsersList();
+                }
+              } catch (retryError) {
+                console.error('❌ 用户列表重试刷新失败:', retryError);
+              }
+            }, 1000);
+          }
+        }, 500);
+
+        // 更新系统状态
+        updateSystemStatus();
+
+      } catch (error) {
+        console.error('创建用户失败:', error);
+
+        // 服务器端验证错误，显示具体错误信息
+        if (error.message.includes('用户名')) {
+          validateFormField('newUsername', 'usernameError', () => false, error.message);
+        } else if (error.message.includes('密码')) {
+          validateFormField('newUserPassword', 'passwordError', () => false, error.message);
+        } else if (error.message.includes('存储')) {
+          showNotification(`创建用户失败: ${error.message}`, 'error');
+          showStorageWarning();
+        } else {
+          showNotification(`创建用户失败: ${error.message}`, 'error');
+        }
+      }
+    });
+
+    // 显示通知消息函数
+    function showNotification(message, type = 'info') {
+      // 创建通知元素
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.textContent = message;
+
+      // 添加样式
+      notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 10001;
+        max-width: 300px;
+        word-wrap: break-word;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
+      `;
+
+      // 根据类型设置背景色
+      const colors = {
+        success: '#4CAF50',
+        error: '#f44336',
+        warning: '#ff9800',
+        info: '#2196F3'
+      };
+      notification.style.backgroundColor = colors[type] || colors.info;
+
+      // 添加到页面
+      document.body.appendChild(notification);
+
+      // 3秒后自动移除
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.style.animation = 'slideOutRight 0.3s ease-in';
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 300);
+        }
+      }, 3000);
+    }
+
+    // 表单验证函数
+    function validateFormField(fieldId, errorId, validationFn, errorMessage) {
+      const field = document.getElementById(fieldId);
+      const errorElement = document.getElementById(errorId);
+
+      if (!field || !errorElement) return true;
+
+      const value = field.value.trim();
+      const isValid = validationFn(value);
+
+      if (isValid) {
+        field.classList.remove('error');
+        errorElement.textContent = '';
+        return true;
+      } else {
+        field.classList.add('error');
+        errorElement.textContent = errorMessage;
+        return false;
+      }
+    }
+
+    // 清除表单错误
+    function clearFormErrors() {
+      const errorElements = document.querySelectorAll('.form-error');
+      const inputElements = document.querySelectorAll('.form-control.error');
+
+      errorElements.forEach(el => el.textContent = '');
+      inputElements.forEach(el => el.classList.remove('error'));
+    }
+
+    // 更新系统状态显示
+    function updateSystemStatus() {
+      const statusElement = document.getElementById('systemStatus');
+      const indicatorElement = document.getElementById('statusIndicator');
+      const textElement = document.getElementById('statusText');
+
+      if (!statusElement || !indicatorElement || !textElement) return;
+
+      if (window.firebaseAvailable) {
+        statusElement.className = 'system-status online';
+        indicatorElement.className = 'status-indicator online';
+        textElement.textContent = '在线模式 - Firebase连接正常';
+      } else {
+        statusElement.className = 'system-status offline';
+        indicatorElement.className = 'status-indicator offline';
+        textElement.textContent = '离线模式 - 使用本地存储';
+      }
+    }
+
+    // 检查浏览器存储支持
+    function checkStorageSupport() {
+      try {
+        const testKey = 'storage_test';
+        localStorage.setItem(testKey, 'test');
+        localStorage.removeItem(testKey);
+        return true;
+      } catch (error) {
+        console.warn('本地存储不可用:', error);
+        return false;
+      }
+    }
+
+    // 显示存储警告
+    function showStorageWarning() {
+      const statusElement = document.getElementById('systemStatus');
+      const indicatorElement = document.getElementById('statusIndicator');
+      const textElement = document.getElementById('statusText');
+
+      if (statusElement && indicatorElement && textElement) {
+        statusElement.className = 'system-status error';
+        indicatorElement.className = 'status-indicator error';
+        textElement.textContent = '存储不可用 - 功能受限';
+      }
+
+      showNotification('浏览器存储被阻止，用户管理功能可能无法正常工作。请检查浏览器设置或隐私模式。', 'error');
+    }
+
+    // 加载用户列表函数（异步版本）
+    window.loadUsersList = async () => {
+      if (window.fileUploader) {
+        return await window.fileUploader.loadUsersList();
+      }
+      return Promise.resolve();
+    };
+
+    // 加载文件权限列表函数
+    window.loadFilePermissionsList = async () => {
+      try {
+        if (window.fileHierarchyManager) {
+          await window.fileHierarchyManager.initializeHierarchy('fileHierarchyContainer');
+
+          // 初始化批量权限管理器
+          if (window.batchPermissionsManager) {
+            window.batchPermissionsManager.initialize();
+          }
+
+          // 初始化导入导出功能
+          if (window.permissionsImportExport) {
+            window.permissionsImportExport.initialize();
+          }
+        } else {
+          console.error('文件层级管理器未初始化');
+        }
+      } catch (error) {
+        console.error('加载文件权限列表失败:', error);
+      }
+    };
+
+    // 全局编辑用户函数（改进版本，包含重试机制）
+    window.editUser = (username) => {
+      console.log(`🔧 尝试编辑用户: ${username}`);
+
+      if (window.fileUploader) {
+        window.fileUploader.editUser(username);
+      } else {
+        console.warn('⚠️ FileUploader未初始化，尝试延迟调用...');
+        // 延迟重试，给FileUploader更多初始化时间
+        setTimeout(() => {
+          if (window.fileUploader) {
+            console.log('✅ FileUploader已初始化，执行编辑操作');
+            window.fileUploader.editUser(username);
+          } else {
+            console.error('❌ FileUploader仍未初始化');
+            showNotification('系统初始化中，请稍后再试', 'warning');
+          }
+        }, 1000);
+      }
+    };
+
+    // 全局删除用户函数（改进版本，包含重试机制）
+    window.deleteUser = (username) => {
+      console.log(`🗑️ 尝试删除用户: ${username}`);
+
+      if (window.fileUploader) {
+        window.fileUploader.deleteUser(username);
+      } else {
+        console.warn('⚠️ FileUploader未初始化，尝试延迟调用...');
+        // 延迟重试，给FileUploader更多初始化时间
+        setTimeout(() => {
+          if (window.fileUploader) {
+            console.log('✅ FileUploader已初始化，执行删除操作');
+            window.fileUploader.deleteUser(username);
+          } else {
+            console.error('❌ FileUploader仍未初始化');
+            showNotification('系统初始化中，请稍后再试', 'warning');
+          }
+        }, 1000);
+      }
+    };
+
+    // 全局编辑文件权限函数
+    window.editFilePermissions = (fileId, owner) => {
+      if (window.fileUploader) {
+        window.fileUploader.editFilePermissions(fileId, owner);
+      } else {
+        showNotification('系统未初始化', 'error');
+      }
+    };
+
+    // 模态框点击外部关闭
+    window.addEventListener('click', (event) => {
+      const createUserModal = document.getElementById('createUserModal');
+      const filePermissionModal = document.getElementById('filePermissionModal');
+
+      if (event.target === createUserModal) {
+        closeCreateUserModal();
+      }
+      if (event.target === filePermissionModal) {
+        closeFilePermissionModal();
+      }
+    });
+
+    // 检查系统初始化状态
+    function checkSystemInitialization() {
+      const checks = {
+        auth: typeof auth !== 'undefined' && auth !== null,
+        firebase: typeof firebase !== 'undefined' && firebase.apps.length > 0,
+        fileUploader: typeof window.fileUploader !== 'undefined' && window.fileUploader !== null
+      };
+
+      console.log('🔍 系统初始化检查:', checks);
+
+      if (checks.fileUploader) {
+        console.log('✅ 所有系统组件已初始化');
+        return true;
+      } else {
+        console.warn('⚠️ FileUploader未初始化，等待中...');
+        return false;
+      }
+    }
+
+    // 等待系统完全初始化
+    function waitForSystemInitialization(callback, maxAttempts = 10) {
+      let attempts = 0;
+
+      const checkInterval = setInterval(() => {
+        attempts++;
+
+        if (checkSystemInitialization()) {
+          clearInterval(checkInterval);
+          callback();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          console.error('❌ 系统初始化超时');
+          showNotification('系统初始化失败，请刷新页面重试', 'error');
+        }
+      }, 500);
+    }
+
+    // 页面加载完成后设置表单验证和系统状态
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('📋 DOM加载完成，开始初始化...');
+
+      // 延迟设置验证，确保所有元素都已加载
+      setTimeout(() => {
+        setupFormValidation();
+
+        // 检查存储支持
+        if (!checkStorageSupport()) {
+          showStorageWarning();
+        }
+
+        // 初始化系统状态显示
+        updateSystemStatus();
+
+        // 等待FileUploader初始化完成
+        waitForSystemInitialization(() => {
+          console.log('🎉 系统初始化完成');
+
+          // 监听Firebase连接状态变化
+          if (typeof firebase !== 'undefined' && firebase.apps.length) {
+            try {
+              firebase.database().ref('.info/connected').on('value', (snapshot) => {
+                window.firebaseAvailable = snapshot.val() === true;
+                updateSystemStatus();
+              });
+            } catch (error) {
+              console.warn('Firebase连接监听设置失败:', error);
+            }
+          }
+
+          // 定期更新系统状态（每30秒）
+          setInterval(updateSystemStatus, 30000);
+        });
+      }, 100);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐作品 - 桑梓</title>
+    <meta name="description" content="音乐作品展示，包含原创音乐、翻唱作品和器乐演奏">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .music-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .music-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .music-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .music-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .music-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #2196f3;
+            background: white;
+            color: #2196f3;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #2196f3;
+            color: white;
+        }
+
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .music-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid #2196f3;
+        }
+
+        .music-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .music-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .music-type {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .music-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .music-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .music-description {
+            color: #6c757d;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .music-player {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .music-player audio {
+            width: 100%;
+            outline: none;
+        }
+
+        .music-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .play-count {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .download-btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #1976d2;
+        }
+
+        .music-author {
+            text-align: right;
+            color: #6c757d;
+            font-style: italic;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .no-music {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .no-music .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #007bff;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2196f3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .audio-placeholder {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+
+        .audio-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .music-container {
+                padding: 1rem;
+            }
+
+            .music-header h1 {
+                font-size: 2rem;
+            }
+
+            .music-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .music-card {
+                padding: 1.5rem;
+            }
+
+            .music-filters {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .music-controls {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">桑梓</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="essays.html" class="nav-link">生活随笔</a>
+                </li>
+                <li class="nav-item">
+                    <a href="poetry.html" class="nav-link">诗歌创作</a>
+                </li>
+                <li class="nav-item">
+                    <a href="novels.html" class="nav-link">小说连载</a>
+                </li>
+                <li class="nav-item">
+                    <a href="artworks.html" class="nav-link">绘画作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="music.html" class="nav-link active">音乐作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="videos.html" class="nav-link">视频作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link">作品上传</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="music-container">
+        <a href="index.html" class="back-link">
+            ← 返回首页
+        </a>
+
+        <div class="music-header">
+            <h1>🎵 音乐作品</h1>
+            <p>融合多种风格与情感表达</p>
+        </div>
+
+        <div class="music-filters">
+            <button class="filter-btn active" data-type="all">全部音乐</button>
+            <button class="filter-btn" data-type="original">原创音乐</button>
+            <button class="filter-btn" data-type="cover">翻唱作品</button>
+            <button class="filter-btn" data-type="instrumental">器乐演奏</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载音乐作品...</p>
+        </div>
+
+        <div id="musicGrid" class="music-grid" style="display: none;">
+            <!-- 音乐作品将在这里动态加载 -->
+        </div>
+
+        <div id="noMusic" class="no-music" style="display: none;">
+            <div class="icon">🎵</div>
+            <h3>暂无音乐作品</h3>
+            <p>还没有发布任何音乐作品，<a href="upload.html">点击这里</a>开始创作吧！</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
+                <div class="footer-links">
+                    <a href="index.html" class="home-button">首页</a>
+                    <div class="works-dropdown">
+                        <span class="dropdown-trigger">作品展示 ▼</span>
+                        <div class="dropdown-menu">
+                            <a href="essays.html">生活随笔</a>
+                            <a href="poetry.html">诗歌创作</a>
+                            <a href="novels.html">小说连载</a>
+                            <a href="artworks.html">绘画作品</a>
+                            <a href="music.html" class="current-page">音乐作品</a>
+                            <a href="videos.html">视频作品</a>
+                        </div>
+                    </div>
+                    <a href="upload.html">上传作品</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        /* 页脚下拉菜单样式 */
+        .works-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-trigger {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .works-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-menu a.current-page {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .dropdown-menu a.current-page:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/comments.js"></script>
+    <script src="js/music.js"></script>
+</body>
+</html>

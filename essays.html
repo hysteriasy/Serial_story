@@ -7,29 +7,216 @@
     <meta name="description" content="个人生活随笔集，记录生活中的点滴感悟和思考">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* 用户状态显示样式 */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .admin-role {
+            background: #dc3545;
+            color: white;
+        }
+
+        .editor-role {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .user-role.user-role {
+            background: #6c757d;
+            color: white;
+        }
+
+        .user-name {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .navbar .nav-menu .nav-item .user-info {
+            color: #333;
+        }
+
+
+
+        /* 权限提示样式 */
+        .permission-notice {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .permission-notice.admin {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .permission-notice .icon {
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .user-info {
+                flex-direction: column;
+                gap: 4px;
+                padding: 6px 10px;
+            }
+
+            .user-role {
+                font-size: 0.7rem;
+                padding: 2px 6px;
+            }
+        }
+
+        /* 页脚下拉菜单样式 */
+        .works-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-trigger {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .works-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-menu a.current-page {
+            background-color: #007bff;
+            color: white;
+            font-weight: 500;
+        }
+
+        .dropdown-menu a.current-page:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .footer-links {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .dropdown-menu {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                border: none;
+                background: transparent;
+                margin-top: 10px;
+            }
+
+            .dropdown-menu a {
+                padding: 8px 0;
+                border-bottom: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- 导航栏 -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <h2>桑梓</h2>
+                <a href="index.html">桑梓</a>
             </div>
             <ul class="nav-menu">
                 <li class="nav-item">
                     <a href="index.html" class="nav-link">首页</a>
                 </li>
                 <li class="nav-item">
-                    <a href="#about" class="nav-link">关于我</a>
+                    <a href="essays.html" class="nav-link active">生活随笔</a>
                 </li>
                 <li class="nav-item">
-                    <a href="#works" class="nav-link">文学作品</a>
+                    <a href="poetry.html" class="nav-link">诗歌创作</a>
                 </li>
                 <li class="nav-item">
-                    <a href="#contact" class="nav-link">联系我</a>
+                    <a href="novels.html" class="nav-link">小说连载</a>
+                </li>
+                <li class="nav-item">
+                    <a href="artworks.html" class="nav-link">绘画作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="music.html" class="nav-link">音乐作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="videos.html" class="nav-link">视频作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link">作品上传</a>
                 </li>
             </ul>
-            <div class="nav-toggle" id="mobile-menu">
+            <div class="hamburger">
                 <span class="bar"></span>
                 <span class="bar"></span>
                 <span class="bar"></span>
@@ -49,9 +236,7 @@
 
         <!-- 随笔内容区域 -->
         <section id="essays" class="container">
-            <div class="essays-controls">
-                <button class="btn btn-primary" id="uploadBtn">上传新随笔</button>
-            </div>
+
 
             <div class="essays-container">
                 <!-- 左侧目录 -->
@@ -81,39 +266,28 @@
             <div class="footer-content">
                 <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
                 <div class="footer-links">
-                    <a href="index.html" class="home-button" id="backToHome">首页</a>
-                <a href="#about">关于作者</a>
-                <a href="#works">文学作品</a>
+                    <a href="index.html" class="home-button">首页</a>
+                    <div class="works-dropdown">
+                        <span class="dropdown-trigger">作品展示 ▼</span>
+                        <div class="dropdown-menu">
+                            <a href="essays.html" class="current-page">生活随笔</a>
+                            <a href="poetry.html">诗歌创作</a>
+                            <a href="novels.html">小说连载</a>
+                            <a href="artworks.html">绘画作品</a>
+                            <a href="music.html">音乐作品</a>
+                            <a href="videos.html">视频作品</a>
+                        </div>
+                    </div>
+                    <a href="upload.html">上传作品</a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- 上传弹窗 -->
-    <div id="uploadModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h3>上传新随笔</h3>
-            <form id="uploadForm">
-                <div class="form-group">
-                    <label for="essayTitleInput">标题</label>
-                    <input type="text" id="essayTitleInput" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label for="essayContentInput">内容</label>
-                    <textarea id="essayContentInput" name="content" rows="10" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="essayImagesInput">上传图片 (可选)</label>
-                    <input type="file" id="essayImagesInput" name="images" multiple accept="image/*">
-                    <p class="help-text">可以选择多张图片，支持JPG、PNG等格式</p>
-                </div>
-                <button type="submit" class="btn btn-primary">上传</button>
-            </form>
-        </div>
-    </div>
-
     <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/comments.js"></script>
     <script src="js/essays.js"></script>
 </body>
 </html>

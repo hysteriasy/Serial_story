@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诗歌创作 - 桑梓</title>
+    <meta name="description" content="诗歌创作作品展示，包含现代诗歌和古典诗词">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .poetry-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .poetry-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .poetry-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .poetry-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .poetry-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .poetry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .poetry-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid #007bff;
+        }
+
+        .poetry-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .poetry-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .poetry-type {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .poetry-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .poetry-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .poetry-content {
+            white-space: pre-line;
+            line-height: 1.8;
+            color: #555;
+            font-family: 'Georgia', serif;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .poetry-author {
+            text-align: right;
+            color: #6c757d;
+            font-style: italic;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        /* 管理按钮样式 */
+        .poetry-management {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .poetry-card:hover .poetry-management {
+            opacity: 1;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .edit-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        .no-poetry {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .no-poetry .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #007bff;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 通知动画 */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* 页脚下拉菜单样式 */
+        .works-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-trigger {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .works-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-menu a.current-page {
+            background-color: #007bff;
+            color: white;
+            font-weight: 500;
+        }
+
+        .dropdown-menu a.current-page:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .footer-links {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .dropdown-menu {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                border: none;
+                background: transparent;
+                margin-top: 10px;
+            }
+
+            .dropdown-menu a {
+                padding: 8px 0;
+                border-bottom: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .poetry-container {
+                padding: 1rem;
+            }
+
+            .poetry-header h1 {
+                font-size: 2rem;
+            }
+
+            .poetry-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .poetry-card {
+                padding: 1.5rem;
+            }
+
+            .poetry-filters {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">桑梓</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="essays.html" class="nav-link">生活随笔</a>
+                </li>
+                <li class="nav-item">
+                    <a href="poetry.html" class="nav-link active">诗歌创作</a>
+                </li>
+                <li class="nav-item">
+                    <a href="novels.html" class="nav-link">小说连载</a>
+                </li>
+                <li class="nav-item">
+                    <a href="artworks.html" class="nav-link">绘画作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="music.html" class="nav-link">音乐作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="videos.html" class="nav-link">视频作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link">作品上传</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="poetry-container">
+        <a href="index.html" class="back-link">
+            ← 返回首页
+        </a>
+
+        <div class="poetry-header">
+            <h1>🌸 诗歌创作</h1>
+            <p>用韵律和意象表达内心的声音</p>
+        </div>
+
+        <div class="poetry-filters">
+            <button class="filter-btn active" data-type="all">全部诗歌</button>
+            <button class="filter-btn" data-type="modern">现代诗</button>
+            <button class="filter-btn" data-type="classical">古体诗词</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载诗歌作品...</p>
+        </div>
+
+        <div id="poetryGrid" class="poetry-grid" style="display: none;">
+            <!-- 诗歌作品将在这里动态加载 -->
+        </div>
+
+        <div id="noPoetry" class="no-poetry" style="display: none;">
+            <div class="icon">📝</div>
+            <h3>暂无诗歌作品</h3>
+            <p>还没有发布任何诗歌作品，<a href="upload.html">点击这里</a>开始创作吧！</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
+                <div class="footer-links">
+                    <a href="index.html" class="home-button">首页</a>
+                    <div class="works-dropdown">
+                        <span class="dropdown-trigger">作品展示 ▼</span>
+                        <div class="dropdown-menu">
+                            <a href="essays.html">生活随笔</a>
+                            <a href="poetry.html" class="current-page">诗歌创作</a>
+                            <a href="novels.html">小说连载</a>
+                            <a href="artworks.html">绘画作品</a>
+                            <a href="music.html">音乐作品</a>
+                            <a href="videos.html">视频作品</a>
+                        </div>
+                    </div>
+                    <a href="upload.html">上传作品</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/comments.js"></script>
+    <script src="js/poetry.js"></script>
+</body>
+</html>

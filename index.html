@@ -5,12 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>桑梓 - 个人分享平台</title>
     <meta name="description" content="个人文学创作作品展示和分享网站，包含随笔、诗歌、小说连载等原创文学作品">
+
+    <!-- 立即执行控制台过滤脚本 - 必须在所有其他脚本之前 -->
+    <script>
+        // 在页面加载的最早阶段就设置控制台过滤
+        (function() {
+            console.log('🔧 初始化控制台过滤器...');
+
+            // 保存原始控制台方法
+            const originalWarn = console.warn;
+            const originalError = console.error;
+            const originalLog = console.log;
+
+            // 跟踪过滤统计
+            let filteredWarnings = 0;
+            let filteredErrors = 0;
+
+            // 重写console.warn
+            console.warn = function(...args) {
+                const message = args.join(' ');
+
+                // 过滤跟踪防护相关警告
+                if (message.includes('Tracking Prevention') ||
+                    message.includes('blocked access to storage') ||
+                    message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                    message.includes('-ms-high-contrast') ||
+                    message.includes('deprecated')) {
+                    filteredWarnings++;
+                    return; // 完全阻止显示
+                }
+
+                // 显示其他警告
+                originalWarn.apply(console, args);
+            };
+
+            // 重写console.error
+            console.error = function(...args) {
+                const message = args.join(' ');
+
+                // 过滤广告和第三方相关错误
+                if (message.includes('googleads') ||
+                    message.includes('doubleclick') ||
+                    message.includes('ad_status.js') ||
+                    message.includes('ERR_NAME_NOT_RESOLVED') ||
+                    message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                    message.includes('Failed to load resource')) {
+                    filteredErrors++;
+                    return; // 完全阻止显示
+                }
+
+                // 显示其他错误
+                originalError.apply(console, args);
+            };
+
+            // 定期报告过滤统计（仅在开发模式下）
+            if (window.location.hostname === 'localhost') {
+                setInterval(() => {
+                    if (filteredWarnings > 0 || filteredErrors > 0) {
+                        originalLog(`🔇 控制台过滤统计: ${filteredWarnings} 个警告, ${filteredErrors} 个错误已被过滤`);
+                        filteredWarnings = 0;
+                        filteredErrors = 0;
+                    }
+                }, 15000); // 每15秒报告一次
+            }
+
+            console.log('✅ 控制台过滤器已激活');
+        })();
+    </script>
+
     <link rel="stylesheet" href="css/style.css?v=20240807">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
     <!-- 欢迎页面覆盖层 -->
-    <div id="welcome-overlay" class="welcome-overlay">
+    <div id="welcome-overlay" class="welcome-overlay" onclick="hideWelcomeScreen()">
         <div class="welcome-content">
             <div class="welcome-animation">
                 <h1 class="welcome-title">
@@ -34,8 +102,8 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <h2>桑梓</h2>
-            </div>
+                        <h2>桑梓</h2>
+                    </div>
             <ul class="nav-menu">
                 <li class="nav-item">
                     <a href="#home" class="nav-link">首页</a>
@@ -43,12 +111,25 @@
                 <li class="nav-item">
                     <a href="#about" class="nav-link">关于我</a>
                 </li>
-                <li class="nav-item">
-                    <a href="#works" class="nav-link">我的作品</a>
+                <li class="nav-item nav-dropdown">
+                    <a href="#" class="nav-link dropdown-trigger">作品展示 ▼</a>
+                    <div class="nav-dropdown-menu">
+                        <a href="essays.html" class="nav-dropdown-link">生活随笔</a>
+                        <a href="poetry.html" class="nav-dropdown-link">诗歌创作</a>
+                        <a href="novels.html" class="nav-dropdown-link">小说连载</a>
+                        <a href="artworks.html" class="nav-dropdown-link">绘画作品</a>
+                        <a href="music.html" class="nav-dropdown-link">音乐作品</a>
+                        <a href="videos.html" class="nav-dropdown-link">视频作品</a>
+                    </div>
                 </li>
-
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link" id="uploadBtn">作品上传</a>
+                </li>
                 <li class="nav-item">
                     <a href="#contact" class="nav-link">联系我</a>
+                </li>
+                <li class="nav-item" id="authNavItem">
+                    <a href="#" class="nav-link" id="authNavLink" onclick="showLoginModal()">登录</a>
                 </li>
             </ul>
             <div class="nav-toggle" id="mobile-menu">
@@ -65,7 +146,7 @@
         <section id="home" class="hero">
             <div class="hero-container">
                 <h1 class="hero-title">桑梓</h1>
-                <p class="hero-description">我不时要将心上的重量化成文字，移一份于纸上，以便我能余出些气力，去做我想做的事，做我必须做的事。</p>
+                <p class="hero-description">我不时要将心上的重量化成文字，移一份于纸上，以便我能余出些气力，去做我想做的事，做我该做的事。</p>
                 <div class="hero-buttons">
                     <button class="btn btn-primary" onclick="scrollToSection('works')">阅读作品</button>
                     <button class="btn btn-secondary" onclick="scrollToSection('about')">了解作者</button>
@@ -79,14 +160,14 @@
                 <h2 class="section-title">关于作者</h2>
                 <div class="about-content">
                     <div class="about-text">
-                        <p>初始，我爱鲁迅，不是他的杂文，是他的散文和小说，他词句间的“新奇”。我把想法讲给老师，老师说，鲁迅的造句，是古今文过渡的产物，不合时宜。我是不信服的。</p>
+                        <p>初始，我爱鲁迅，是他的散文和小说，词句间的“奇趣”。我把想法讲给老师，老师说，鲁迅的造句，是古今文过渡的产物，不合时宜。我是不信服的。</p>
                         <p>转而，我爱梁实秋，是他在艰难时势下行间的洒脱和意趣。我把想法讲给朋友，朋友说，那是避世的消极，消磨青年意气。我是不信服的。</p>
                         <p>后来，我爱路遥，是爱故事里生活与理想的错落，和隐约的希望。我不再把想法讲给人听……</p>
                         <p>然后，我只好是孤独的，盼望着你从我的世界里路过。</p>
                         <ul class="feature-list">
                             <li>随笔散文 - 记录生活中的点滴感悟</li>
                             <li>现代诗歌 - 用现代语言表达内心情感</li>
-                            <li>古典诗词 - 传承古典文学的韵味</li>
+                            <li>古典诗词 - 传承古典文学的VENTUNE</li>
                             <li>小说连载 - 构建完整的故事世界</li>
                         </ul>
                     </div>
@@ -99,105 +180,140 @@
             </div>
         </section>
 
-        <!-- 作品展示部分 -->
+        <!-- 作品分类导航 -->
         <section id="works" class="projects">
             <div class="container">
-                <h2 class="section-title">我的作品</h2>
-                <div class="media-filter">
-                        <button class="filter-btn active" data-filter="all">全部作品</button>
-                        <button class="filter-btn" data-filter="literature">文学作品</button>
-                        <button class="filter-btn" data-filter="art">绘画作品</button>
-                        <button class="filter-btn" data-filter="music">音乐作品</button>
-                        <button class="filter-btn" data-filter="video">视频作品</button>
-                    </div>
-                    <div class="projects-grid">
-                    <div class="project-card literature" data-category="literature">
-                        <div class="project-image">
-    
-                        </div>
-                        <div class="project-content">
-                            <h3>生活随笔</h3>
-                            <p>记录日常生活中的感悟与思考，用文字捕捉生活的美好瞬间</p>
-                            <div class="project-links">
-                                <a href="essays.html" class="btn btn-small">阅读随笔</a>
-                                <a href="#" class="btn btn-small btn-outline">更多作品</a>
+                <h2 class="section-title">作品分类</h2>
+                <p class="section-subtitle">探索不同类型的创作作品</p>
+
+                <div class="category-grid">
+                    <!-- 文学作品分类 -->
+                    <div class="category-section">
+                        <h3 class="category-title">📚 文学作品</h3>
+                        <div class="category-cards">
+                            <div class="category-card essays-card">
+                                <div class="card-content">
+                                    <h4>生活随笔</h4>
+                                    <p>记录日常生活中的感悟与思考</p>
+                                    <a href="essays.html" class="category-link">进入阅读</a>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="project-card literature" data-category="literature">
-                        <div class="project-image">
-                            <div class="placeholder-image">🌸 诗歌</div>
-                        </div>
-                        <div class="project-content">
-                            <h3>诗歌创作</h3>
-                            <p>现代诗歌与古典诗词，用韵律和意象表达内心的声音</p>
-                            <div class="project-links">
-                                <a href="#" class="btn btn-small">现代诗歌</a>
-                                <a href="#" class="btn btn-small btn-outline">古典诗词</a>
+                            <div class="category-card">
+                                <div class="card-content">
+                                    <h4>诗歌创作</h4>
+                                    <p>现代诗歌与古典诗词</p>
+                                    <a href="poetry.html" class="category-link">进入阅读</a>
+                                </div>
+                            </div>
+                            <div class="category-card">
+                                <div class="card-content">
+                                    <h4>小说连载</h4>
+                                    <p>长篇小说连载更新</p>
+                                    <a href="novels.html" class="category-link">进入阅读</a>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="project-card literature" data-category="literature">
-                        <div class="project-image">
-                            <div class="placeholder-image">📖 小说</div>
-                        </div>
-                        <div class="project-content">
-                            <h3>小说连载</h3>
-                            <p>长篇小说连载更新，构建完整的故事世界和人物命运</p>
-                            <div class="project-links">
-                                <a href="#" class="btn btn-small">阅读连载</a>
-                                <a href="#" class="btn btn-small btn-outline">作品目录</a>
+                    <!-- 媒体作品分类 -->
+                    <div class="category-section">
+                        <h3 class="category-title">🎨 媒体作品</h3>
+                        <div class="category-cards">
+                            <div class="category-card">
+                                <div class="card-content">
+                                    <h4>绘画作品</h4>
+                                    <p>水彩、素描与数字绘画</p>
+                                    <a href="artworks.html" class="category-link">进入欣赏</a>
+                                </div>
+                            </div>
+                            <div class="category-card">
+                                <div class="card-content">
+                                    <h4>音乐创作</h4>
+                                    <p>原创音乐作品</p>
+                                    <a href="music.html" class="category-link">进入聆听</a>
+                                </div>
+                            </div>
+                            <div class="category-card">
+                                <div class="card-content">
+                                    <h4>视频作品</h4>
+                                    <p>创意短片与纪录片</p>
+                                    <a href="videos.html" class="category-link">进入观看</a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="project-card art" data-category="art">
-                        <div class="project-image">
-                            <div class="placeholder-image">🎨 绘画</div>
-                        </div>
-                        <div class="project-content">
-                            <h3>绘画作品</h3>
-                            <p>水彩、素描与数字绘画，用色彩和线条表达情感与创意</p>
-                            <div class="project-links">
-                                <a href="#" class="btn btn-small">浏览画廊</a>
-                                <a href="#" class="btn btn-small btn-outline">更多作品</a>
-                            </div>
-                        </div>
+                <!-- 快速统计 -->
+                <div class="works-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalWorks">0</span>
+                        <span class="stat-label">总作品数</span>
                     </div>
-
-                    <div class="project-card music" data-category="music">
-                        <div class="project-image">
-                            <div class="placeholder-image">🎵 音乐</div>
-                        </div>
-                        <div class="project-content">
-                            <h3>音乐创作</h3>
-                            <p>原创音乐作品，融合多种风格与情感表达</p>
-                            <div class="audio-player">
-                                <audio controls>您的浏览器不支持音频播放。</audio>
-                            </div>
-                            <div class="project-links">
-                                <a href="#" class="btn btn-small">收听更多</a>
-                                <a href="#" class="btn btn-small btn-outline">音乐主页</a>
-                            </div>
-                        </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="literatureCount">0</span>
+                        <span class="stat-label">文学作品</span>
                     </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="mediaCount">0</span>
+                        <span class="stat-label">媒体作品</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="lastUpdate">--</span>
+                        <span class="stat-label">最近更新</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-                    <div class="project-card video" data-category="video">
-                        <div class="project-image">
-                            <div class="placeholder-image">🎬 视频</div>
+        <!-- 管理员专用区域 -->
+        <section id="admin-section" class="admin-only" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 0;">
+            <div class="container">
+                <h2 class="section-title" style="color: white; text-align: center; margin-bottom: 40px;">
+                    👑 管理员控制面板
+                </h2>
+                <div class="admin-dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
+                    <div class="admin-card" style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px; text-align: center; backdrop-filter: blur(10px);">
+                        <h3 style="margin-bottom: 15px;">📝 内容管理</h3>
+                        <p style="margin-bottom: 20px; opacity: 0.9;">管理网站内容和文章</p>
+                        <a href="upload.html" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; display: inline-block;">进入管理</a>
+                    </div>
+                    <div class="admin-card" style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px; text-align: center; backdrop-filter: blur(10px);">
+                        <h3 style="margin-bottom: 15px;">👥 用户管理</h3>
+                        <p style="margin-bottom: 20px; opacity: 0.9;">管理用户账户和权限</p>
+                        <a href="upload.html" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; display: inline-block;">用户管理</a>
+                    </div>
+                    <div class="admin-card" style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px; text-align: center; backdrop-filter: blur(10px);">
+                        <h3 style="margin-bottom: 15px;">📊 系统统计</h3>
+                        <p style="margin-bottom: 20px; opacity: 0.9;">查看网站访问统计</p>
+                        <button class="btn" onclick="showStats()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer;">查看统计</button>
+                    </div>
+                </div>
+                <div class="admin-welcome" style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    <h4 style="margin-bottom: 10px;">欢迎回来，管理员！</h4>
+                    <p style="opacity: 0.9;">您拥有完整的系统管理权限</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 认证用户专用内容 -->
+        <section id="auth-section" class="auth-required" style="display: none; background: #f8f9fa; padding: 40px 0;">
+            <div class="container">
+                <h2 class="section-title" style="text-align: center; margin-bottom: 30px;">
+                    🎉 欢迎登录用户
+                </h2>
+                <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+                    <p style="font-size: 1.1em; color: #6c757d; margin-bottom: 20px;">
+                        感谢您的登录！作为注册用户，您可以享受更多功能和内容。
+                    </p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px;">
+                        <div style="padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h4 style="color: #007bff; margin-bottom: 10px;">📚 专属内容</h4>
+                            <p style="font-size: 0.9em; color: #6c757d;">访问会员专属文章</p>
                         </div>
-                        <div class="project-content">
-                            <h3>视频作品</h3>
-                            <p>创意短片、纪录片与旅行影像，用镜头讲述故事</p>
-                            <div class="video-container">
-                                <iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>
-                            </div>
-                            <div class="project-links">
-                                <a href="#" class="btn btn-small">观看更多</a>
-                                <a href="#" class="btn btn-small btn-outline">视频主页</a>
-                            </div>
+                        <div style="padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h4 style="color: #28a745; margin-bottom: 10px;">💬 互动功能</h4>
+                            <p style="font-size: 0.9em; color: #6c757d;">参与评论和讨论</p>
                         </div>
                     </div>
                 </div>
@@ -239,6 +355,39 @@
                 </div>
             </div>
         </section>
+
+        <!-- 管理员专用区域 -->
+        <section id="adminSection" class="admin-section" style="display: none;">
+            <div class="container">
+                <div class="admin-panel">
+                    <h2 class="admin-title">🔧 管理员控制面板</h2>
+                    <p class="admin-subtitle">系统管理和用户权限控制</p>
+                    <div class="admin-buttons">
+                        <a href="user-management.html" class="admin-btn">
+                            <div class="admin-btn-icon">👥</div>
+                            <div class="admin-btn-content">
+                                <h3>用户管理</h3>
+                                <p>管理用户账户、角色权限和操作日志</p>
+                            </div>
+                        </a>
+                        <a href="#" class="admin-btn" onclick="showSystemStats()">
+                            <div class="admin-btn-icon">📊</div>
+                            <div class="admin-btn-content">
+                                <h3>系统统计</h3>
+                                <p>查看网站访问量、作品统计等数据</p>
+                            </div>
+                        </a>
+                        <a href="#" class="admin-btn" onclick="showOperationLogs()">
+                            <div class="admin-btn-icon">📋</div>
+                            <div class="admin-btn-content">
+                                <h3>操作日志</h3>
+                                <p>查看系统操作记录和安全日志</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- 页脚 -->
@@ -249,7 +398,6 @@
                 <div class="footer-links">
                     <a href="#home">首页</a>
                     <a href="#about">关于作者</a>
-                    <a href="#works">文学作品</a>
                 </div>
             </div>
         </div>
@@ -260,7 +408,1094 @@
         ↑
     </button>
 
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeLoginModal()">&times;</span>
+            <h3>用户登录</h3>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginUsername">用户名</label>
+                    <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">密码</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">登录</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeLoginModal()">取消</button>
+                </div>
+            </form>
+            <div class="login-help">
+                <p><small>需要账户？请联系管理员获取登录凭据</small></p>
+                <p><small>忘记密码？请联系系统管理员重置</small></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户信息显示区域 -->
+    <div id="userInfoDisplay" style="display: none; position: fixed; top: 80px; right: 20px; background: rgba(255,255,255,0.98); padding: 20px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); z-index: 1000; min-width: 200px;">
+        <div id="userInfoContent"></div>
+        <button id="logoutButton" onclick="logout()" style="
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        ">
+            <span style="position: relative; z-index: 1;">退出登录</span>
+        </button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+
+
     <!-- JavaScript文件 -->
     <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/system-stats.js"></script>
+    <script src="js/homepage-integration.js"></script>
+
+    <style>
+        /* 现代化退出登录按钮样式 */
+        #logoutButton::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        #logoutButton:hover::before {
+            left: 100%;
+        }
+
+        #logoutButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        #logoutButton:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* 用户信息显示区域现代化样式 */
+        #userInfoDisplay {
+            animation: slideInFromRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* 主导航栏下拉菜单样式 */
+        .nav-dropdown {
+            position: relative;
+        }
+
+        .dropdown-trigger {
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .nav-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .nav-dropdown:hover .nav-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .nav-dropdown-link {
+            display: block;
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav-dropdown-link:last-child {
+            border-bottom: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .nav-dropdown-link:first-child {
+            border-radius: 12px 12px 0 0;
+        }
+
+        .nav-dropdown-link:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        /* 管理员专用区域样式 */
+        .admin-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 4rem 0;
+            margin-top: 2rem;
+        }
+
+        .admin-panel {
+            text-align: center;
+            color: white;
+        }
+
+        .admin-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .admin-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+        }
+
+        .admin-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .admin-btn {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .admin-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-decoration: none;
+            color: white;
+        }
+
+        .admin-btn-icon {
+            font-size: 3rem;
+            flex-shrink: 0;
+        }
+
+        .admin-btn-content {
+            text-align: left;
+        }
+
+        .admin-btn-content h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.3rem;
+        }
+
+        .admin-btn-content p {
+            margin: 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            #userInfoDisplay {
+                right: 10px;
+                left: 10px;
+                width: auto;
+                min-width: auto;
+            }
+
+            .nav-dropdown-menu {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                border: none;
+                background: transparent;
+                margin-top: 10px;
+            }
+
+            .nav-dropdown-link {
+                padding: 8px 0;
+                border-bottom: none;
+                color: white;
+            }
+
+            .nav-dropdown-link:hover {
+                background: rgba(255,255,255,0.1);
+                transform: none;
+            }
+
+            .admin-buttons {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .admin-btn {
+                flex-direction: column;
+                text-align: center;
+                padding: 1.5rem;
+            }
+
+            .admin-btn-content {
+                text-align: center;
+            }
+
+            .admin-title {
+                font-size: 2rem;
+            }
+
+            .admin-subtitle {
+                font-size: 1rem;
+            }
+        }
+
+        /* 分类卡片样式优化 */
+        .category-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* 生活随笔卡片背景图片 */
+        .essays-card {
+            background-image: url('images/cec38ab95d65588029620c44d93ac499.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* 其他分类卡片的渐变背景 */
+        .category-card:nth-child(2) {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        }
+
+        .category-card:nth-child(3) {
+            background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
+        }
+
+        .category-card:nth-child(4) {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+        }
+
+        .category-card:nth-child(5) {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+        }
+
+        .category-card:nth-child(6) {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+        }
+
+        /* 卡片内容容器 */
+        .card-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            margin: 1rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 生活随笔卡片特殊样式 */
+        .essays-card .card-content {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* 卡片标题样式 */
+        .card-content h4 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            letter-spacing: 0.5px;
+        }
+
+        /* 卡片描述样式 */
+        .card-content p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        /* 卡片链接样式 */
+        .card-content .category-link {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .card-content .category-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 卡片悬停效果 */
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .category-card:hover .card-content {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .essays-card:hover .card-content {
+            background: rgba(0, 0, 0, 0.7);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .card-content {
+                padding: 1.5rem;
+                margin: 0.5rem;
+            }
+
+            .card-content h4 {
+                font-size: 1.25rem;
+            }
+
+            .card-content p {
+                font-size: 0.9rem;
+            }
+
+            .card-content .category-link {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .category-card {
+                min-height: 160px;
+            }
+
+            .card-content {
+                padding: 1rem;
+                margin: 0.25rem;
+            }
+
+            .card-content h4 {
+                font-size: 1.1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .card-content p {
+                font-size: 0.85rem;
+                margin-bottom: 1rem;
+            }
+
+            .card-content .category-link {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+
+    <script>
+        // 首页登录功能
+        function showLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+            // 防止背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            document.getElementById('loginForm').reset();
+            // 恢复背景滚动
+            document.body.style.overflow = 'auto';
+        }
+
+        function updateAuthNavigation() {
+            console.log('🔄 updateAuthNavigation 函数开始执行...');
+
+            // 检查auth对象是否已初始化
+            if (typeof auth === 'undefined') {
+                console.log('⚠️ Auth对象尚未初始化，稍后重试...');
+                setTimeout(updateAuthNavigation, 500);
+                return;
+            }
+
+            console.log('✅ Auth对象已初始化');
+            console.log('👤 当前用户状态:', auth.currentUser);
+
+            const authNavLink = document.getElementById('authNavLink');
+            const userInfoDisplay = document.getElementById('userInfoDisplay');
+            const userInfoContent = document.getElementById('userInfoContent');
+
+            console.log('🔍 DOM元素检查:');
+            console.log('  - authNavLink:', authNavLink ? '✅ 存在' : '❌ 不存在');
+            console.log('  - userInfoDisplay:', userInfoDisplay ? '✅ 存在' : '❌ 不存在');
+            console.log('  - userInfoContent:', userInfoContent ? '✅ 存在' : '❌ 不存在');
+
+            if (!authNavLink) {
+                console.error('❌ 关键DOM元素 authNavLink 不存在！');
+                return;
+            }
+
+            if (auth.currentUser) {
+                console.log('🔄 更新UI为已登录状态:', auth.currentUser.username);
+                console.log('👤 用户角色:', auth.currentUser.role);
+                console.log('🔑 用户权限:', auth.currentUser.privilege);
+
+                // 已登录状态 - 更新导航链接（移除头像图标）
+                console.log('🔄 更新导航链接文本和样式...');
+                authNavLink.textContent = auth.currentUser.username;
+                authNavLink.style.color = '#28a745'; // 绿色表示已登录
+                authNavLink.style.fontWeight = 'bold';
+                console.log('✅ 导航链接基础样式已设置');
+
+                authNavLink.onclick = () => {
+                    console.log('🔄 用户点击了导航链接');
+                    const display = userInfoDisplay.style.display;
+                    userInfoDisplay.style.display = display === 'none' ? 'block' : 'none';
+                };
+
+                // 更新用户信息显示
+                if (userInfoContent) {
+                    console.log('🔄 更新用户信息内容...');
+                    userInfoContent.innerHTML = `
+                        <div style="text-align: center;">
+                            <strong style="color: #28a745;">${auth.currentUser.username}</strong><br>
+                            <small style="color: #6c757d;">角色: ${getRoleName(auth.currentUser.role)}</small><br>
+                            <small style="color: #007bff;">状态: 已登录</small>
+                        </div>
+                    `;
+                    console.log('✅ 用户信息内容已更新');
+                } else {
+                    console.warn('⚠️ userInfoContent 元素不存在');
+                }
+
+                // 显示基于权限的内容
+                console.log('🔄 显示认证用户内容...');
+                try {
+                    showAuthenticatedContent();
+                    console.log('✅ 认证用户内容已显示');
+                } catch (error) {
+                    console.error('❌ 显示认证用户内容失败:', error);
+                }
+
+                // 如果是管理员，添加特殊标识（移除皇冠图标）
+                console.log('🔍 检查是否为管理员...');
+                if (auth.isAdmin()) {
+                    console.log('👑 用户是管理员，应用管理员样式...');
+                    authNavLink.textContent = auth.currentUser.username;
+                    authNavLink.style.color = '#dc3545'; // 红色表示管理员
+                    console.log('✅ 管理员样式已应用');
+
+                    // 显示管理员控制面板
+                    updateAdminSection(true);
+                } else {
+                    console.log('👤 用户不是管理员');
+                    // 隐藏管理员控制面板
+                    updateAdminSection(false);
+                }
+
+                // 强制触发页面重新渲染
+                console.log('🔄 强制页面重新渲染...');
+                document.body.style.display = 'none';
+                document.body.offsetHeight; // 触发重排
+                document.body.style.display = '';
+                console.log('✅ 页面重新渲染完成');
+
+            } else {
+                console.log('🔄 更新UI为未登录状态');
+
+                // 未登录状态
+                authNavLink.textContent = '登录';
+                authNavLink.style.color = ''; // 恢复默认颜色
+                authNavLink.style.fontWeight = '';
+                authNavLink.onclick = showLoginModal;
+
+                if (userInfoDisplay) {
+                    userInfoDisplay.style.display = 'none';
+                }
+
+                // 隐藏需要认证的内容
+                hideAuthenticatedContent();
+
+                // 隐藏管理员控制面板
+                updateAdminSection(false);
+            }
+        }
+
+        function getRoleName(role) {
+            const roleNames = {
+                admin: '管理员',
+                editor: '编辑员',
+                user: '普通用户'
+            };
+            return roleNames[role] || '普通用户';
+        }
+
+        function showAuthenticatedContent() {
+            console.log('🔄 showAuthenticatedContent 函数开始执行...');
+
+            // 显示需要登录才能看到的内容
+            const authElements = document.querySelectorAll('.auth-required');
+            console.log('🔍 找到 .auth-required 元素数量:', authElements.length);
+
+            authElements.forEach((el, index) => {
+                console.log(`🔄 显示 .auth-required 元素 ${index + 1}:`, el);
+                el.style.display = 'block';
+            });
+
+            if (authElements.length > 0) {
+                console.log('✅ 认证用户内容已显示');
+            } else {
+                console.warn('⚠️ 没有找到 .auth-required 元素');
+            }
+
+            // 如果是管理员，显示管理功能
+            if (auth.isAdmin()) {
+                console.log('👑 用户是管理员，显示管理员专用内容...');
+                const adminElements = document.querySelectorAll('.admin-only');
+                console.log('🔍 找到 .admin-only 元素数量:', adminElements.length);
+
+                adminElements.forEach((el, index) => {
+                    console.log(`🔄 显示 .admin-only 元素 ${index + 1}:`, el);
+                    el.style.display = 'block';
+                });
+
+                if (adminElements.length > 0) {
+                    console.log('✅ 管理员专用内容已显示');
+                } else {
+                    console.warn('⚠️ 没有找到 .admin-only 元素');
+                }
+            } else {
+                console.log('👤 用户不是管理员，跳过管理员内容显示');
+            }
+        }
+
+        function hideAuthenticatedContent() {
+            // 隐藏需要登录的内容
+            const authElements = document.querySelectorAll('.auth-required');
+            authElements.forEach(el => el.style.display = 'none');
+
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => el.style.display = 'none');
+        }
+
+        function logout() {
+            if (typeof auth !== 'undefined') {
+                auth.logout();
+                updateAuthNavigation();
+                showSuccessMessage('已退出登录');
+            } else {
+                alert('系统尚未初始化');
+            }
+        }
+
+        // 显示成功消息
+        function showSuccessMessage(message) {
+            showMessage(message, 'success');
+        }
+
+        // 显示错误消息
+        function showErrorMessage(message) {
+            showMessage(message, 'error');
+        }
+
+        // 通用消息显示函数
+        function showMessage(message, type = 'success') {
+            // 创建消息元素
+            const messageDiv = document.createElement('div');
+            const bgColor = type === 'success' ? '#28a745' : '#dc3545';
+            const icon = type === 'success' ? '✅' : '❌';
+
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideInRight 0.3s ease-out;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            messageDiv.innerHTML = `${icon} ${message}`;
+
+            // 添加动画样式
+            if (!document.getElementById('messageAnimationStyle')) {
+                const style = document.createElement('style');
+                style.id = 'messageAnimationStyle';
+                style.textContent = `
+                    @keyframes slideInRight {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOutRight {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(messageDiv);
+
+            // 根据消息类型设置不同的显示时间
+            const displayTime = type === 'error' ? 5000 : 3000;
+
+            setTimeout(() => {
+                messageDiv.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    }
+                }, 300);
+            }, displayTime);
+        }
+
+        // 显示管理员欢迎信息
+        function showAdminWelcome() {
+            const welcomeDiv = document.createElement('div');
+            welcomeDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 10001;
+                text-align: center;
+                max-width: 400px;
+                animation: fadeInScale 0.5s ease-out;
+            `;
+
+            welcomeDiv.innerHTML = `
+                <h3 style="margin: 0 0 15px 0; font-size: 1.5em;">🎉 管理员登录成功</h3>
+                <p style="margin: 0 0 20px 0; opacity: 0.9;">欢迎回来，${auth.currentUser.username}！</p>
+                <p style="margin: 0 0 20px 0; font-size: 0.9em; opacity: 0.8;">您现在可以访问所有管理功能</p>
+                <button onclick="closeAdminWelcome()" style="
+                    background: rgba(255,255,255,0.2);
+                    border: 1px solid rgba(255,255,255,0.3);
+                    color: white;
+                    padding: 8px 20px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.9em;
+                ">确定</button>
+            `;
+
+            // 添加动画样式
+            if (!document.getElementById('adminWelcomeStyle')) {
+                const style = document.createElement('style');
+                style.id = 'adminWelcomeStyle';
+                style.textContent = `
+                    @keyframes fadeInScale {
+                        from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+                        to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            welcomeDiv.id = 'adminWelcomeDiv';
+            document.body.appendChild(welcomeDiv);
+
+            // 添加背景遮罩
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 10000;
+            `;
+            overlay.id = 'adminWelcomeOverlay';
+            overlay.onclick = closeAdminWelcome;
+            document.body.appendChild(overlay);
+        }
+
+        // 关闭管理员欢迎信息
+        function closeAdminWelcome() {
+            const welcomeDiv = document.getElementById('adminWelcomeDiv');
+            const overlay = document.getElementById('adminWelcomeOverlay');
+
+            if (welcomeDiv) welcomeDiv.remove();
+            if (overlay) overlay.remove();
+        }
+
+        // 更新管理员区域显示
+        function updateAdminSection(show) {
+            const adminSection = document.getElementById('adminSection');
+            if (!adminSection) {
+                console.warn('⚠️ 未找到管理员区域元素');
+                return;
+            }
+
+            if (show) {
+                console.log('👑 显示管理员控制面板');
+                adminSection.style.display = 'block';
+            } else {
+                console.log('🔒 隐藏管理员控制面板');
+                adminSection.style.display = 'none';
+            }
+        }
+
+        // 管理员功能函数
+        function showSystemStats() {
+            // 获取系统统计数据
+            const stats = {
+                totalUsers: JSON.parse(localStorage.getItem('users') || '[]').length,
+                totalEssays: JSON.parse(localStorage.getItem('essays') || '[]').length,
+                totalPoetry: JSON.parse(localStorage.getItem('poetry') || '[]').length,
+                storageUsed: JSON.stringify(localStorage).length,
+                lastLogin: new Date().toLocaleString()
+            };
+
+            const statsText = `📊 系统统计信息\n\n` +
+                `👥 注册用户数: ${stats.totalUsers}\n` +
+                `📝 生活随笔: ${stats.totalEssays} 篇\n` +
+                `🌸 诗歌作品: ${stats.totalPoetry} 首\n` +
+                `💾 存储使用: ${(stats.storageUsed / 1024).toFixed(2)} KB\n` +
+                `🕐 最后登录: ${stats.lastLogin}\n\n` +
+                `点击"用户管理"查看详细信息`;
+
+            alert(statsText);
+        }
+
+        function showOperationLogs() {
+            if (typeof adminLogger !== 'undefined') {
+                const logs = adminLogger.getLogs().slice(0, 5);
+                let logText = '📋 最近5条操作日志:\n\n';
+
+                if (logs.length === 0) {
+                    logText += '暂无操作日志';
+                } else {
+                    logs.forEach((log, index) => {
+                        logText += `${index + 1}. [${new Date(log.timestamp).toLocaleString()}]\n`;
+                        logText += `   操作员: ${log.operator}\n`;
+                        logText += `   操作: ${log.operation}\n`;
+                        if (log.details && Object.keys(log.details).length > 0) {
+                            logText += `   详情: ${JSON.stringify(log.details)}\n`;
+                        }
+                        logText += '\n';
+                    });
+                }
+
+                logText += '\n点击"用户管理"查看完整日志';
+                alert(logText);
+            } else {
+                alert('操作日志系统未加载\n\n请确保 admin-logger.js 已正确加载');
+            }
+        }
+
+        // 显示真实系统统计
+        async function showStats() {
+            try {
+                // 显示加载状态
+                const adminWelcome = document.querySelector('.admin-welcome');
+                if (adminWelcome) {
+                    adminWelcome.innerHTML = `
+                        <h4 style="margin-bottom: 10px;">📊 系统统计概览</h4>
+                        <p style="opacity: 0.9; margin-bottom: 15px;">正在加载实时数据...</p>
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                        </div>
+                    `;
+                }
+
+                // 获取真实统计数据
+                const stats = await window.systemStatsManager.getRealSystemStats();
+                const displayStats = window.systemStatsManager.formatStatsForDisplay(stats);
+
+                const statsHtml = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            <div style="font-size: 2em; font-weight: bold;">${displayStats.summary.totalUsers}</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">注册用户</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            <div style="font-size: 2em; font-weight: bold;">${displayStats.summary.totalWorks}</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">发布作品</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            <div style="font-size: 2em; font-weight: bold;">${displayStats.summary.todayActive}</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">今日活跃</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            <div style="font-size: 2em; font-weight: bold;">${stats.activity.onlineUsers}</div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">在线用户</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 0.9em; line-height: 1.6;">
+                        <div><strong>详细统计:</strong></div>
+                        <div>• ${displayStats.detailed.users}</div>
+                        <div>• ${displayStats.detailed.works}</div>
+                        <div>• ${displayStats.detailed.activity}</div>
+                        <div>• ${displayStats.detailed.storage}</div>
+                        <div style="margin-top: 10px; opacity: 0.7;">最后更新: ${new Date().toLocaleString()}</div>
+                    </div>
+                `;
+
+                showSuccessMessage('系统统计数据已更新');
+
+                // 更新管理员欢迎区域
+                if (adminWelcome) {
+                    adminWelcome.innerHTML = `
+                        <h4 style="margin-bottom: 10px;">📊 系统统计概览</h4>
+                        <p style="opacity: 0.9; margin-bottom: 15px;">实时系统数据</p>
+                        ${statsHtml}
+                    `;
+                }
+
+            } catch (error) {
+                console.error('获取系统统计失败:', error);
+                showErrorMessage('获取统计数据失败，请稍后重试');
+
+                // 显示错误状态
+                const adminWelcome = document.querySelector('.admin-welcome');
+                if (adminWelcome) {
+                    adminWelcome.innerHTML = `
+                        <h4 style="margin-bottom: 10px;">📊 系统统计概览</h4>
+                        <p style="opacity: 0.9; margin-bottom: 15px; color: #ffcccb;">数据加载失败</p>
+                        <button onclick="showStats()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer;">重新加载</button>
+                    `;
+                }
+            }
+        }
+
+        // 登录表单处理
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    // 检查auth对象是否可用
+                    if (typeof auth === 'undefined') {
+                        alert('系统正在初始化，请稍后再试');
+                        return;
+                    }
+
+                    const username = document.getElementById('loginUsername').value;
+                    const password = document.getElementById('loginPassword').value;
+
+                    try {
+                        console.log('🔐 开始登录流程...');
+                        console.log('📝 输入的用户名:', username);
+
+                        // 显示登录中状态
+                        const submitBtn = e.target.querySelector('button[type="submit"]');
+                        const originalText = submitBtn.textContent;
+                        submitBtn.textContent = '登录中...';
+                        submitBtn.disabled = true;
+
+                        const result = await auth.login(username, password);
+                        console.log('🔍 登录结果:', result);
+
+                        // 恢复按钮状态
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+
+                        if (result) {
+                            console.log('✅ 登录成功，开始更新UI...');
+                            console.log('👤 当前用户:', auth.currentUser);
+
+                            // 步骤1：关闭登录模态框
+                            console.log('🔄 步骤1：关闭登录模态框...');
+                            try {
+                                closeLoginModal();
+                                console.log('✅ 登录模态框已关闭');
+                            } catch (error) {
+                                console.error('❌ 关闭模态框失败:', error);
+                            }
+
+                            // 步骤2：立即更新导航状态（使用setTimeout确保DOM更新）
+                            console.log('🔄 步骤2：更新导航状态...');
+                            setTimeout(() => {
+                                try {
+                                    updateAuthNavigation();
+                                    console.log('✅ 导航状态已更新');
+                                } catch (error) {
+                                    console.error('❌ 更新导航状态失败:', error);
+                                }
+                            }, 100);
+
+                            // 步骤3：显示成功消息
+                            console.log('🔄 步骤3：显示成功消息...');
+                            setTimeout(() => {
+                                try {
+                                    showSuccessMessage('登录成功！欢迎回来，' + auth.currentUser.username);
+                                    console.log('✅ 成功消息已显示');
+                                } catch (error) {
+                                    console.error('❌ 显示成功消息失败:', error);
+                                }
+                            }, 200);
+
+                            // 步骤4：管理员特殊处理
+                            if (auth.isAdmin()) {
+                                console.log('🔄 步骤4：显示管理员欢迎信息...');
+                                setTimeout(() => {
+                                    try {
+                                        showAdminWelcome();
+                                        console.log('✅ 管理员欢迎信息已显示');
+                                    } catch (error) {
+                                        console.error('❌ 显示管理员欢迎信息失败:', error);
+                                    }
+                                }, 1500);
+                            }
+
+                            console.log('🎉 登录流程完成！');
+                        } else {
+                            console.error('❌ 登录返回false');
+                            alert('登录失败：未知错误');
+                        }
+                    } catch (error) {
+                        console.error('❌ 登录异常:', error);
+
+                        // 恢复按钮状态
+                        const submitBtn = e.target.querySelector('button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.textContent = '登录';
+                            submitBtn.disabled = false;
+                        }
+
+                        // 显示友好的错误消息
+                        let errorMessage = '登录失败';
+                        if (error.message.includes('用户不存在')) {
+                            errorMessage = '用户名不存在，请检查输入';
+                        } else if (error.message.includes('密码错误')) {
+                            errorMessage = '密码错误，请重新输入';
+                        } else if (error.message.includes('Firebase')) {
+                            errorMessage = '网络连接问题，请稍后重试';
+                        } else {
+                            errorMessage = `登录失败: ${error.message}`;
+                        }
+
+                        showErrorMessage(errorMessage);
+                    }
+                });
+            }
+
+            // 初始化认证状态 - 等待auth模块完全加载
+            console.log('🔧 开始初始化认证状态...');
+            let initAttempts = 0;
+            const maxAttempts = 10;
+
+            const initAuth = () => {
+                initAttempts++;
+                console.log(`🔧 认证初始化尝试 ${initAttempts}/${maxAttempts}...`);
+
+                if (typeof auth !== 'undefined') {
+                    console.log('✅ Auth对象可用，开始更新导航...');
+                    updateAuthNavigation();
+                } else if (initAttempts < maxAttempts) {
+                    console.log('⚠️ Auth对象尚未可用，500ms后重试...');
+                    setTimeout(initAuth, 500);
+                } else {
+                    console.error('❌ Auth对象初始化超时');
+                }
+            };
+
+            // 延迟启动以确保所有脚本都已加载
+            setTimeout(initAuth, 100);
+        });
+
+        // 模态框点击外部关闭
+        window.addEventListener('click', (event) => {
+            const loginModal = document.getElementById('loginModal');
+            if (event.target === loginModal) {
+                closeLoginModal();
+            }
+        });
+    </script>
 </body>
 </html>

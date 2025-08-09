@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小说连载 - 桑梓</title>
+    <meta name="description" content="小说连载作品展示，长篇小说章节更新">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .novels-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .novels-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .novels-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .novels-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .novels-grid {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .novel-series {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .novel-series:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .novel-title {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #333;
+            font-weight: 600;
+            border-bottom: 2px solid #ff9a9e;
+            padding-bottom: 0.5rem;
+        }
+
+        .novel-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .novel-stats {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .novel-author {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .chapters-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .chapter-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border-left: 4px solid #ff9a9e;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .chapter-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .chapter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .chapter-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chapter-number {
+            background: #ff9a9e;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .chapter-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .chapter-preview {
+            color: #555;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .read-more {
+            color: #ff9a9e;
+            font-weight: 500;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .no-novels {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .no-novels .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #007bff;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff9a9e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 章节模态框 */
+        .chapter-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 2rem;
+        }
+
+        .chapter-modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .chapter-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #6c757d;
+            transition: color 0.3s ease;
+        }
+
+        .chapter-modal-close:hover {
+            color: #333;
+        }
+
+        .chapter-modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+            padding-right: 3rem;
+        }
+
+        .chapter-modal-content-text {
+            line-height: 1.8;
+            color: #555;
+            white-space: pre-line;
+        }
+
+        @media (max-width: 768px) {
+            .novels-container {
+                padding: 1rem;
+            }
+
+            .novels-header h1 {
+                font-size: 2rem;
+            }
+
+            .novel-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .chapter-modal {
+                padding: 1rem;
+            }
+
+            .chapter-modal-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">桑梓</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="essays.html" class="nav-link">生活随笔</a>
+                </li>
+                <li class="nav-item">
+                    <a href="poetry.html" class="nav-link">诗歌创作</a>
+                </li>
+                <li class="nav-item">
+                    <a href="novels.html" class="nav-link active">小说连载</a>
+                </li>
+                <li class="nav-item">
+                    <a href="artworks.html" class="nav-link">绘画作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="music.html" class="nav-link">音乐作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="videos.html" class="nav-link">视频作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link">作品上传</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="novels-container">
+        <a href="index.html" class="back-link">
+            ← 返回首页
+        </a>
+
+        <div class="novels-header">
+            <h1>📖 小说连载</h1>
+            <p>构建完整的故事世界和人物命运</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载小说作品...</p>
+        </div>
+
+        <div id="novelsGrid" class="novels-grid" style="display: none;">
+            <!-- 小说作品将在这里动态加载 -->
+        </div>
+
+        <div id="noNovels" class="no-novels" style="display: none;">
+            <div class="icon">📚</div>
+            <h3>暂无小说作品</h3>
+            <p>还没有发布任何小说连载，<a href="upload.html">点击这里</a>开始创作吧！</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
+                <div class="footer-links">
+                    <a href="index.html" class="home-button">首页</a>
+                    <div class="works-dropdown">
+                        <span class="dropdown-trigger">作品展示 ▼</span>
+                        <div class="dropdown-menu">
+                            <a href="essays.html">生活随笔</a>
+                            <a href="poetry.html">诗歌创作</a>
+                            <a href="novels.html" class="current-page">小说连载</a>
+                            <a href="artworks.html">绘画作品</a>
+                            <a href="music.html">音乐作品</a>
+                            <a href="videos.html">视频作品</a>
+                        </div>
+                    </div>
+                    <a href="upload.html">上传作品</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        /* 页脚下拉菜单样式 */
+        .works-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-trigger {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .works-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-menu a.current-page {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .dropdown-menu a.current-page:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/comments.js"></script>
+    <script src="js/novels.js"></script>
+</body>
+</html>

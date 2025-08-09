@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘画作品 - 桑梓</title>
+    <meta name="description" content="绘画作品展示，包含水彩、素描与数字绘画">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .artworks-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .artworks-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .artworks-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .artworks-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .artworks-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #ff7043;
+            background: white;
+            color: #ff7043;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #ff7043;
+            color: white;
+        }
+
+        .artworks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .artwork-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .artwork-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .artwork-image {
+            width: 100%;
+            height: 250px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .artwork-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .artwork-card:hover .artwork-image img {
+            transform: scale(1.05);
+        }
+
+        .artwork-placeholder {
+            font-size: 4rem;
+            color: #dee2e6;
+        }
+
+        .artwork-content {
+            padding: 1.5rem;
+        }
+
+        .artwork-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .artwork-type {
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .artwork-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .artwork-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .artwork-description {
+            color: #6c757d;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .artwork-author {
+            text-align: right;
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .no-artworks {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .no-artworks .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #007bff;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff7043;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 图片模态框 */
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 2rem;
+        }
+
+        .image-modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .image-modal img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-modal-close:hover {
+            opacity: 0.7;
+        }
+
+        .image-modal-info {
+            position: absolute;
+            bottom: -60px;
+            left: 0;
+            right: 0;
+            color: white;
+            text-align: center;
+        }
+
+        .image-modal-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .image-modal-author {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .artworks-container {
+                padding: 1rem;
+            }
+
+            .artworks-header h1 {
+                font-size: 2rem;
+            }
+
+            .artworks-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .artworks-filters {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .image-modal {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">桑梓</a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="essays.html" class="nav-link">生活随笔</a>
+                </li>
+                <li class="nav-item">
+                    <a href="poetry.html" class="nav-link">诗歌创作</a>
+                </li>
+                <li class="nav-item">
+                    <a href="novels.html" class="nav-link">小说连载</a>
+                </li>
+                <li class="nav-item">
+                    <a href="artworks.html" class="nav-link active">绘画作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="music.html" class="nav-link">音乐作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="videos.html" class="nav-link">视频作品</a>
+                </li>
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link">作品上传</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="artworks-container">
+        <a href="index.html" class="back-link">
+            ← 返回首页
+        </a>
+
+        <div class="artworks-header">
+            <h1>🎨 绘画作品</h1>
+            <p>用色彩和线条表达情感与创意</p>
+        </div>
+
+        <div class="artworks-filters">
+            <button class="filter-btn active" data-type="all">全部作品</button>
+            <button class="filter-btn" data-type="painting">绘画作品</button>
+            <button class="filter-btn" data-type="sketch">素描作品</button>
+            <button class="filter-btn" data-type="digital">数字艺术</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载绘画作品...</p>
+        </div>
+
+        <div id="artworksGrid" class="artworks-grid" style="display: none;">
+            <!-- 绘画作品将在这里动态加载 -->
+        </div>
+
+        <div id="noArtworks" class="no-artworks" style="display: none;">
+            <div class="icon">🎨</div>
+            <h3>暂无绘画作品</h3>
+            <p>还没有发布任何绘画作品，<a href="upload.html">点击这里</a>开始创作吧！</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
+                <div class="footer-links">
+                    <a href="index.html" class="home-button">首页</a>
+                    <div class="works-dropdown">
+                        <span class="dropdown-trigger">作品展示 ▼</span>
+                        <div class="dropdown-menu">
+                            <a href="essays.html">生活随笔</a>
+                            <a href="poetry.html">诗歌创作</a>
+                            <a href="novels.html">小说连载</a>
+                            <a href="artworks.html" class="current-page">绘画作品</a>
+                            <a href="music.html">音乐作品</a>
+                            <a href="videos.html">视频作品</a>
+                        </div>
+                    </div>
+                    <a href="upload.html">上传作品</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        /* 页脚下拉菜单样式 */
+        .works-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-trigger {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .works-dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: #f8f9fa;
+        }
+
+        .dropdown-menu a.current-page {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .dropdown-menu a.current-page:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/comments.js"></script>
+    <script src="js/artworks.js"></script>
+</body>
+</html>
