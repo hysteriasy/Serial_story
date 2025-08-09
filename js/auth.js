@@ -64,7 +64,7 @@ const USER_ROLES = {
 // 预设管理员账户
 const PRESET_ADMIN = {
   username: 'hysteria',
-  password: process.env.ADMIN_PASSWORD || 'please_change_this_password',
+  password: 'hysteria7816', // 在生产环境中应该通过其他方式配置
   role: 'admin'
 };
 
