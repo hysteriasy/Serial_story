@@ -417,24 +417,31 @@ class UserStatusManager {
 
   // 绑定事件
   bindEvents() {
-    // 监听auth模块的登录状态变化
-    if (typeof auth !== 'undefined') {
-      // 重写auth.login方法以在登录后更新状态
-      const originalLogin = auth.login;
-      auth.login = async function(...args) {
-        const result = await originalLogin.apply(this, args);
-        userStatusManager.updateUserStatus();
-        return result;
-      };
+    // 延迟绑定auth模块的方法重写，确保auth对象已完全初始化
+    setTimeout(() => {
+      if (typeof auth !== 'undefined' && auth.login && auth.logout) {
+        // 重写auth.login方法以在登录后更新状态
+        const originalLogin = auth.login;
+        auth.login = async function(...args) {
+          const result = await originalLogin.apply(this, args);
+          userStatusManager.updateUserStatus();
+          return result;
+        };
 
-      // 重写auth.logout方法以在登出后更新状态
-      const originalLogout = auth.logout;
-      auth.logout = function(...args) {
-        const result = originalLogout.apply(this, args);
-        userStatusManager.updateUserStatus();
-        return result;
-      };
-    }
+        // 重写auth.logout方法以在登出后更新状态
+        const originalLogout = auth.logout;
+        auth.logout = function(...args) {
+          const result = originalLogout.apply(this, args);
+          userStatusManager.updateUserStatus();
+          return result;
+        };
+
+        console.log('✅ Auth方法重写完成');
+      } else {
+        console.warn('⚠️ Auth对象未完全初始化，跳过方法重写');
+      }
+    }, 100); // 延迟100ms确保auth对象完全加载
+  }
   }
 
   // 更新用户状态显示
