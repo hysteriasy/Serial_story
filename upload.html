@@ -1382,7 +1382,7 @@
       if (roleSelect) {
         roleSelect.addEventListener('change', () => {
           validateFormField('newUserRole', 'roleError',
-            (value) => ['user', 'editor', 'admin'].includes(value),
+            (value) => ['visitor', 'friend', 'admin'].includes(value),
             '请选择有效的用户角色'
           );
         });
@@ -1437,7 +1437,7 @@
 
       // 验证角色
       isValid &= validateFormField('newUserRole', 'roleError',
-        (value) => ['user', 'editor', 'admin'].includes(value),
+        (value) => ['visitor', 'friend', 'admin'].includes(value),
         '请选择有效的用户角色'
       );
 

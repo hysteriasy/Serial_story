@@ -289,13 +289,13 @@ function canManageWork(workAuthor, action) {
         return true;
       }
 
-      // 编辑员可以编辑自己的作品，但不能删除其他人的作品
-      if (action === '编辑' && auth.isEditor && auth.isEditor()) {
+      // 好友可以编辑自己的作品
+      if (action === '编辑' && auth.isFriend && auth.isFriend()) {
         if (auth.currentUser.username === workAuthor) {
-          console.log('✅ 编辑员用户，可以编辑自己的作品');
+          console.log('✅ 好友用户，可以编辑自己的作品');
           return true;
         } else {
-          console.log('⚠️ 编辑员不能编辑其他人的作品');
+          console.log('⚠️ 好友不能编辑其他人的作品');
           return false;
         }
       }
@@ -337,10 +337,10 @@ async function verifyPassword(action, workAuthor = null) {
         return true;
       }
 
-      // 检查编辑员权限（编辑员可以编辑，但不能删除）
-      if (action === '编辑' && auth.isEditor && auth.isEditor()) {
-        console.log('✅ 编辑员用户，授权编辑操作');
-        console.log(`编辑员用户 ${auth.currentUser.username} 已授权执行编辑操作`);
+      // 检查好友权限（好友可以编辑，但不能删除）
+      if (action === '编辑' && auth.isFriend && auth.isFriend()) {
+        console.log('✅ 好友用户，授权编辑操作');
+        console.log(`好友用户 ${auth.currentUser.username} 已授权执行编辑操作`);
         return true;
       }
 
@@ -405,7 +405,7 @@ async function verifyPassword(action, workAuthor = null) {
 
   // 从localStorage获取密码，如果没有则使用默认密码
   const storedPassword = localStorage.getItem(envKey);
-  const defaultPassword = action === '删除' ? 'admin123' : 'editor123';
+  const defaultPassword = action === '删除' ? 'change_admin_password' : 'change_friend_password';
   const isValid = password === (storedPassword || defaultPassword);
 
   if (isValid) {
