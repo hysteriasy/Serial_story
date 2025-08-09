@@ -1007,10 +1007,10 @@
         function getRoleName(role) {
             const roleNames = {
                 admin: '管理员',
-                editor: '编辑员',
-                user: '普通用户'
+                friend: '好友',
+                visitor: '访客'
             };
-            return roleNames[role] || '普通用户';
+            return roleNames[role] || '访客';
         }
 
         function showAuthenticatedContent() {

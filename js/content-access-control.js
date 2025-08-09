@@ -136,20 +136,26 @@ class ContentAccessControl {
   inferPermissionsFromContent(content) {
     // 检查是否有明确的可见性设置
     if (content.visibility) {
-      const level = content.visibility === 'public' ? 'public' : 
+      const level = content.visibility === 'public' ? 'public' :
                    content.visibility === 'friends' ? 'friend' :
-                   content.visibility === 'private' ? 'private' : 'visitor';
+                   content.visibility === 'private' ? 'private' :
+                   content.visibility === 'visitor' ? 'visitor' : 'friend';
       return window.filePermissionsSystem.createPermissionStructure(level);
     }
 
     // 检查是否有isPublic标志
     if (content.hasOwnProperty('isPublic')) {
-      const level = content.isPublic ? 'public' : 'private';
+      const level = content.isPublic ? 'public' : 'friend'; // 默认为好友可见而不是私有
       return window.filePermissionsSystem.createPermissionStructure(level);
     }
 
-    // 默认为公开（向后兼容）
-    return window.filePermissionsSystem.createPermissionStructure('public');
+    // 检查是否有权限级别设置
+    if (content.permissionLevel) {
+      return window.filePermissionsSystem.createPermissionStructure(content.permissionLevel);
+    }
+
+    // 默认为好友可见（访客和好友都可以查看）
+    return window.filePermissionsSystem.createPermissionStructure('friend');
   }
 
   // 生成缓存键

@@ -5,41 +5,66 @@ const PASSWORD_CONFIG = {
   specialChars: '!@#$%^&*'
 };
 
-// 用户角色权限配置 - 三级权限体系
+// 用户角色权限配置 - 四级权限体系
 const USER_ROLES = {
   admin: {
     name: '管理员',
+    level: 4,
     permissions: ['upload', 'delete', 'edit', 'manage_users', 'view_all_files', 'set_file_permissions', 'comment', 'edit_comment', 'delete_comment'],
     uploadTypes: ['literature', 'art', 'music', 'video'], // 可以上传所有类型
     canComment: true,
     canEditOwnComment: true,
     canDeleteOwnComment: true,
-    canDeleteAnyComment: true
+    canDeleteAnyComment: true,
+    canViewContent: ['public', 'friend', 'visitor', 'private'], // 可以查看所有内容
+    canManageOwnWorks: true,
+    canManageAllWorks: true
   },
   friend: {
     name: '好友',
+    level: 3,
     permissions: ['upload', 'edit', 'comment', 'edit_comment', 'delete_comment'],
     uploadTypes: ['literature', 'art', 'music', 'video'], // 可以上传所有类型
     canComment: true,
     canEditOwnComment: true,
     canDeleteOwnComment: true,
-    canDeleteAnyComment: false
+    canDeleteAnyComment: false,
+    canViewContent: ['public', 'friend'], // 可以查看公开作品和其他好友的作品（黑名单除外）
+    canManageOwnWorks: true,
+    canManageAllWorks: false
   },
   visitor: {
     name: '访客',
+    level: 2,
+    permissions: ['view', 'comment', 'edit_comment', 'delete_comment'],
+    uploadTypes: [], // 不能上传任何内容
+    canComment: true,
+    canEditOwnComment: true,
+    canDeleteOwnComment: true,
+    canDeleteAnyComment: false,
+    canViewContent: ['public', 'friend'], // 可以查看所有好友级别用户的作品（黑名单除外）
+    canManageOwnWorks: false,
+    canManageAllWorks: false
+  },
+  guest: {
+    name: '未登录用户',
+    level: 1,
     permissions: ['view'],
     uploadTypes: [], // 不能上传任何内容
     canComment: false,
     canEditOwnComment: false,
     canDeleteOwnComment: false,
-    canDeleteAnyComment: false
+    canDeleteAnyComment: false,
+    canViewContent: ['public'], // 只能查看标记为"公开"的作品
+    canManageOwnWorks: false,
+    canManageAllWorks: false
   }
 };
 
 // 预设管理员账户
 const PRESET_ADMIN = {
   username: 'hysteria',
-  password: 'hysteria7816',
+  password: process.env.ADMIN_PASSWORD || 'please_change_this_password',
   role: 'admin'
 };
 
@@ -49,14 +74,14 @@ const auth = {
   // 检查用户权限
   hasPermission(permission) {
     if (!this.currentUser) return false;
-    const role = USER_ROLES[this.currentUser.role] || USER_ROLES.user;
+    const role = USER_ROLES[this.currentUser.role] || USER_ROLES.visitor;
     return role.permissions.includes(permission);
   },
 
   // 检查上传权限
   canUploadType(fileType) {
     if (!this.currentUser) return false;
-    const role = USER_ROLES[this.currentUser.role] || USER_ROLES.user;
+    const role = USER_ROLES[this.currentUser.role] || USER_ROLES.visitor;
     return role.uploadTypes.includes(fileType);
   },
 
@@ -75,17 +100,30 @@ const auth = {
     return this.currentUser && this.currentUser.role === 'visitor';
   },
 
+  // 检查是否为未登录用户
+  isGuest() {
+    return !this.currentUser;
+  },
+
   // 检查用户权限级别
   getUserPermissionLevel() {
-    if (!this.currentUser) return 0;
+    if (!this.currentUser) return 1; // 未登录用户级别为1
 
-    const levels = {
-      'visitor': 1,
-      'friend': 2,
-      'admin': 3
-    };
+    const role = USER_ROLES[this.currentUser.role];
+    return role ? role.level : 1;
+  },
 
-    return levels[this.currentUser.role] || 0;
+  // 检查用户是否可以查看指定级别的内容
+  canViewContentLevel(contentLevel) {
+    if (!this.currentUser) {
+      // 未登录用户只能查看公开内容
+      return contentLevel === 'public';
+    }
+
+    const role = USER_ROLES[this.currentUser.role];
+    if (!role) return false;
+
+    return role.canViewContent.includes(contentLevel);
   },
 
   // 检查是否可以编辑指定用户
@@ -632,9 +670,9 @@ const auth = {
   },
 
   // 检查用户是否可以访问特定文件
-  async canAccessFile(fileId, fileOwner) {
+  async canAccessFile(fileId, fileOwner, filePermissions = null) {
     // 文件所有者总是可以访问
-    if (this.currentUser.username === fileOwner) {
+    if (this.currentUser && this.currentUser.username === fileOwner) {
       return true;
     }
 
@@ -644,30 +682,40 @@ const auth = {
     }
 
     // 获取文件权限设置
-    const snapshot = await firebase.database().ref(`userFiles/${fileOwner}/${fileId}/permissions`).once('value');
-    const permissions = snapshot.val();
+    let permissions = filePermissions;
+    if (!permissions && typeof firebase !== 'undefined') {
+      const snapshot = await firebase.database().ref(`userFiles/${fileOwner}/${fileId}/permissions`).once('value');
+      permissions = snapshot.val();
+    }
 
     if (!permissions) {
-      // 没有设置权限，默认私有
+      // 没有设置权限，默认为好友可见
+      permissions = { level: 'friend', isPublic: false };
+    }
+
+    // 检查是否被屏蔽（黑名单）
+    if (this.currentUser && permissions.blockedUsers && permissions.blockedUsers.includes(this.currentUser.username)) {
       return false;
     }
 
-    // 检查是否被屏蔽
-    if (permissions.blockedUsers && permissions.blockedUsers.includes(this.currentUser.username)) {
-      return false;
-    }
-
-    // 检查是否在允许列表中
-    if (permissions.allowedUsers && permissions.allowedUsers.includes(this.currentUser.username)) {
+    // 检查是否在允许列表中（白名单）
+    if (this.currentUser && permissions.allowedUsers && permissions.allowedUsers.includes(this.currentUser.username)) {
       return true;
     }
 
-    // 检查是否为公开文件
-    if (permissions.isPublic) {
-      return true;
+    // 根据权限级别检查访问权限
+    const permissionLevel = permissions.level || (permissions.isPublic ? 'public' : 'friend');
+
+    if (permissionLevel === 'public') {
+      return true; // 公开内容所有人都可以访问
     }
 
-    return false;
+    if (!this.currentUser) {
+      return false; // 未登录用户只能访问公开内容
+    }
+
+    // 检查用户角色是否有权限访问此级别的内容
+    return this.canViewContentLevel(permissionLevel);
   },
 
   // 获取用户可访问的文件列表
@@ -1094,7 +1142,7 @@ const auth = {
 
   // 评论权限检查方法
   canComment() {
-    if (!this.currentUser) return false;
+    if (!this.currentUser) return false; // 未登录用户无法评论
     const role = USER_ROLES[this.currentUser.role] || USER_ROLES.visitor;
     return role.canComment;
   },

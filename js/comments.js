@@ -94,7 +94,7 @@ class CommentSystem {
       return `
         <div class="comment-form-placeholder">
           <p>您当前的权限不允许发表评论</p>
-          <p>只有好友和管理员可以发表评论</p>
+          <p>只有访客、好友和管理员可以发表评论</p>
         </div>
       `;
     }

@@ -99,9 +99,9 @@ class WorkUploader {
     const role = auth.currentUser.role || 'user';
     const roleName = {
       admin: '管理员',
-      editor: '编辑员',
-      user: '普通用户'
-    }[role] || '普通用户';
+      friend: '好友',
+      visitor: '访客'
+    }[role] || '访客';
 
     userInfoContainer.innerHTML = `
       <div class="user-info">
@@ -854,10 +854,18 @@ class WorkUploader {
     // 根据可见性设置检查权限
     switch (workPermissions.visibility) {
       case 'public':
-        return true;
+        return true; // 所有人都可以查看
 
       case 'private':
         return false; // 只有作者和管理员可见
+
+      case 'friend':
+        // 好友级别：好友和管理员可以查看
+        return ['friend', 'admin'].includes(viewerRole);
+
+      case 'visitor':
+        // 访客级别：访客、好友和管理员可以查看
+        return ['visitor', 'friend', 'admin'].includes(viewerRole);
 
       case 'whitelist':
         // 检查是否在白名单中
@@ -875,7 +883,12 @@ class WorkUploader {
         if (workPermissions.blockedUsers.includes(viewerUsername)) {
           return false;
         }
-        return true; // 不在黑名单中的用户可以查看
+        // 根据默认权限级别判断
+        const defaultLevel = workPermissions.defaultLevel || 'friend';
+        if (defaultLevel === 'public') return true;
+        if (defaultLevel === 'friend') return ['friend', 'admin'].includes(viewerRole);
+        if (defaultLevel === 'visitor') return ['visitor', 'friend', 'admin'].includes(viewerRole);
+        return false;
 
       default:
         return workPermissions.isPublic || false;
@@ -1379,8 +1392,8 @@ class WorkUploader {
   getRoleName(role) {
     const roleNames = {
       admin: '管理员',
-      editor: '编辑员',
-      user: '普通用户'
+      friend: '好友',
+      visitor: '访客'
     };
     return roleNames[role] || '未知角色';
   }

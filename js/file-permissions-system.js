@@ -9,9 +9,10 @@ class FilePermissionsSystem {
     };
 
     this.userRoleLevels = {
-      visitor: 1,
-      friend: 2,
-      admin: 3
+      guest: 1,      // 未登录用户
+      visitor: 2,    // 访客
+      friend: 3,     // 好友
+      admin: 4       // 管理员
     };
   }
 
@@ -82,8 +83,8 @@ class FilePermissionsSystem {
   // 获取权限级别对应的最低角色要求
   getRequiredRole(level) {
     const roleMap = {
-      'public': null, // 无要求
-      'visitor': 'visitor', // 需要登录
+      'public': null, // 无要求，所有人都可以访问
+      'visitor': 'visitor', // 需要登录（访客级别）
       'friend': 'friend', // 需要好友级别
       'custom': null // 自定义规则
     };
@@ -93,12 +94,12 @@ class FilePermissionsSystem {
   // 获取权限级别对应的最低角色等级
   getMinRoleLevel(level) {
     const levelMap = {
-      'public': 0, // 无要求
-      'visitor': 1, // 访客级别
-      'friend': 2, // 好友级别
+      'public': 0, // 无要求，所有人都可以访问
+      'visitor': 2, // 需要访客级别（登录）
+      'friend': 3, // 需要好友级别
       'custom': 0 // 自定义规则
     };
-    return levelMap[level];
+    return levelMap[level] || 0;
   }
 
   // 验证用户是否有权限访问文件
@@ -135,10 +136,11 @@ class FilePermissionsSystem {
             level: 'anonymous'
           };
         }
-        
+
+        // 未登录用户只能访问公开内容
         return {
           hasAccess: false,
-          reason: 'Login required',
+          reason: 'Login required for non-public content',
           level: 'login_required'
         };
       }
@@ -158,7 +160,7 @@ class FilePermissionsSystem {
       }
 
       // 5. 检查基于角色的权限
-      const userRoleLevel = this.userRoleLevels[currentUser.role] || 0;
+      const userRoleLevel = this.userRoleLevels[currentUser.role] || 1; // 默认为guest级别
       const requiredLevel = this.getMinRoleLevel(level);
 
       if (userRoleLevel >= requiredLevel) {
