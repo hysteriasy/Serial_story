@@ -116,20 +116,30 @@ function initMediaFilter() {
 function initMobileMenu() {
     const mobileMenu = document.getElementById('mobile-menu');
     const navMenu = document.querySelector('.nav-menu');
-    
+
     if (mobileMenu && navMenu) {
-        mobileMenu.addEventListener('click', function() {
+        // 添加触摸事件支持
+        const toggleMenu = function() {
             mobileMenu.classList.toggle('active');
             navMenu.classList.toggle('active');
-        });
+        };
+
+        mobileMenu.addEventListener('click', toggleMenu);
+        mobileMenu.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            toggleMenu();
+        }, { passive: false });
 
         // 点击菜单项时关闭移动端菜单
         const navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
-            link.addEventListener('click', function() {
+            const closeMenu = function() {
                 mobileMenu.classList.remove('active');
                 navMenu.classList.remove('active');
-            });
+            };
+
+            link.addEventListener('click', closeMenu);
+            link.addEventListener('touchend', closeMenu, { passive: true });
         });
     }
 }
@@ -144,7 +154,7 @@ function initScrollEffects() {
         return; // 如果两个元素都不存在，直接返回
     }
 
-    window.addEventListener('scroll', function() {
+    const handleScroll = function() {
         const scrollTop = window.pageYOffset;
 
         // 导航栏滚动效果 - 只有当navbar存在时才执行
@@ -152,9 +162,11 @@ function initScrollEffects() {
             if (scrollTop > 100) {
                 navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
                 navbar.style.backdropFilter = 'blur(10px)';
+                navbar.style.webkitBackdropFilter = 'blur(10px)';
             } else {
                 navbar.style.backgroundColor = '#fff';
                 navbar.style.backdropFilter = 'none';
+                navbar.style.webkitBackdropFilter = 'none';
             }
         }
 
@@ -166,7 +178,14 @@ function initScrollEffects() {
                 backToTopBtn.classList.remove('show');
             }
         }
-    });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // 为iOS设备添加触摸滚动支持
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        document.addEventListener('touchmove', handleScroll, { passive: true });
+    }
 }
 
 // 平滑滚动到指定区域
@@ -391,7 +410,7 @@ function throttle(func, limit) {
 // 性能优化：使用节流优化滚动事件
 window.addEventListener('scroll', throttle(function() {
     // 这里可以添加其他滚动相关的功能
-}, 100));
+}, 100), { passive: true });
 
 // 页面加载完成后的额外初始化
 window.addEventListener('load', function() {
@@ -440,8 +459,12 @@ function initWelcomeScreen() {
     // 初始化逻辑
     welcomeOverlay.style.opacity = '1';
 
-    // 添加点击事件监听器以关闭欢迎页面
+    // 添加点击和触摸事件监听器以关闭欢迎页面
     welcomeOverlay.addEventListener('click', hideWelcomeScreen);
+    welcomeOverlay.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      hideWelcomeScreen();
+    }, { passive: false });
   } catch (error) {
     console.error('欢迎页面初始化失败:', error);
   }

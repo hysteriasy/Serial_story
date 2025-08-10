@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <title>iOS兼容性测试 - 桑梓</title>
+    <meta name="description" content="iOS Safari兼容性测试页面">
+    <link rel="stylesheet" href="css/style.css?v=20240807">
+    <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-top: 100px;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        .test-title {
+            color: #007bff;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .test-item {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .test-result {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        
+        .backdrop-test {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .animation-test {
+            width: 50px;
+            height: 50px;
+            background: #007bff;
+            border-radius: 50%;
+            animation: bounce 2s infinite;
+            margin: 1rem auto;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @-webkit-keyframes bounce {
+            0%, 100% { -webkit-transform: translateY(0); }
+            50% { -webkit-transform: translateY(-20px); }
+        }
+        
+        .touch-test {
+            background: #28a745;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 8px;
+            margin: 1rem 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .font-test {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .scroll-test {
+            height: 200px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>桑梓 - iOS测试</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">返回首页</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="test-container">
+        <h1 style="text-align: center; color: #007bff; margin-bottom: 2rem;">iOS Safari 兼容性测试</h1>
+        
+        <!-- 设备信息测试 -->
+        <div class="test-section">
+            <h2 class="test-title">📱 设备信息检测</h2>
+            <div class="test-item">
+                <strong>用户代理:</strong> <span id="userAgent"></span>
+            </div>
+            <div class="test-item">
+                <strong>屏幕尺寸:</strong> <span id="screenSize"></span>
+            </div>
+            <div class="test-item">
+                <strong>视口尺寸:</strong> <span id="viewportSize"></span>
+            </div>
+            <div class="test-item">
+                <strong>设备像素比:</strong> <span id="devicePixelRatio"></span>
+            </div>
+            <div class="test-item">
+                <strong>iOS设备:</strong> <span id="isIOSDevice" class="test-result"></span>
+            </div>
+        </div>
+
+        <!-- CSS特性测试 -->
+        <div class="test-section">
+            <h2 class="test-title">🎨 CSS特性支持测试</h2>
+            <div class="test-item">
+                <strong>backdrop-filter支持:</strong> <span id="backdropFilterSupport" class="test-result"></span>
+            </div>
+            <div class="test-item">
+                <strong>CSS Grid支持:</strong> <span id="cssGridSupport" class="test-result"></span>
+            </div>
+            <div class="test-item">
+                <strong>Flexbox支持:</strong> <span id="flexboxSupport" class="test-result"></span>
+            </div>
+            <div class="backdrop-test">
+                <strong>backdrop-filter效果测试</strong><br>
+                如果您看到模糊背景效果，说明backdrop-filter工作正常
+            </div>
+        </div>
+
+        <!-- 动画测试 -->
+        <div class="test-section">
+            <h2 class="test-title">🎬 动画性能测试</h2>
+            <div class="animation-test"></div>
+            <p style="text-align: center;">如果上方圆球正在弹跳，说明CSS动画工作正常</p>
+        </div>
+
+        <!-- 触摸事件测试 -->
+        <div class="test-section">
+            <h2 class="test-title">👆 触摸事件测试</h2>
+            <div class="touch-test" id="touchTest">
+                点击或触摸这里测试触摸事件
+            </div>
+            <div class="test-item">
+                <strong>触摸事件状态:</strong> <span id="touchStatus">等待测试</span>
+            </div>
+        </div>
+
+        <!-- 字体渲染测试 */
+        <div class="test-section">
+            <h2 class="test-title">🔤 字体渲染测试</h2>
+            <div class="font-test">
+                <p>这是中文字体渲染测试：桑梓个人分享平台</p>
+                <p>This is English font rendering test: Sangzi Personal Sharing Platform</p>
+                <p>数字测试：1234567890</p>
+                <p>特殊字符：！@#￥%……&*（）</p>
+            </div>
+        </div>
+
+        <!-- 滚动性能测试 -->
+        <div class="test-section">
+            <h2 class="test-title">📜 滚动性能测试</h2>
+            <div class="scroll-test">
+                <p>这是一个滚动测试区域。在iOS设备上，滚动应该流畅且有惯性。</p>
+                <p>第1行内容</p><p>第2行内容</p><p>第3行内容</p><p>第4行内容</p><p>第5行内容</p>
+                <p>第6行内容</p><p>第7行内容</p><p>第8行内容</p><p>第9行内容</p><p>第10行内容</p>
+                <p>第11行内容</p><p>第12行内容</p><p>第13行内容</p><p>第14行内容</p><p>第15行内容</p>
+                <p>第16行内容</p><p>第17行内容</p><p>第18行内容</p><p>第19行内容</p><p>第20行内容</p>
+            </div>
+        </div>
+
+        <!-- 交互测试 -->
+        <div class="test-section">
+            <h2 class="test-title">🎯 交互功能测试</h2>
+            <button class="test-button" onclick="testAlert()">测试弹窗</button>
+            <button class="test-button" onclick="testVibration()">测试震动</button>
+            <button class="test-button" onclick="testOrientation()">测试方向</button>
+            <div class="test-item">
+                <strong>测试结果:</strong> <span id="interactionResult">等待测试</span>
+            </div>
+        </div>
+
+        <!-- 性能测试 */
+        <div class="test-section">
+            <h2 class="test-title">⚡ 性能测试</h2>
+            <button class="test-button" onclick="runPerformanceTest()">运行性能测试</button>
+            <div class="test-item">
+                <strong>页面加载时间:</strong> <span id="loadTime"></span>
+            </div>
+            <div class="test-item">
+                <strong>DOM节点数量:</strong> <span id="domNodes"></span>
+            </div>
+            <div class="test-item">
+                <strong>内存使用:</strong> <span id="memoryUsage"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- iOS兼容性修复 -->
+    <script src="js/ios-compatibility.js"></script>
+    
+    <script>
+        // 页面加载时间记录
+        const loadStartTime = performance.now();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            runCompatibilityTests();
+            
+            // 记录加载时间
+            const loadTime = performance.now() - loadStartTime;
+            document.getElementById('loadTime').textContent = loadTime.toFixed(2) + 'ms';
+        });
+
+        function runCompatibilityTests() {
+            // 设备信息检测
+            document.getElementById('userAgent').textContent = navigator.userAgent;
+            document.getElementById('screenSize').textContent = screen.width + 'x' + screen.height;
+            document.getElementById('viewportSize').textContent = window.innerWidth + 'x' + window.innerHeight;
+            document.getElementById('devicePixelRatio').textContent = window.devicePixelRatio || 1;
+            
+            // iOS设备检测
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const iosElement = document.getElementById('isIOSDevice');
+            iosElement.textContent = isIOS ? '是' : '否';
+            iosElement.className = 'test-result ' + (isIOS ? 'test-pass' : 'test-fail');
+
+            // CSS特性支持检测
+            testCSSSupport('backdrop-filter', 'blur(10px)', 'backdropFilterSupport');
+            testCSSSupport('display', 'grid', 'cssGridSupport');
+            testCSSSupport('display', 'flex', 'flexboxSupport');
+
+            // 触摸事件测试
+            setupTouchTest();
+            
+            // DOM节点数量
+            document.getElementById('domNodes').textContent = document.querySelectorAll('*').length;
+        }
+
+        function testCSSSupport(property, value, elementId) {
+            const isSupported = CSS.supports(property, value) || CSS.supports('-webkit-' + property, value);
+            const element = document.getElementById(elementId);
+            element.textContent = isSupported ? '支持' : '不支持';
+            element.className = 'test-result ' + (isSupported ? 'test-pass' : 'test-fail');
+        }
+
+        function setupTouchTest() {
+            const touchTest = document.getElementById('touchTest');
+            const touchStatus = document.getElementById('touchStatus');
+            
+            touchTest.addEventListener('touchstart', function() {
+                touchStatus.textContent = '触摸开始';
+            }, { passive: true });
+            
+            touchTest.addEventListener('touchend', function() {
+                touchStatus.textContent = '触摸结束 - 触摸事件正常';
+            }, { passive: true });
+            
+            touchTest.addEventListener('click', function() {
+                if (touchStatus.textContent === '等待测试') {
+                    touchStatus.textContent = '点击事件正常';
+                }
+            });
+        }
+
+        function testAlert() {
+            alert('弹窗测试成功！');
+            document.getElementById('interactionResult').textContent = '弹窗测试通过';
+        }
+
+        function testVibration() {
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+                document.getElementById('interactionResult').textContent = '震动测试通过';
+            } else {
+                document.getElementById('interactionResult').textContent = '设备不支持震动';
+            }
+        }
+
+        function testOrientation() {
+            const orientation = screen.orientation || screen.mozOrientation || screen.msOrientation;
+            document.getElementById('interactionResult').textContent = '当前方向: ' + (orientation ? orientation.type : window.orientation);
+        }
+
+        function runPerformanceTest() {
+            // 内存使用检测
+            if (performance.memory) {
+                const memory = performance.memory;
+                const memoryInfo = `已用: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)}MB / 总计: ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)}MB`;
+                document.getElementById('memoryUsage').textContent = memoryInfo;
+            } else {
+                document.getElementById('memoryUsage').textContent = '浏览器不支持内存检测';
+            }
+        }
+
+        // 监听方向变化
+        window.addEventListener('orientationchange', function() {
+            setTimeout(function() {
+                document.getElementById('viewportSize').textContent = window.innerWidth + 'x' + window.innerHeight;
+            }, 100);
+        });
+    </script>
+</body>
+</html>

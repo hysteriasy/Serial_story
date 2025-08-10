@@ -2,10 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
     <title>桑梓 - 生活随笔</title>
     <meta name="description" content="个人生活随笔集，记录生活中的点滴感悟和思考">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         /* 用户状态显示样式 */
@@ -283,6 +287,9 @@
             </div>
         </div>
     </footer>
+
+    <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
+    <script src="js/ios-compatibility.js"></script>
 
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>

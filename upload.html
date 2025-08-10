@@ -2,10 +2,14 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
   <title>作品上传 - 桑梓</title>
   <meta name="description" content="桑梓个人创作平台 - 上传和管理您的文学、艺术、音乐、视频作品">
   <link rel="stylesheet" href="css/style.css?v=20240807">
+  <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
     /* 上传页面专用样式 - 与主页风格保持一致 */
@@ -1271,6 +1275,9 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+  <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
+  <script src="js/ios-compatibility.js"></script>
 
   <!-- 应用脚本 -->
   <script src="js/script.js"></script>

@@ -1,0 +1,360 @@
+/* iOS Safari 兼容性修复 CSS */
+
+/* 为所有关键动画添加 -webkit- 前缀 */
+
+@-webkit-keyframes welcomeFadeIn {
+    from {
+        opacity: 0;
+        -webkit-transform: scale(0.9);
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: scale(1);
+        transform: scale(1);
+    }
+}
+
+@-webkit-keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(-50px);
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 0.9;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
+
+@-webkit-keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(50px);
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
+
+@-webkit-keyframes fadeInScale {
+    from {
+        opacity: 0;
+        -webkit-transform: scale(0.8);
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 0.9;
+        -webkit-transform: scale(1);
+        transform: scale(1);
+    }
+}
+
+@-webkit-keyframes fadeInBounce {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(30px);
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.8;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
+
+@-webkit-keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+    40% {
+        -webkit-transform: translateY(-10px);
+        transform: translateY(-10px);
+    }
+    60% {
+        -webkit-transform: translateY(-5px);
+        transform: translateY(-5px);
+    }
+}
+
+@-webkit-keyframes fadeInUp {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(30px);
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
+
+@-webkit-keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        -webkit-transform: translateY(-50px);
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
+}
+
+@-webkit-keyframes slideIn {
+    from {
+        -webkit-transform: translateX(100%);
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        -webkit-transform: translateX(0);
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+        -webkit-transform: translateX(100%);
+        transform: translateX(100%);
+    }
+}
+
+/* iOS Safari 特定修复 */
+
+/* 修复iOS Safari中的backdrop-filter支持 */
+.modal,
+.nav-dropdown-menu,
+.card-content {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+/* 修复iOS Safari中的transform性能 */
+.category-card,
+.project-card,
+.btn,
+.nav-link,
+.welcome-animation,
+.modal-content {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* 修复iOS Safari中的滚动性能 */
+.modal,
+.essays-content,
+.novels-content,
+.poetry-content {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 修复iOS Safari中的字体渲染 */
+body,
+.welcome-title,
+.hero-title,
+.section-title {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* iOS中文字体优化 */
+h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 600;
+}
+
+/* 修复iOS Safari中的中文字体显示 */
+.welcome-title,
+.hero-title,
+.section-title,
+.nav-link,
+.btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* 修复iOS Safari中的字体大小调整 */
+html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* 修复iOS Safari中的点击高亮 */
+a,
+button,
+.btn,
+.nav-link,
+.category-link {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* 修复iOS Safari中的输入框缩放问题 */
+input,
+textarea,
+select {
+    font-size: 16px !important; /* 防止iOS自动缩放 */
+    -webkit-appearance: none;
+    -webkit-border-radius: 0;
+    border-radius: 0;
+}
+
+/* 修复iOS Safari中的按钮样式 */
+button,
+.btn {
+    -webkit-appearance: none;
+    -webkit-border-radius: 0;
+    border-radius: 6px;
+}
+
+/* 修复iOS Safari中的渐变文字 */
+.nav-link.special-link,
+.title-main {
+    /* 为不支持background-clip的浏览器提供fallback */
+    color: #007bff;
+    background: linear-gradient(45deg, #007bff, #00ffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 修复iOS Safari中的动画性能 */
+.welcome-overlay,
+.welcome-content,
+.welcome-animation {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: opacity, transform;
+}
+
+/* iOS Safari 特定的媒体查询 */
+@supports (-webkit-touch-callout: none) {
+    /* 仅在iOS Safari中应用的样式 */
+    
+    .welcome-title {
+        font-size: 3.5rem;
+    }
+    
+    .hero-title {
+        font-size: 2.8rem;
+    }
+    
+    /* 修复iOS Safari中的固定定位问题 */
+    .navbar {
+        position: -webkit-sticky;
+        position: sticky;
+    }
+    
+    /* 修复iOS Safari中的100vh问题 */
+    .welcome-overlay {
+        height: 100vh;
+        height: -webkit-fill-available;
+    }
+}
+
+/* 修复iOS Safari中的视频播放问题 */
+video {
+    -webkit-playsinline: true;
+    playsinline: true;
+}
+
+/* 修复iOS Safari中的图片显示问题 */
+img {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+}
+
+/* 触摸反馈样式 */
+.touching {
+    opacity: 0.7 !important;
+    -webkit-transform: scale(0.98);
+    transform: scale(0.98);
+    -webkit-transition: all 0.1s ease;
+    transition: all 0.1s ease;
+}
+
+/* 修复iOS Safari中的CSS变量支持 */
+:root {
+    --vh: 1vh;
+}
+
+.welcome-overlay {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+}
+
+/* 修复iOS Safari中的安全区域 */
+@supports (padding: max(0px)) {
+    .navbar {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+
+    .container {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+}
+
+/* 修复iOS Safari中的表单元素样式 */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+    -webkit-appearance: none;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
+    background-color: white;
+    border: 1px solid #ddd;
+}
+
+/* 修复iOS Safari中的按钮点击区域 */
+.btn,
+button,
+a {
+    min-height: 44px; /* iOS推荐的最小触摸目标尺寸 */
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 修复iOS Safari中的滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+}
