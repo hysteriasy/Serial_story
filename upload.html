@@ -282,151 +282,7 @@
       font-size: 1.1rem;
     }
 
-    /* 管理员面板样式 */
-    .admin-panel {
-      background: rgba(255,255,255,0.95);
-      border-radius: 12px;
-      padding: 30px;
-      margin: 30px auto;
-      max-width: 1200px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      border-left: 4px solid #dc3545;
-    }
 
-    .admin-panel h3 {
-      color: #dc3545;
-      margin-bottom: 20px;
-    }
-
-    .admin-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 25px;
-      border-bottom: 2px solid #dee2e6;
-    }
-
-    .admin-tab {
-      padding: 12px 20px;
-      background: transparent;
-      border: none;
-      border-bottom: 3px solid transparent;
-      cursor: pointer;
-      font-weight: 600;
-      color: #6c757d;
-      transition: all 0.3s ease;
-    }
-
-    .admin-tab.active {
-      color: #dc3545;
-      border-bottom-color: #dc3545;
-    }
-
-    .admin-content {
-      display: none;
-    }
-
-    .admin-content.active {
-      display: block;
-    }
-
-    .user-management-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-
-    .user-card {
-      background: #f8f9fa;
-      padding: 20px;
-      border-radius: 8px;
-      border: 1px solid #dee2e6;
-    }
-
-    .user-card h4 {
-      margin-top: 0;
-      color: #333;
-    }
-
-    .user-role {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8em;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .role-admin {
-      background: #dc3545;
-      color: white;
-    }
-
-    .role-editor {
-      background: #ffc107;
-      color: #212529;
-    }
-
-    .role-user {
-      background: #6c757d;
-      color: white;
-    }
-
-    /* 系统状态样式 */
-    .system-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
-      border: 1px solid #ddd;
-    }
-
-    .system-status.online {
-      background-color: #d4edda;
-      color: #155724;
-      border-color: #c3e6cb;
-    }
-
-    .system-status.offline {
-      background-color: #fff3cd;
-      color: #856404;
-      border-color: #ffeaa7;
-    }
-
-    .system-status.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border-color: #f5c6cb;
-    }
-
-    .status-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .status-indicator.online {
-      background-color: #28a745;
-      animation: pulse 2s infinite;
-    }
-
-    .status-indicator.offline {
-      background-color: #ffc107;
-    }
-
-    .status-indicator.error {
-      background-color: #dc3545;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
 
     /* 存储徽章样式 */
     .storage-badge {
@@ -819,6 +675,81 @@
       color: #28a745;
     }
 
+    /* 权限设置样式 */
+    .permission-preview {
+      background: #e7f3ff;
+      border: 1px solid #b3d9ff;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+
+    .permission-preview h5 {
+      margin: 0 0 8px 0;
+      color: #0056b3;
+      font-size: 1em;
+    }
+
+    .permission-preview ul {
+      margin: 5px 0;
+      padding-left: 20px;
+    }
+
+    .permission-preview li {
+      margin: 3px 0;
+    }
+
+    .custom-permissions-container {
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 10px;
+      background: #f8f9fa;
+    }
+
+    .permission-radio-group {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 15px;
+    }
+
+    .permission-radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: normal;
+    }
+
+    .permission-radio-group input[type="radio"] {
+      margin: 0;
+    }
+
+    .github-status {
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+
+    .github-status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .github-status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .github-status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
     /* 响应式设计 */
     @media (max-width: 768px) {
       .hero-title {
@@ -830,8 +761,7 @@
       }
 
       .upload-section,
-      .user-info,
-      .admin-panel {
+      .user-info {
         margin: 20px;
         padding: 20px;
       }
@@ -852,9 +782,7 @@
         text-align: center;
       }
 
-      .admin-tabs {
-        flex-wrap: wrap;
-      }
+
 
       .modal-content {
         width: 95%;
@@ -933,54 +861,23 @@
     <!-- 用户信息显示区域 -->
     <div id="userInfoContainer"></div>
 
-    <!-- 管理员面板 -->
-    <div id="adminPanel" class="admin-panel" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3>🔧 管理员控制面板</h3>
-        <div id="systemStatus" class="system-status">
-          <span id="statusIndicator" class="status-indicator"></span>
-          <span id="statusText">检查系统状态...</span>
+    <!-- GitHub配置区域 -->
+    <section class="upload-section" id="githubConfigSection" style="display: none;">
+      <h2 class="section-title">⚙️ GitHub存储配置</h2>
+      <div class="form-group">
+        <label for="githubToken">GitHub Personal Access Token</label>
+        <input type="password" id="githubToken" class="form-control" placeholder="请输入您的GitHub Token">
+        <div class="file-upload-hint">
+          <p>为了将作品保存到GitHub仓库，需要配置Personal Access Token。</p>
+          <p><a href="https://github.com/settings/tokens" target="_blank">点击这里创建Token</a>，需要repo权限。</p>
         </div>
       </div>
-      <div class="admin-tabs">
-        <button class="admin-tab active" onclick="switchAdminTab('users')">用户管理</button>
-        <button class="admin-tab" onclick="switchAdminTab('files')">文件权限</button>
-        <button class="admin-tab" onclick="switchAdminTab('settings')">系统设置</button>
+      <div class="form-actions">
+        <button type="button" id="saveGithubToken" class="btn btn-primary">保存配置</button>
+        <button type="button" id="testGithubConnection" class="btn btn-secondary">测试连接</button>
       </div>
-
-      <!-- 用户管理标签页 -->
-      <div id="adminUsers" class="admin-content active">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h4>用户管理</h4>
-          <div style="display: flex; gap: 10px;">
-            <button class="btn btn-info" onclick="loginRecordsManager.showLoginRecordsModal()">📋 登录记录</button>
-            <button class="btn btn-primary" onclick="showCreateUserModal()">➕ 添加用户</button>
-          </div>
-        </div>
-        <div id="usersList" class="user-management-grid">
-          <!-- 用户列表将在这里动态生成 -->
-        </div>
-      </div>
-
-      <!-- 文件权限标签页 -->
-      <div id="adminFiles" class="admin-content">
-        <div id="fileHierarchyContainer">
-          <!-- 文件层级结构将在这里动态生成 -->
-        </div>
-      </div>
-
-      <!-- 系统设置标签页 -->
-      <div id="adminSettings" class="admin-content">
-        <h4>系统设置</h4>
-        <div class="form-group">
-          <label>默认文件权限</label>
-          <select id="defaultFilePermission" class="form-control">
-            <option value="private">私有（仅所有者可见）</option>
-            <option value="public">公开（所有人可见）</option>
-          </select>
-        </div>
-      </div>
-    </div>
+      <div id="githubStatus" style="margin-top: 15px;"></div>
+    </section>
 
     <!-- 作品上传区域 -->
     <section class="upload-section">
@@ -1060,10 +957,37 @@
         <!-- 通用设置 -->
         <div class="form-group">
           <label>访问权限</label>
-          <select id="literaturePermission" class="form-control">
-            <option value="public">公开（所有人可见）</option>
-            <option value="private">私有（仅自己可见）</option>
+          <select id="literaturePermission" class="form-control" onchange="togglePermissionSettings('literature')">
+            <option value="public">🌍 公开（所有人可见）</option>
+            <option value="friend">👥 仅好友可见</option>
+            <option value="visitor">👤 访客及以上可见</option>
+            <option value="custom">⚙️ 自定义权限</option>
+            <option value="private">🔒 私有（仅自己可见）</option>
           </select>
+        </div>
+
+        <!-- 自定义权限设置 -->
+        <div id="literatureCustomPermissions" class="form-group" style="display: none;">
+          <label>自定义权限设置</label>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <div class="form-group">
+              <label>
+                <input type="radio" name="literaturePermissionType" value="whitelist" checked>
+                白名单模式（仅指定用户可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="radio" name="literaturePermissionType" value="blacklist">
+                黑名单模式（指定用户不可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>指定用户（用逗号分隔）</label>
+              <input type="text" id="literatureUserList" class="form-control" placeholder="例如：user1, user2, user3">
+            </div>
+          </div>
+          <div class="permission-preview" id="literaturePermissionPreview"></div>
         </div>
 
         <div class="form-actions">
@@ -1099,10 +1023,37 @@
         </div>
         <div class="form-group">
           <label>访问权限</label>
-          <select id="artPermission" class="form-control">
-            <option value="public">公开（所有人可见）</option>
-            <option value="private">私有（仅自己可见）</option>
+          <select id="artPermission" class="form-control" onchange="togglePermissionSettings('art')">
+            <option value="public">🌍 公开（所有人可见）</option>
+            <option value="friend">👥 仅好友可见</option>
+            <option value="visitor">👤 访客及以上可见</option>
+            <option value="custom">⚙️ 自定义权限</option>
+            <option value="private">🔒 私有（仅自己可见）</option>
           </select>
+        </div>
+
+        <!-- 自定义权限设置 -->
+        <div id="artCustomPermissions" class="form-group" style="display: none;">
+          <label>自定义权限设置</label>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <div class="form-group">
+              <label>
+                <input type="radio" name="artPermissionType" value="whitelist" checked>
+                白名单模式（仅指定用户可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="radio" name="artPermissionType" value="blacklist">
+                黑名单模式（指定用户不可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>指定用户（用逗号分隔）</label>
+              <input type="text" id="artUserList" class="form-control" placeholder="例如：user1, user2, user3">
+            </div>
+          </div>
+          <div class="permission-preview" id="artPermissionPreview"></div>
         </div>
         <div class="form-actions">
           <button type="button" id="submitArt" class="btn btn-primary">发布作品</button>
@@ -1137,10 +1088,37 @@
         </div>
         <div class="form-group">
           <label>访问权限</label>
-          <select id="musicPermission" class="form-control">
-            <option value="public">公开（所有人可见）</option>
-            <option value="private">私有（仅自己可见）</option>
+          <select id="musicPermission" class="form-control" onchange="togglePermissionSettings('music')">
+            <option value="public">🌍 公开（所有人可见）</option>
+            <option value="friend">👥 仅好友可见</option>
+            <option value="visitor">👤 访客及以上可见</option>
+            <option value="custom">⚙️ 自定义权限</option>
+            <option value="private">🔒 私有（仅自己可见）</option>
           </select>
+        </div>
+
+        <!-- 自定义权限设置 -->
+        <div id="musicCustomPermissions" class="form-group" style="display: none;">
+          <label>自定义权限设置</label>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <div class="form-group">
+              <label>
+                <input type="radio" name="musicPermissionType" value="whitelist" checked>
+                白名单模式（仅指定用户可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="radio" name="musicPermissionType" value="blacklist">
+                黑名单模式（指定用户不可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>指定用户（用逗号分隔）</label>
+              <input type="text" id="musicUserList" class="form-control" placeholder="例如：user1, user2, user3">
+            </div>
+          </div>
+          <div class="permission-preview" id="musicPermissionPreview"></div>
         </div>
         <div class="form-actions">
           <button type="button" id="submitMusic" class="btn btn-primary">发布作品</button>
@@ -1175,10 +1153,37 @@
         </div>
         <div class="form-group">
           <label>访问权限</label>
-          <select id="videoPermission" class="form-control">
-            <option value="public">公开（所有人可见）</option>
-            <option value="private">私有（仅自己可见）</option>
+          <select id="videoPermission" class="form-control" onchange="togglePermissionSettings('video')">
+            <option value="public">🌍 公开（所有人可见）</option>
+            <option value="friend">👥 仅好友可见</option>
+            <option value="visitor">👤 访客及以上可见</option>
+            <option value="custom">⚙️ 自定义权限</option>
+            <option value="private">🔒 私有（仅自己可见）</option>
           </select>
+        </div>
+
+        <!-- 自定义权限设置 -->
+        <div id="videoCustomPermissions" class="form-group" style="display: none;">
+          <label>自定义权限设置</label>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <div class="form-group">
+              <label>
+                <input type="radio" name="videoPermissionType" value="whitelist" checked>
+                白名单模式（仅指定用户可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="radio" name="videoPermissionType" value="blacklist">
+                黑名单模式（指定用户不可见）
+              </label>
+            </div>
+            <div class="form-group">
+              <label>指定用户（用逗号分隔）</label>
+              <input type="text" id="videoUserList" class="form-control" placeholder="例如：user1, user2, user3">
+            </div>
+          </div>
+          <div class="permission-preview" id="videoPermissionPreview"></div>
         </div>
         <div class="form-actions">
           <button type="button" id="submitVideo" class="btn btn-primary">发布作品</button>
@@ -1227,49 +1232,7 @@
   <!-- 返回顶部按钮 -->
   <button id="backToTop" class="back-to-top" onclick="scrollToTop()">↑</button>
 
-  <!-- 创建用户模态框 -->
-  <div id="createUserModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeCreateUserModal()">&times;</span>
-      <h3>添加新用户</h3>
-      <form id="createUserForm">
-        <div class="form-group">
-          <label for="newUsername">用户名</label>
-          <input type="text" id="newUsername" placeholder="4-16位字母数字" required>
-          <span id="usernameError" class="form-error"></span>
-        </div>
-        <div class="form-group">
-          <label for="newUserPassword">密码</label>
-          <input type="password" id="newUserPassword" placeholder="至少6位字符" required>
-          <span id="passwordError" class="form-error"></span>
-        </div>
-        <div class="form-group">
-          <label for="newUserRole">用户角色</label>
-          <select id="newUserRole" required>
-            <option value="visitor">访客</option>
-            <option value="friend">好友</option>
-            <option value="admin">管理员</option>
-          </select>
-          <span id="roleError" class="form-error"></span>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">创建用户</button>
-          <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">取消</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- 文件权限设置模态框 -->
-  <div id="filePermissionModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span class="close-btn" onclick="closeFilePermissionModal()">&times;</span>
-      <h3>设置文件权限</h3>
-      <div id="filePermissionContent">
-        <!-- 文件权限设置内容将在这里动态生成 -->
-      </div>
-    </div>
-  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -1284,122 +1247,16 @@
   <script src="js/auth.js"></script>
   <script src="js/user-status.js"></script>
   <script src="js/unified-button-styles.js"></script>
-  <script src="js/file-permissions-system.js"></script>
-  <script src="js/file-hierarchy-manager.js"></script>
-  <script src="js/file-permissions-ui.js"></script>
-  <script src="js/file-details-viewer.js"></script>
-  <script src="js/content-access-control.js"></script>
-  <script src="js/batch-permissions-manager.js"></script>
-  <script src="js/permissions-import-export.js"></script>
-  <script src="js/login-records-manager.js"></script>
+  <script src="js/github-storage.js"></script>
+
   <script src="js/upload.js"></script>
 
   <script>
     // 页面专用JavaScript
 
-    // 管理员标签页切换
-    function switchAdminTab(tabName) {
-      // 隐藏所有标签页内容
-      document.querySelectorAll('.admin-content').forEach(content => {
-        content.classList.remove('active');
-      });
 
-      // 移除所有标签的active状态
-      document.querySelectorAll('.admin-tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
 
-      // 显示选中的标签页
-      document.getElementById('admin' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
 
-      // 设置选中标签的active状态
-      event.target.classList.add('active');
-
-      // 根据标签页加载相应内容
-      if (tabName === 'users') {
-        loadUsersList();
-      } else if (tabName === 'files') {
-        loadFilePermissionsList();
-      }
-    }
-
-    // 显示创建用户模态框
-    function showCreateUserModal() {
-      document.getElementById('createUserModal').style.display = 'block';
-    }
-
-    // 关闭创建用户模态框
-    function closeCreateUserModal() {
-      document.getElementById('createUserModal').style.display = 'none';
-      document.getElementById('createUserForm').reset();
-      clearFormErrors();
-    }
-
-    // 关闭编辑用户模态框
-    function closeEditUserModal() {
-      const modal = document.getElementById('editUserModal');
-      if (modal) {
-        modal.remove();
-      }
-    }
-
-    // 全局函数，供模态框内的按钮调用
-    window.closeEditUserModal = closeEditUserModal;
-
-    // 添加实时验证
-    function setupFormValidation() {
-      const usernameInput = document.getElementById('newUsername');
-      const passwordInput = document.getElementById('newUserPassword');
-      const roleSelect = document.getElementById('newUserRole');
-
-      if (usernameInput) {
-        usernameInput.addEventListener('blur', () => {
-          validateFormField('newUsername', 'usernameError',
-            (value) => value.length >= 4 && value.length <= 16 && /^[a-zA-Z0-9_]+$/.test(value),
-            '用户名需4-16位字母数字或下划线'
-          );
-        });
-
-        usernameInput.addEventListener('input', () => {
-          // 清除错误状态当用户开始输入
-          if (usernameInput.classList.contains('error')) {
-            usernameInput.classList.remove('error');
-            document.getElementById('usernameError').textContent = '';
-          }
-        });
-      }
-
-      if (passwordInput) {
-        passwordInput.addEventListener('blur', () => {
-          validateFormField('newUserPassword', 'passwordError',
-            (value) => value.length >= 6,
-            '密码至少需要6位字符'
-          );
-        });
-
-        passwordInput.addEventListener('input', () => {
-          // 清除错误状态当用户开始输入
-          if (passwordInput.classList.contains('error')) {
-            passwordInput.classList.remove('error');
-            document.getElementById('passwordError').textContent = '';
-          }
-        });
-      }
-
-      if (roleSelect) {
-        roleSelect.addEventListener('change', () => {
-          validateFormField('newUserRole', 'roleError',
-            (value) => ['visitor', 'friend', 'admin'].includes(value),
-            '请选择有效的用户角色'
-          );
-        });
-      }
-    }
-
-    // 关闭文件权限模态框
-    function closeFilePermissionModal() {
-      document.getElementById('filePermissionModal').style.display = 'none';
-    }
 
     // 返回顶部功能
     function scrollToTop() {
@@ -1416,106 +1273,7 @@
       }
     });
 
-    // 创建用户表单提交
-    document.getElementById('createUserForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
 
-      // 清除之前的错误
-      clearFormErrors();
-
-      const username = document.getElementById('newUsername').value.trim();
-      const password = document.getElementById('newUserPassword').value;
-      const role = document.getElementById('newUserRole').value;
-
-      // 客户端验证
-      let isValid = true;
-
-      // 验证用户名
-      isValid &= validateFormField('newUsername', 'usernameError',
-        (value) => value.length >= 4 && value.length <= 16 && /^[a-zA-Z0-9_]+$/.test(value),
-        '用户名需4-16位字母数字或下划线'
-      );
-
-      // 验证密码
-      isValid &= validateFormField('newUserPassword', 'passwordError',
-        (value) => value.length >= 6,
-        '密码至少需要6位字符'
-      );
-
-      // 验证角色
-      isValid &= validateFormField('newUserRole', 'roleError',
-        (value) => ['visitor', 'friend', 'admin'].includes(value),
-        '请选择有效的用户角色'
-      );
-
-      if (!isValid) {
-        showNotification('请修正表单中的错误', 'error');
-        return;
-      }
-
-      try {
-        // 检查存储支持
-        if (!checkStorageSupport()) {
-          showStorageWarning();
-          return;
-        }
-
-        const userData = await auth.createUser(username, password, role);
-
-        // 根据存储类型显示不同的成功消息
-        if (userData.storage_type === 'firebase') {
-          showNotification(`用户 ${username} 创建成功（已保存到云端）`, 'success');
-        } else {
-          showNotification(`用户 ${username} 创建成功（已保存到本地存储）`, 'success');
-        }
-
-        closeCreateUserModal();
-
-        // 延迟刷新用户列表，确保数据已完全写入
-        setTimeout(async () => {
-          try {
-            if (window.fileUploader) {
-              await window.fileUploader.loadUsersList();
-            } else {
-              await loadUsersList();
-            }
-            console.log('✅ 用户列表已刷新');
-          } catch (error) {
-            console.warn('⚠️ 用户列表刷新失败:', error);
-            // 如果第一次刷新失败，再尝试一次
-            setTimeout(async () => {
-              try {
-                if (window.fileUploader) {
-                  await window.fileUploader.loadUsersList();
-                } else {
-                  await loadUsersList();
-                }
-              } catch (retryError) {
-                console.error('❌ 用户列表重试刷新失败:', retryError);
-              }
-            }, 1000);
-          }
-        }, 500);
-
-        // 更新系统状态
-        updateSystemStatus();
-
-      } catch (error) {
-        console.error('创建用户失败:', error);
-
-        // 服务器端验证错误，显示具体错误信息
-        if (error.message.includes('用户名')) {
-          validateFormField('newUsername', 'usernameError', () => false, error.message);
-        } else if (error.message.includes('密码')) {
-          validateFormField('newUserPassword', 'passwordError', () => false, error.message);
-        } else if (error.message.includes('存储')) {
-          showNotification(`创建用户失败: ${error.message}`, 'error');
-          showStorageWarning();
-        } else {
-          showNotification(`创建用户失败: ${error.message}`, 'error');
-        }
-      }
-    });
 
     // 显示通知消息函数
     function showNotification(message, type = 'info') {
@@ -1564,253 +1322,155 @@
         }
       }, 3000);
     }
+    // 权限设置功能
+    function togglePermissionSettings(category) {
+      const permissionSelect = document.getElementById(`${category}Permission`);
+      const customPermissions = document.getElementById(`${category}CustomPermissions`);
 
-    // 表单验证函数
-    function validateFormField(fieldId, errorId, validationFn, errorMessage) {
-      const field = document.getElementById(fieldId);
-      const errorElement = document.getElementById(errorId);
-
-      if (!field || !errorElement) return true;
-
-      const value = field.value.trim();
-      const isValid = validationFn(value);
-
-      if (isValid) {
-        field.classList.remove('error');
-        errorElement.textContent = '';
-        return true;
+      if (permissionSelect.value === 'custom') {
+        customPermissions.style.display = 'block';
+        updatePermissionPreview(category);
       } else {
-        field.classList.add('error');
-        errorElement.textContent = errorMessage;
-        return false;
+        customPermissions.style.display = 'none';
+        updatePermissionPreview(category);
       }
     }
 
-    // 清除表单错误
-    function clearFormErrors() {
-      const errorElements = document.querySelectorAll('.form-error');
-      const inputElements = document.querySelectorAll('.form-control.error');
+    function updatePermissionPreview(category) {
+      const permissionSelect = document.getElementById(`${category}Permission`);
+      const preview = document.getElementById(`${category}PermissionPreview`);
+      const userList = document.getElementById(`${category}UserList`);
+      const permissionType = document.querySelector(`input[name="${category}PermissionType"]:checked`);
 
-      errorElements.forEach(el => el.textContent = '');
-      inputElements.forEach(el => el.classList.remove('error'));
-    }
+      if (!preview) return;
 
-    // 更新系统状态显示
-    function updateSystemStatus() {
-      const statusElement = document.getElementById('systemStatus');
-      const indicatorElement = document.getElementById('statusIndicator');
-      const textElement = document.getElementById('statusText');
+      let previewText = '';
+      const selectedValue = permissionSelect.value;
 
-      if (!statusElement || !indicatorElement || !textElement) return;
+      switch (selectedValue) {
+        case 'public':
+          previewText = '<h5>🌍 公开权限</h5><p>所有访问者都可以查看此作品</p>';
+          break;
+        case 'friend':
+          previewText = '<h5>👥 好友权限</h5><p>只有好友级别及以上用户可以查看</p>';
+          break;
+        case 'visitor':
+          previewText = '<h5>👤 访客权限</h5><p>访客级别及以上用户可以查看</p>';
+          break;
+        case 'private':
+          previewText = '<h5>🔒 私有权限</h5><p>只有您自己可以查看此作品</p>';
+          break;
+        case 'custom':
+          if (permissionType && userList) {
+            const users = userList.value.split(',').map(u => u.trim()).filter(u => u);
+            const mode = permissionType.value;
 
-      if (window.firebaseAvailable) {
-        statusElement.className = 'system-status online';
-        indicatorElement.className = 'status-indicator online';
-        textElement.textContent = '在线模式 - Firebase连接正常';
-      } else {
-        statusElement.className = 'system-status offline';
-        indicatorElement.className = 'status-indicator offline';
-        textElement.textContent = '离线模式 - 使用本地存储';
-      }
-    }
-
-    // 检查浏览器存储支持
-    function checkStorageSupport() {
-      try {
-        const testKey = 'storage_test';
-        localStorage.setItem(testKey, 'test');
-        localStorage.removeItem(testKey);
-        return true;
-      } catch (error) {
-        console.warn('本地存储不可用:', error);
-        return false;
-      }
-    }
-
-    // 显示存储警告
-    function showStorageWarning() {
-      const statusElement = document.getElementById('systemStatus');
-      const indicatorElement = document.getElementById('statusIndicator');
-      const textElement = document.getElementById('statusText');
-
-      if (statusElement && indicatorElement && textElement) {
-        statusElement.className = 'system-status error';
-        indicatorElement.className = 'status-indicator error';
-        textElement.textContent = '存储不可用 - 功能受限';
-      }
-
-      showNotification('浏览器存储被阻止，用户管理功能可能无法正常工作。请检查浏览器设置或隐私模式。', 'error');
-    }
-
-    // 加载用户列表函数（异步版本）
-    window.loadUsersList = async () => {
-      if (window.fileUploader) {
-        return await window.fileUploader.loadUsersList();
-      }
-      return Promise.resolve();
-    };
-
-    // 加载文件权限列表函数
-    window.loadFilePermissionsList = async () => {
-      try {
-        if (window.fileHierarchyManager) {
-          await window.fileHierarchyManager.initializeHierarchy('fileHierarchyContainer');
-
-          // 初始化批量权限管理器
-          if (window.batchPermissionsManager) {
-            window.batchPermissionsManager.initialize();
-          }
-
-          // 初始化导入导出功能
-          if (window.permissionsImportExport) {
-            window.permissionsImportExport.initialize();
-          }
-        } else {
-          console.error('文件层级管理器未初始化');
-        }
-      } catch (error) {
-        console.error('加载文件权限列表失败:', error);
-      }
-    };
-
-    // 全局编辑用户函数（改进版本，包含重试机制）
-    window.editUser = (username) => {
-      console.log(`🔧 尝试编辑用户: ${username}`);
-
-      if (window.fileUploader) {
-        window.fileUploader.editUser(username);
-      } else {
-        console.warn('⚠️ FileUploader未初始化，尝试延迟调用...');
-        // 延迟重试，给FileUploader更多初始化时间
-        setTimeout(() => {
-          if (window.fileUploader) {
-            console.log('✅ FileUploader已初始化，执行编辑操作');
-            window.fileUploader.editUser(username);
-          } else {
-            console.error('❌ FileUploader仍未初始化');
-            showNotification('系统初始化中，请稍后再试', 'warning');
-          }
-        }, 1000);
-      }
-    };
-
-    // 全局删除用户函数（改进版本，包含重试机制）
-    window.deleteUser = (username) => {
-      console.log(`🗑️ 尝试删除用户: ${username}`);
-
-      if (window.fileUploader) {
-        window.fileUploader.deleteUser(username);
-      } else {
-        console.warn('⚠️ FileUploader未初始化，尝试延迟调用...');
-        // 延迟重试，给FileUploader更多初始化时间
-        setTimeout(() => {
-          if (window.fileUploader) {
-            console.log('✅ FileUploader已初始化，执行删除操作');
-            window.fileUploader.deleteUser(username);
-          } else {
-            console.error('❌ FileUploader仍未初始化');
-            showNotification('系统初始化中，请稍后再试', 'warning');
-          }
-        }, 1000);
-      }
-    };
-
-    // 全局编辑文件权限函数
-    window.editFilePermissions = (fileId, owner) => {
-      if (window.fileUploader) {
-        window.fileUploader.editFilePermissions(fileId, owner);
-      } else {
-        showNotification('系统未初始化', 'error');
-      }
-    };
-
-    // 模态框点击外部关闭
-    window.addEventListener('click', (event) => {
-      const createUserModal = document.getElementById('createUserModal');
-      const filePermissionModal = document.getElementById('filePermissionModal');
-
-      if (event.target === createUserModal) {
-        closeCreateUserModal();
-      }
-      if (event.target === filePermissionModal) {
-        closeFilePermissionModal();
-      }
-    });
-
-    // 检查系统初始化状态
-    function checkSystemInitialization() {
-      const checks = {
-        auth: typeof auth !== 'undefined' && auth !== null,
-        firebase: typeof firebase !== 'undefined' && firebase.apps.length > 0,
-        fileUploader: typeof window.fileUploader !== 'undefined' && window.fileUploader !== null
-      };
-
-      console.log('🔍 系统初始化检查:', checks);
-
-      if (checks.fileUploader) {
-        console.log('✅ 所有系统组件已初始化');
-        return true;
-      } else {
-        console.warn('⚠️ FileUploader未初始化，等待中...');
-        return false;
-      }
-    }
-
-    // 等待系统完全初始化
-    function waitForSystemInitialization(callback, maxAttempts = 10) {
-      let attempts = 0;
-
-      const checkInterval = setInterval(() => {
-        attempts++;
-
-        if (checkSystemInitialization()) {
-          clearInterval(checkInterval);
-          callback();
-        } else if (attempts >= maxAttempts) {
-          clearInterval(checkInterval);
-          console.error('❌ 系统初始化超时');
-          showNotification('系统初始化失败，请刷新页面重试', 'error');
-        }
-      }, 500);
-    }
-
-    // 页面加载完成后设置表单验证和系统状态
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('📋 DOM加载完成，开始初始化...');
-
-      // 延迟设置验证，确保所有元素都已加载
-      setTimeout(() => {
-        setupFormValidation();
-
-        // 检查存储支持
-        if (!checkStorageSupport()) {
-          showStorageWarning();
-        }
-
-        // 初始化系统状态显示
-        updateSystemStatus();
-
-        // 等待FileUploader初始化完成
-        waitForSystemInitialization(() => {
-          console.log('🎉 系统初始化完成');
-
-          // 监听Firebase连接状态变化
-          if (typeof firebase !== 'undefined' && firebase.apps.length) {
-            try {
-              firebase.database().ref('.info/connected').on('value', (snapshot) => {
-                window.firebaseAvailable = snapshot.val() === true;
-                updateSystemStatus();
-              });
-            } catch (error) {
-              console.warn('Firebase连接监听设置失败:', error);
+            if (mode === 'whitelist') {
+              previewText = '<h5>⚙️ 白名单模式</h5>';
+              if (users.length > 0) {
+                previewText += '<p>只有以下用户可以查看：</p><ul>';
+                users.forEach(user => {
+                  previewText += `<li>${user}</li>`;
+                });
+                previewText += '</ul>';
+              } else {
+                previewText += '<p>请指定允许查看的用户</p>';
+              }
+            } else {
+              previewText = '<h5>⚙️ 黑名单模式</h5>';
+              if (users.length > 0) {
+                previewText += '<p>除以下用户外，好友级别用户都可以查看：</p><ul>';
+                users.forEach(user => {
+                  previewText += `<li>${user}</li>`;
+                });
+                previewText += '</ul>';
+              } else {
+                previewText += '<p>所有好友级别用户都可以查看</p>';
+              }
             }
           }
+          break;
+      }
 
-          // 定期更新系统状态（每30秒）
-          setInterval(updateSystemStatus, 30000);
+      preview.innerHTML = previewText;
+    }
+
+    // GitHub配置功能
+    function initGitHubConfig() {
+      const saveTokenBtn = document.getElementById('saveGithubToken');
+      const testConnectionBtn = document.getElementById('testGithubConnection');
+      const tokenInput = document.getElementById('githubToken');
+
+      if (saveTokenBtn) {
+        saveTokenBtn.addEventListener('click', async () => {
+          const token = tokenInput.value.trim();
+          if (!token) {
+            showNotification('请输入GitHub Token', 'error');
+            return;
+          }
+
+          try {
+            window.githubStorage.setToken(token);
+            showNotification('GitHub Token已保存', 'success');
+          } catch (error) {
+            showNotification(`保存失败: ${error.message}`, 'error');
+          }
         });
-      }, 100);
+      }
+
+      if (testConnectionBtn) {
+        testConnectionBtn.addEventListener('click', async () => {
+          try {
+            showNotification('正在测试GitHub连接...', 'info');
+            await window.githubStorage.validateToken();
+            showNotification('GitHub连接测试成功！', 'success');
+          } catch (error) {
+            showNotification(`连接测试失败: ${error.message}`, 'error');
+          }
+        });
+      }
+
+      // 加载已保存的token
+      const savedToken = localStorage.getItem('github_token');
+      if (savedToken && tokenInput) {
+        tokenInput.value = savedToken;
+      }
+    }
+
+    // 页面加载完成后初始化权限设置
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        initGitHubConfig();
+
+        // 为所有权限设置添加事件监听
+        ['literature', 'art', 'music', 'video'].forEach(category => {
+          const userList = document.getElementById(`${category}UserList`);
+          const permissionRadios = document.querySelectorAll(`input[name="${category}PermissionType"]`);
+
+          if (userList) {
+            userList.addEventListener('input', () => updatePermissionPreview(category));
+          }
+
+          permissionRadios.forEach(radio => {
+            radio.addEventListener('change', () => updatePermissionPreview(category));
+          });
+        });
+
+        // 如果是管理员，显示GitHub配置区域
+        if (auth && auth.isAdmin && auth.isAdmin()) {
+          const configSection = document.getElementById('githubConfigSection');
+          if (configSection) {
+            configSection.style.display = 'block';
+          }
+        }
+      }, 1000);
     });
+
+
+
+
+
+
   </script>
 </body>
 </html>

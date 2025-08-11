@@ -11,6 +11,10 @@ class WorkUploader {
     this.database = firebase.database();
     this.maxFileSize = 10 * 1024 * 1024; // 10MB
 
+    // GitHub存储支持
+    this.githubStorage = window.githubStorage;
+    this.preferredStorage = 'github'; // 优先使用GitHub存储
+
     // 作品分类配置
     this.categories = {
       literature: {
@@ -312,7 +316,7 @@ class WorkUploader {
       }
 
       // 保存作品
-      await this.saveLiteratureWork('literature', subcategory, workData, permission);
+      await this.saveLiteratureWork('literature', subcategory, workData, permission, 'literature');
 
       this.showNotification('文学作品发布成功！', 'success');
       this.resetLiteratureForm();
@@ -379,7 +383,7 @@ class WorkUploader {
         title,
         description,
         file
-      }, permission);
+      }, permission, category);
 
       this.showNotification(`${this.categories[category].name}发布成功！`, 'success');
       this.resetMediaForm(category);
@@ -428,7 +432,7 @@ class WorkUploader {
   }
 
   // 保存文学作品
-  async saveLiteratureWork(mainCategory, subcategory, workData, permission) {
+  async saveLiteratureWork(mainCategory, subcategory, workData, permission, category = null) {
     const user = auth.currentUser;
     if (!user) throw new Error('请先登录');
 
@@ -448,13 +452,27 @@ class WorkUploader {
       uploadedBy: user.username,
       userRole: user.role,
       uploadTime: timestamp,
-      permissions: this.getWorkPermissions(permission),
-      storage_type: 'local',
+      permissions: this.getWorkPermissions(permission, category),
+      storage_type: 'local', // 默认值，会根据实际保存位置更新
       ...workData // 包含其他特定字段如poetryType, chapter等
     };
 
     try {
-      // 保存到本地存储
+      // 尝试保存到GitHub
+      let githubResult = null;
+      if (this.preferredStorage === 'github' && this.githubStorage) {
+        try {
+          githubResult = await this.githubStorage.uploadLiteratureWork(workInfo, user.username);
+          workInfo.storage_type = 'github';
+          workInfo.githubPath = githubResult.path;
+          workInfo.downloadUrl = githubResult.downloadUrl;
+          console.log('✅ 文学作品已保存到GitHub');
+        } catch (error) {
+          console.warn('⚠️ GitHub保存失败，使用本地存储:', error.message);
+        }
+      }
+
+      // 保存到本地存储（作为备用或主要存储）
       await this.saveToLocalStorage(workInfo, mainCategory, subcategory);
 
       // 如果是生活随笔，同时保存到essays格式（兼容现有展示逻辑）
@@ -472,7 +490,7 @@ class WorkUploader {
   }
 
   // 保存媒体作品
-  async saveMediaWork(mainCategory, subcategory, workData, permission) {
+  async saveMediaWork(mainCategory, subcategory, workData, permission, category = null) {
     const user = auth.currentUser;
     if (!user) throw new Error('请先登录');
 
@@ -509,11 +527,25 @@ class WorkUploader {
         uploadedBy: user.username,
         userRole: user.role,
         uploadTime: timestamp,
-        permissions: this.getWorkPermissions(permission),
-        storage_type: 'local'
+        permissions: this.getWorkPermissions(permission, category),
+        storage_type: 'local' // 默认值，会根据实际保存位置更新
       };
 
-      // 保存到本地存储
+      // 尝试保存到GitHub
+      let githubResult = null;
+      if (this.preferredStorage === 'github' && this.githubStorage) {
+        try {
+          githubResult = await this.githubStorage.uploadMediaWork(workInfo, user.username);
+          workInfo.storage_type = 'github';
+          workInfo.githubPath = githubResult.path;
+          workInfo.downloadUrl = githubResult.downloadUrl;
+          console.log('✅ 媒体作品已保存到GitHub');
+        } catch (error) {
+          console.warn('⚠️ GitHub保存失败，使用本地存储:', error.message);
+        }
+      }
+
+      // 保存到本地存储（作为备用或主要存储）
       await this.saveToLocalStorage(workInfo, mainCategory, subcategory);
 
       console.log('✅ 媒体作品保存成功');
@@ -786,10 +818,30 @@ class WorkUploader {
   }
 
   // 获取作品权限设置（扩展版本）
-  getWorkPermissions(permissionType, customSettings = {}) {
+  getWorkPermissions(permissionType, category = null) {
+    // 获取自定义权限设置
+    let customSettings = {};
+    if (permissionType === 'custom' && category) {
+      const userList = document.getElementById(`${category}UserList`);
+      const permissionTypeRadio = document.querySelector(`input[name="${category}PermissionType"]:checked`);
+
+      if (userList && permissionTypeRadio) {
+        const users = userList.value.split(',').map(u => u.trim()).filter(u => u);
+        const mode = permissionTypeRadio.value;
+
+        if (mode === 'whitelist') {
+          customSettings.allowedUsers = users;
+          customSettings.visibility = 'whitelist';
+        } else if (mode === 'blacklist') {
+          customSettings.blockedUsers = users;
+          customSettings.visibility = 'blacklist';
+        }
+      }
+    }
+
     const basePermissions = {
-      visibility: permissionType || 'public', // 'public', 'private', 'whitelist', 'blacklist'
-      isPublic: permissionType === 'public',
+      visibility: customSettings.visibility || permissionType || 'public',
+      isPublic: ['public', 'blacklist'].includes(customSettings.visibility || permissionType),
       allowedUsers: customSettings.allowedUsers || [], // 白名单用户
       blockedUsers: customSettings.blockedUsers || [], // 黑名单用户
       allowedRoles: customSettings.allowedRoles || [], // 允许的角色
@@ -806,23 +858,31 @@ class WorkUploader {
           isPublic: true,
           visibility: 'public'
         };
+      case 'friend':
+        return {
+          ...basePermissions,
+          isPublic: false,
+          visibility: 'friend',
+          allowedRoles: ['friend', 'admin']
+        };
+      case 'visitor':
+        return {
+          ...basePermissions,
+          isPublic: false,
+          visibility: 'visitor',
+          allowedRoles: ['visitor', 'friend', 'admin']
+        };
       case 'private':
         return {
           ...basePermissions,
           isPublic: false,
           visibility: 'private'
         };
-      case 'whitelist':
+      case 'custom':
         return {
           ...basePermissions,
-          isPublic: false,
-          visibility: 'whitelist'
-        };
-      case 'blacklist':
-        return {
-          ...basePermissions,
-          isPublic: true,
-          visibility: 'blacklist'
+          isPublic: customSettings.visibility === 'blacklist',
+          visibility: customSettings.visibility || 'whitelist'
         };
       default:
         return {
