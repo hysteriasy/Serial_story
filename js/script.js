@@ -1,49 +1,54 @@
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
-    // Firebase initialization - 使用演示配置，在实际部署时需要替换为真实配置
-    const firebaseConfig = {
-      apiKey: 'demo-api-key',
-      authDomain: 'demo-project.firebaseapp.com',
-      databaseURL: 'https://demo-project-default-rtdb.firebaseio.com',
-      projectId: 'demo-project',
-      storageBucket: 'demo-project.appspot.com',
-      messagingSenderId: '123456789',
-      appId: '1:123456789:web:demo-app-id'
-    };
-
-    // 全局Firebase状态标志
+    // Firebase 初始化（优雅的离线模式处理）
     window.firebaseAvailable = false;
 
-    // 检查Firebase是否可用
-    if (typeof firebase !== 'undefined') {
+    // 检查是否在 GitHub Pages 环境下，如果是则跳过 Firebase 初始化
+    const isGitHubPages = window.location.hostname === 'hysteriasy.github.io';
+
+    if (isGitHubPages) {
+      console.info('🌐 检测到 GitHub Pages 环境，使用 GitHub 存储模式');
+      window.firebaseAvailable = false;
+    } else if (typeof firebase !== 'undefined') {
+      // 只在非 GitHub Pages 环境下尝试 Firebase 初始化
       try {
-        firebase.initializeApp(firebaseConfig);
-        console.log('🔧 Firebase配置已加载（演示模式）');
+        // 检查是否有有效的 Firebase 配置
+        const hasValidConfig = window.firebaseConfig &&
+                              window.firebaseConfig.apiKey &&
+                              !window.firebaseConfig.apiKey.includes('demo');
 
-        // 测试数据库连接（设置超时）
-        const connectionTimeout = setTimeout(() => {
-          console.warn('⚠️ Firebase连接超时，切换到离线模式');
-          window.firebaseAvailable = false;
-        }, 3000);
+        if (hasValidConfig) {
+          firebase.initializeApp(window.firebaseConfig);
+          console.log('🔧 Firebase 配置已加载');
 
-        firebase.database().ref('.info/connected').on('value', (snapshot) => {
-          clearTimeout(connectionTimeout);
-          if (snapshot.val() === true) {
-            console.log('✅ Firebase数据库连接正常');
-            window.firebaseAvailable = true;
-          } else {
-            console.warn('⚠️ Firebase数据库连接断开，使用离线模式');
+          // 测试数据库连接（设置较短超时）
+          const connectionTimeout = setTimeout(() => {
+            console.info('📱 Firebase 连接超时，使用离线模式');
             window.firebaseAvailable = false;
-          }
-        });
+          }, 2000);
+
+          firebase.database().ref('.info/connected').on('value', (snapshot) => {
+            clearTimeout(connectionTimeout);
+            if (snapshot.val() === true) {
+              console.log('✅ Firebase 数据库连接正常');
+              window.firebaseAvailable = true;
+            } else {
+              console.info('📱 Firebase 数据库连接断开，使用离线模式');
+              window.firebaseAvailable = false;
+            }
+          });
+        } else {
+          console.info('📱 未配置有效的 Firebase，使用离线模式');
+          window.firebaseAvailable = false;
+        }
 
       } catch (error) {
-        console.warn('⚠️ Firebase初始化失败:', error.message);
-        console.info('📱 系统将在离线模式下运行');
+        // 静默处理 Firebase 错误，避免控制台噪音
+        console.info('📱 Firebase 不可用，系统在离线模式下运行');
         window.firebaseAvailable = false;
       }
     } else {
-      console.info('📱 Firebase库未加载，使用离线模式');
+      console.info('📱 Firebase 库未加载，使用离线模式');
       window.firebaseAvailable = false;
     }
 
@@ -473,19 +478,29 @@ function initWelcomeScreen() {
 // 导航功能初始化
 function initNavigation() {
   try {
-    const navToggle = document.querySelector('.nav-toggle');
+    // 尝试多种导航切换元素选择器
+    const navToggle = document.querySelector('.nav-toggle') ||
+                     document.querySelector('.hamburger') ||
+                     document.getElementById('navToggle');
     const navMenu = document.querySelector('.nav-menu');
     const navLinks = document.querySelectorAll('.nav-link');
 
-    if (!navToggle || !navMenu) {
-      console.error('导航元素未找到:', { navToggle, navMenu });
+    if (!navMenu) {
+      console.warn('导航菜单元素未找到，跳过导航功能初始化');
       return;
     }
 
-    // 移动端菜单切换
-    navToggle.addEventListener('click', () => {
-      navMenu.classList.toggle('active');
-    });
+    if (!navToggle) {
+      console.info('导航切换按钮未找到，可能是桌面版布局');
+      // 即使没有切换按钮，也要初始化导航链接功能
+    }
+
+    // 移动端菜单切换（如果存在切换按钮）
+    if (navToggle) {
+      navToggle.addEventListener('click', () => {
+        navMenu.classList.toggle('active');
+      });
+    }
 
     // 导航链接点击事件
     navLinks.forEach(link => {

@@ -818,6 +818,67 @@
         padding: 0 10px;
       }
     }
+
+    /* GitHub 配置提示样式 */
+    .config-notice {
+      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+      border: 1px solid #2196f3;
+      border-radius: 12px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .notice-content {
+      padding: 20px;
+    }
+
+    .config-notice h4 {
+      color: #1976d2;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .config-notice p {
+      color: #424242;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .config-actions {
+      margin: 20px 0;
+    }
+
+    .config-actions .btn {
+      background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .config-actions .btn:hover {
+      background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+    }
+
+    .config-details {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+
+    .config-details p {
+      margin: 0;
+      font-size: 13px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -861,22 +922,22 @@
     <!-- 用户信息显示区域 -->
     <div id="userInfoContainer"></div>
 
-    <!-- GitHub配置区域 -->
+    <!-- GitHub配置提示区域 -->
     <section class="upload-section" id="githubConfigSection" style="display: none;">
       <h2 class="section-title">⚙️ GitHub存储配置</h2>
-      <div class="form-group">
-        <label for="githubToken">GitHub Personal Access Token</label>
-        <input type="password" id="githubToken" class="form-control" placeholder="请输入您的GitHub Token">
-        <div class="file-upload-hint">
-          <p>为了将作品保存到GitHub仓库，需要配置Personal Access Token。</p>
-          <p><a href="https://github.com/settings/tokens" target="_blank">点击这里创建Token</a>，需要repo权限。</p>
+      <div class="config-notice">
+        <div class="notice-content">
+          <h4>🔗 GitHub Token 配置</h4>
+          <p>为了在 GitHub Pages 环境下正常保存和同步数据，需要配置 GitHub Personal Access Token。</p>
+          <p><strong>请前往管理员控制面板进行配置：</strong></p>
+          <div class="config-actions">
+            <a href="admin.html" class="btn btn-primary">🔧 前往管理员面板配置</a>
+          </div>
+          <div class="config-details">
+            <p><small>配置路径：管理员控制面板 → 系统设置 → GitHub 存储配置</small></p>
+          </div>
         </div>
       </div>
-      <div class="form-actions">
-        <button type="button" id="saveGithubToken" class="btn btn-primary">保存配置</button>
-        <button type="button" id="testGithubConnection" class="btn btn-secondary">测试连接</button>
-      </div>
-      <div id="githubStatus" style="margin-top: 15px;"></div>
     </section>
 
     <!-- 作品上传区域 -->
@@ -1243,11 +1304,12 @@
   <script src="js/ios-compatibility.js"></script>
 
   <!-- 应用脚本 -->
+  <script src="js/github-storage.js"></script>
+  <script src="js/data-manager.js"></script>
   <script src="js/script.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/user-status.js"></script>
   <script src="js/unified-button-styles.js"></script>
-  <script src="js/github-storage.js"></script>
 
   <script src="js/upload.js"></script>
 
@@ -1395,52 +1457,26 @@
       preview.innerHTML = previewText;
     }
 
-    // GitHub配置功能
-    function initGitHubConfig() {
-      const saveTokenBtn = document.getElementById('saveGithubToken');
-      const testConnectionBtn = document.getElementById('testGithubConnection');
-      const tokenInput = document.getElementById('githubToken');
-
-      if (saveTokenBtn) {
-        saveTokenBtn.addEventListener('click', async () => {
-          const token = tokenInput.value.trim();
-          if (!token) {
-            showNotification('请输入GitHub Token', 'error');
-            return;
-          }
-
-          try {
-            window.githubStorage.setToken(token);
-            showNotification('GitHub Token已保存', 'success');
-          } catch (error) {
-            showNotification(`保存失败: ${error.message}`, 'error');
-          }
-        });
-      }
-
-      if (testConnectionBtn) {
-        testConnectionBtn.addEventListener('click', async () => {
-          try {
-            showNotification('正在测试GitHub连接...', 'info');
-            await window.githubStorage.validateToken();
-            showNotification('GitHub连接测试成功！', 'success');
-          } catch (error) {
-            showNotification(`连接测试失败: ${error.message}`, 'error');
-          }
-        });
-      }
-
-      // 加载已保存的token
+    // GitHub配置状态检查
+    function checkGitHubConfig() {
       const savedToken = localStorage.getItem('github_token');
-      if (savedToken && tokenInput) {
-        tokenInput.value = savedToken;
+      const configSection = document.getElementById('githubConfigSection');
+
+      if (configSection) {
+        if (!savedToken) {
+          // 如果没有配置 Token，显示配置提示
+          configSection.style.display = 'block';
+        } else {
+          // 如果已配置 Token，隐藏配置提示
+          configSection.style.display = 'none';
+        }
       }
     }
 
     // 页面加载完成后初始化权限设置
     document.addEventListener('DOMContentLoaded', function() {
       setTimeout(() => {
-        initGitHubConfig();
+        checkGitHubConfig();
 
         // 为所有权限设置添加事件监听
         ['literature', 'art', 'music', 'video'].forEach(category => {
@@ -1456,13 +1492,8 @@
           });
         });
 
-        // 如果是管理员，显示GitHub配置区域
-        if (auth && auth.isAdmin && auth.isAdmin()) {
-          const configSection = document.getElementById('githubConfigSection');
-          if (configSection) {
-            configSection.style.display = 'block';
-          }
-        }
+        // 检查GitHub配置状态（所有用户都可以看到配置提示）
+        checkGitHubConfig();
       }, 1000);
     });
 

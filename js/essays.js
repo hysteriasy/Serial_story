@@ -50,8 +50,16 @@ async function loadEssaysList() {
             li.className = 'essay-item';
             li.innerHTML = `
                 <div class="essay-item-content" data-index="${index}">
-                    <span class="essay-title">${essay.title}</span>
-                    <span class="essay-date">${formatDate(essay.date)}</span>
+                    <div class="essay-header">
+                        <span class="essay-title">${essay.title}</span>
+                        <span class="essay-source">${getSourceIcon(essay.source)}</span>
+                    </div>
+                    <div class="essay-meta">
+                        <span class="essay-author">作者: ${essay.author}</span>
+                        <span class="essay-date">${formatDate(essay.date)}</span>
+                        ${essay.lastModified && essay.lastModified !== essay.date ?
+                          `<span class="essay-modified">修改: ${formatDate(essay.lastModified)}</span>` : ''}
+                    </div>
                 </div>
                 <button class="delete-btn" data-index="${index}">删除</button>
             `;
@@ -214,9 +222,38 @@ function initMobileMenu() {
   }
 }
 
-// 从本地存储加载随笔
+// 从多个数据源智能加载随笔
 async function loadEssaysFromFiles() {
   try {
+    // 使用智能文件加载器
+    if (window.smartFileLoader) {
+      const files = await window.smartFileLoader.loadFileList('essays');
+
+      if (files && files.length > 0) {
+        console.log(`✅ 智能加载器加载了 ${files.length} 篇随笔`);
+
+        // 转换为随笔格式并确保作者信息完整
+        const essays = files.map(file => {
+          return {
+            id: file.id,
+            title: file.title || '无标题',
+            content: file.content || '',
+            author: file.author || file.username || '匿名',
+            date: file.date || file.created_at || new Date().toISOString(),
+            lastModified: file.lastModified || file.last_modified || file.date,
+            source: file.source || 'unknown',
+            type: file.type || 'literature',
+            permissions: file.permissions || { level: 'public' }
+          };
+        });
+
+        return essays.sort((a, b) => new Date(b.date) - new Date(a.date));
+      }
+    }
+
+    // 回退到传统方法
+    console.log('📁 回退到传统加载方法');
+
     // 首先尝试从新格式的本地存储获取随笔
     const essays = getEssaysFromStorage();
 
@@ -867,3 +904,42 @@ style.textContent = `
 `;
 
 document.head.appendChild(style);
+
+// 获取数据源图标
+function getSourceIcon(source) {
+    const icons = {
+        'github': '🌐',
+        'localStorage': '💾',
+        'firebase': '🔥',
+        'unknown': '❓'
+    };
+    return icons[source] || icons.unknown;
+}
+
+// 改进的日期格式化函数
+function formatDate(dateString) {
+    if (!dateString) return '未知时间';
+
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            return '今天';
+        } else if (diffDays === 2) {
+            return '昨天';
+        } else if (diffDays <= 7) {
+            return `${diffDays - 1}天前`;
+        } else {
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+    } catch (error) {
+        return dateString.substring(0, 10); // 返回日期部分
+    }
+}

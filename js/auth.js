@@ -196,6 +196,29 @@ const auth = {
     };
 
     try {
+      // 使用统一的数据管理器保存用户数据
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        try {
+          const userKey = `user_${username}`;
+          await window.dataManager.saveData(userKey, userData, {
+            category: 'users',
+            commitMessage: `创建用户: ${username}`
+          });
+          userData.storage_type = 'github';
+          console.log(`✅ 用户 ${username} 已保存到GitHub仓库`);
+
+          // 同时保存到本地存储作为缓存
+          await this.saveUserToLocalStorage(userData);
+
+          // 更新用户索引
+          await this.updateUserIndex(username, 'add');
+
+          return userData;
+        } catch (githubError) {
+          console.warn('⚠️ GitHub保存失败，回退到Firebase/本地存储:', githubError.message);
+        }
+      }
+
       if (window.firebaseAvailable && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
         // 尝试保存到Firebase
         userData.created_at = firebase.database.ServerValue.TIMESTAMP;
@@ -232,8 +255,21 @@ const auth = {
       throw new Error('不能删除预设管理员账户');
     }
 
+    let deletedFromGitHub = false;
     let deletedFromFirebase = false;
     let deletedFromLocal = false;
+
+    // 尝试从GitHub删除
+    if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+      try {
+        const userKey = `user_${username}`;
+        await window.dataManager.deleteData(userKey, { category: 'users' });
+        deletedFromGitHub = true;
+        console.log(`✅ 用户 ${username} 已从GitHub删除`);
+      } catch (error) {
+        console.warn('⚠️ GitHub删除失败:', error.message);
+      }
+    }
 
     // 尝试从Firebase删除
     if (window.firebaseAvailable && typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
@@ -263,8 +299,17 @@ const auth = {
       console.warn('本地存储删除失败:', error);
     }
 
-    if (!deletedFromFirebase && !deletedFromLocal) {
+    if (!deletedFromGitHub && !deletedFromFirebase && !deletedFromLocal) {
       throw new Error('删除用户失败：无法从任何存储中删除用户数据');
+    }
+
+    // 更新用户索引
+    if (deletedFromGitHub || deletedFromLocal) {
+      try {
+        await this.updateUserIndex(username, 'remove');
+      } catch (error) {
+        console.warn('更新用户索引失败:', error);
+      }
     }
 
     return true;
@@ -392,7 +437,47 @@ const auth = {
     let userList = [];
     const userMap = new Map(); // 使用Map避免重复用户
 
-    // 首先获取本地存储的用户（优先本地，因为新创建的用户可能在这里）
+    // 在网络环境下，优先从 GitHub 获取用户数据
+    if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+      try {
+        // 这里需要实现一个方法来获取所有用户数据
+        // 由于 GitHub API 的限制，我们可能需要维护一个用户索引文件
+        const userIndexKey = 'users_index';
+        const userIndex = await window.dataManager.loadData(userIndexKey, {
+          category: 'system',
+          fallbackToLocal: true
+        });
+
+        if (userIndex && userIndex.users) {
+          for (const username of userIndex.users) {
+            try {
+              const userKey = `user_${username}`;
+              const userData = await window.dataManager.loadData(userKey, {
+                category: 'users',
+                fallbackToLocal: true
+              });
+
+              if (userData) {
+                userMap.set(username, {
+                  username: userData.username,
+                  role: userData.role,
+                  created_at: userData.created_at,
+                  last_modified: userData.last_modified,
+                  storage_type: 'github'
+                });
+              }
+            } catch (error) {
+              console.warn(`从 GitHub 获取用户 ${username} 数据失败:`, error);
+            }
+          }
+          console.log(`✅ 从 GitHub 获取到 ${userIndex.users.length} 个用户索引`);
+        }
+      } catch (error) {
+        console.warn('⚠️ GitHub 用户数据获取失败:', error.message);
+      }
+    }
+
+    // 获取本地存储的用户（作为备用或补充）
     const localUsernames = this.getLocalUsersList();
     console.log(`📱 本地存储中有 ${localUsernames.length} 个用户索引`);
 
@@ -401,13 +486,18 @@ const auth = {
         const userData = localStorage.getItem(`user_${username}`);
         if (userData) {
           const user = JSON.parse(userData);
-          userMap.set(username, {
-            username: user.username,
-            role: user.role,
-            created_at: user.created_at,
-            last_modified: user.last_modified,
-            storage_type: 'local'
-          });
+          // 如果 GitHub 中没有这个用户，或者本地版本更新，则使用本地数据
+          const existingUser = userMap.get(username);
+          if (!existingUser || (user.last_modified &&
+              new Date(user.last_modified) > new Date(existingUser.last_modified || 0))) {
+            userMap.set(username, {
+              username: user.username,
+              role: user.role,
+              created_at: user.created_at,
+              last_modified: user.last_modified,
+              storage_type: existingUser ? 'local_updated' : 'local'
+            });
+          }
         }
       } catch (error) {
         console.warn(`解析本地用户 ${username} 数据失败:`, error);
@@ -1167,6 +1257,50 @@ const auth = {
 
     // 用户只能删除自己的评论
     return role.canDeleteOwnComment && this.currentUser.username === commentAuthor;
+  },
+
+  // 更新用户索引（用于 GitHub 环境下的用户管理）
+  async updateUserIndex(username, action) {
+    if (!window.dataManager || !window.dataManager.shouldUseGitHubStorage()) {
+      return; // 只在 GitHub 环境下维护索引
+    }
+
+    try {
+      const userIndexKey = 'users_index';
+      let userIndex = await window.dataManager.loadData(userIndexKey, {
+        category: 'system',
+        fallbackToLocal: true
+      });
+
+      if (!userIndex) {
+        userIndex = { users: [], lastUpdated: new Date().toISOString() };
+      }
+
+      if (action === 'add') {
+        if (!userIndex.users.includes(username)) {
+          userIndex.users.push(username);
+          userIndex.lastUpdated = new Date().toISOString();
+          console.log(`✅ 用户 ${username} 已添加到索引`);
+        }
+      } else if (action === 'remove') {
+        const index = userIndex.users.indexOf(username);
+        if (index > -1) {
+          userIndex.users.splice(index, 1);
+          userIndex.lastUpdated = new Date().toISOString();
+          console.log(`✅ 用户 ${username} 已从索引中移除`);
+        }
+      }
+
+      // 保存更新后的索引
+      await window.dataManager.saveData(userIndexKey, userIndex, {
+        category: 'system',
+        commitMessage: `更新用户索引: ${action} ${username}`
+      });
+
+    } catch (error) {
+      console.error('更新用户索引失败:', error);
+      throw error;
+    }
   }
 };
 

@@ -81,6 +81,199 @@
             font-size: 1.2rem;
         }
 
+        /* 改进的随笔列表样式 */
+        .essay-item {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .essay-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+
+        .essay-item-content {
+            padding: 16px;
+            cursor: pointer;
+        }
+
+        .essay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .essay-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .essay-source {
+            font-size: 1.2rem;
+            margin-left: 8px;
+            opacity: 0.7;
+        }
+
+        .essay-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .essay-author {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .essay-date, .essay-modified {
+            color: #6c757d;
+        }
+
+        .essay-modified {
+            font-style: italic;
+        }
+
+        /* 改进的评论区样式 */
+        .comments-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .comments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .comments-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .comments-count {
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .comment-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .comment-item:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .comment-date {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .comment-content {
+            line-height: 1.6;
+            color: #495057;
+            margin-bottom: 12px;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .comment-action-btn {
+            background: none;
+            border: 1px solid #dee2e6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .comment-action-btn:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+            color: #007bff;
+        }
+
+        .comment-form {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .comment-form textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .comment-form textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        .comment-submit-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        .comment-submit-btn:hover {
+            background: #0056b3;
+        }
+
+        .comment-submit-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 768px) {
             .user-info {
                 flex-direction: column;
@@ -91,6 +284,44 @@
             .user-role {
                 font-size: 0.7rem;
                 padding: 2px 6px;
+            }
+
+            /* 移动端随笔列表优化 */
+            .essay-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .essay-source {
+                margin-left: 0;
+                align-self: flex-end;
+            }
+
+            .essay-meta {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            /* 移动端评论区优化 */
+            .comments-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .comment-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+
+            .comment-actions {
+                flex-wrap: wrap;
+            }
+
+            .comment-form {
+                padding: 12px;
             }
         }
 
@@ -220,7 +451,7 @@
                     <a href="upload.html" class="nav-link">作品上传</a>
                 </li>
             </ul>
-            <div class="hamburger">
+            <div class="hamburger" id="navToggle">
                 <span class="bar"></span>
                 <span class="bar"></span>
                 <span class="bar"></span>

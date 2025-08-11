@@ -3,6 +3,9 @@ class UserStatusManager {
   constructor() {
     this.initialized = false;
     this.updateInterval = null;
+    this.lastUpdateTime = 0;
+    this.updateThrottle = 1000; // 1秒节流
+    this.isUpdating = false;
   }
 
   // 初始化用户状态管理
@@ -442,15 +445,24 @@ class UserStatusManager {
       }
     }, 100); // 延迟100ms确保auth对象完全加载
   }
-  }
 
-  // 更新用户状态显示
+  // 更新用户状态显示（带节流机制）
   updateUserStatus() {
-    const userStatusItem = document.getElementById('userStatusItem');
-    const loginItem = document.getElementById('loginItem');
-    const currentUserName = document.getElementById('currentUserName');
-    const userNavLink = document.getElementById('userNavLink');
-    const userInfoContent = document.getElementById('userInfoContent');
+    // 节流检查：避免频繁更新
+    const now = Date.now();
+    if (this.isUpdating || (now - this.lastUpdateTime < this.updateThrottle)) {
+      return;
+    }
+
+    this.isUpdating = true;
+    this.lastUpdateTime = now;
+
+    try {
+      const userStatusItem = document.getElementById('userStatusItem');
+      const loginItem = document.getElementById('loginItem');
+      const currentUserName = document.getElementById('currentUserName');
+      const userNavLink = document.getElementById('userNavLink');
+      const userInfoContent = document.getElementById('userInfoContent');
 
     if (!userStatusItem || !loginItem) {
       return; // 元素还未创建
@@ -498,6 +510,11 @@ class UserStatusManager {
       }
 
       console.log('✅ 用户状态已更新 - 未登录');
+    }
+    } catch (error) {
+      console.error('❌ 更新用户状态失败:', error);
+    } finally {
+      this.isUpdating = false;
     }
   }
 
@@ -581,7 +598,7 @@ class UserStatusManager {
 
         if (result) {
           this.closeLoginModal();
-          this.updateUserStatus();
+          // updateUserStatus 会在 auth.login 重写方法中自动调用，这里不需要重复调用
           this.showMessage('登录成功！欢迎回来，' + auth.currentUser.username, 'success');
 
           // 如果是管理员，显示特殊提示
@@ -669,7 +686,7 @@ class UserStatusManager {
       if (typeof auth !== 'undefined') {
         const username = auth.currentUser ? auth.currentUser.username : '用户';
         auth.logout();
-        this.updateUserStatus();
+        // updateUserStatus 会在 auth.logout 重写方法中自动调用，这里不需要重复调用
 
         // 显示退出成功提示
         this.showMessage(`${username} 已成功退出登录`, 'success');

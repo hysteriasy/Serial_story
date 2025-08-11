@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>环境检测测试 - 桑梓</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .test-result {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .info {
+            background: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+        
+        .warning {
+            background: #fefcbf;
+            color: #744210;
+            border: 1px solid #f6e05e;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        
+        .btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #3182ce;
+        }
+        
+        .btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+        
+        .current-url {
+            background: #edf2f7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 环境检测和存储策略测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">当前访问信息</div>
+            <div class="current-url">
+                <strong>URL:</strong> <span id="currentUrl"></span><br>
+                <strong>协议:</strong> <span id="protocol"></span><br>
+                <strong>主机:</strong> <span id="hostname"></span><br>
+                <strong>路径:</strong> <span id="pathname"></span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">环境检测结果</div>
+            <div id="environmentResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">存储策略测试</div>
+            <div id="storageStrategyResult"></div>
+            <button class="btn" onclick="testStorageStrategy()">测试存储策略</button>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">GitHub存储测试</div>
+            <div id="githubTestResult"></div>
+            <button class="btn" onclick="testGitHubConnection()">测试GitHub连接</button>
+            <button class="btn" onclick="testGitHubUpload()" id="testUploadBtn" disabled>测试上传功能</button>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">数据管理器测试</div>
+            <div id="dataManagerResult"></div>
+            <button class="btn" onclick="testDataManager()">测试数据管理器</button>
+            <button class="btn" onclick="testDataSaveLoad()">测试数据保存/读取</button>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">用户注册测试</div>
+            <div id="userTestResult"></div>
+            <input type="text" id="testUsername" placeholder="测试用户名" style="padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px;">
+            <button class="btn" onclick="testUserRegistration()">测试用户注册</button>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">测试说明</div>
+            <div class="test-result info">
+                <strong>本地环境测试:</strong><br>
+                • 通过 file:// 协议访问此页面<br>
+                • 应该显示"local_file"环境，使用"local_storage"策略<br><br>
+                
+                <strong>GitHub Pages测试:</strong><br>
+                • 通过 https://hysteriasy.github.io/Serial_story/ 访问<br>
+                • 应该显示"github_pages"环境，使用"github_storage"策略<br><br>
+                
+                <strong>预期行为:</strong><br>
+                • 本地环境：数据保存到浏览器本地存储<br>
+                • 线上环境：数据保存到GitHub仓库，不使用本地存储
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载必要的脚本 -->
+    <script src="js/github-storage.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <script>
+        // 显示当前访问信息
+        function displayCurrentInfo() {
+            document.getElementById('currentUrl').textContent = window.location.href;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('pathname').textContent = window.location.pathname;
+        }
+        
+        // 显示环境检测结果
+        function displayEnvironmentResult() {
+            const resultDiv = document.getElementById('environmentResult');
+            
+            if (window.environmentManager) {
+                const env = window.environmentManager.getEnvironment();
+                const strategy = window.environmentManager.getStorageStrategy();
+                const isOnline = window.environmentManager.isOnlineEnvironment();
+                
+                resultDiv.innerHTML = `
+                    <div class="test-result success">
+                        <strong>检测到的环境:</strong> ${env}<br>
+                        <strong>存储策略:</strong> ${strategy}<br>
+                        <strong>是否为线上环境:</strong> ${isOnline ? '是' : '否'}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="test-result error">
+                        环境管理器未初始化！请确保 github-storage.js 已正确加载。
+                    </div>
+                `;
+            }
+        }
+        
+        // 测试存储策略
+        function testStorageStrategy() {
+            const resultDiv = document.getElementById('storageStrategyResult');
+            
+            if (!window.environmentManager) {
+                resultDiv.innerHTML = '<div class="test-result error">环境管理器未初始化</div>';
+                return;
+            }
+            
+            const shouldUseGitHub = window.environmentManager.shouldUseGitHubStorage();
+            const shouldUseLocal = window.environmentManager.shouldUseLocalStorage();
+            
+            resultDiv.innerHTML = `
+                <div class="test-result info">
+                    <strong>应该使用GitHub存储:</strong> ${shouldUseGitHub ? '是' : '否'}<br>
+                    <strong>应该使用本地存储:</strong> ${shouldUseLocal ? '是' : '否'}
+                </div>
+            `;
+        }
+        
+        // 测试GitHub连接
+        async function testGitHubConnection() {
+            const resultDiv = document.getElementById('githubTestResult');
+            const uploadBtn = document.getElementById('testUploadBtn');
+            
+            resultDiv.innerHTML = '<div class="test-result info">正在测试GitHub连接...</div>';
+            
+            try {
+                if (!window.githubStorage) {
+                    throw new Error('GitHub存储模块未初始化');
+                }
+                
+                if (!window.githubStorage.token) {
+                    throw new Error('GitHub Token未配置');
+                }
+                
+                await window.githubStorage.validateToken();
+                resultDiv.innerHTML = '<div class="test-result success">✅ GitHub连接测试成功！</div>';
+                uploadBtn.disabled = false;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result error">❌ GitHub连接失败: ${error.message}</div>`;
+                uploadBtn.disabled = true;
+            }
+        }
+        
+        // 测试GitHub上传
+        async function testGitHubUpload() {
+            const resultDiv = document.getElementById('githubTestResult');
+            
+            try {
+                const testData = {
+                    test: true,
+                    timestamp: new Date().toISOString(),
+                    environment: window.environmentManager.getEnvironment(),
+                    userAgent: navigator.userAgent
+                };
+                
+                const testPath = `test/environment-test-${Date.now()}.json`;
+                await window.githubStorage.uploadFile(testPath, JSON.stringify(testData, null, 2), '环境测试文件');
+                
+                resultDiv.innerHTML += '<div class="test-result success">✅ 测试文件上传成功！</div>';
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="test-result error">❌ 上传测试失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试数据管理器
+        function testDataManager() {
+            const resultDiv = document.getElementById('dataManagerResult');
+
+            if (!window.dataManager) {
+                resultDiv.innerHTML = '<div class="test-result error">数据管理器未初始化</div>';
+                return;
+            }
+
+            const envInfo = window.dataManager.getEnvironmentInfo();
+
+            resultDiv.innerHTML = `
+                <div class="test-result success">
+                    ✅ 数据管理器已初始化<br>
+                    <strong>环境:</strong> ${envInfo.environment}<br>
+                    <strong>存储策略:</strong> ${envInfo.strategy}<br>
+                    <strong>是否线上环境:</strong> ${envInfo.isOnline ? '是' : '否'}<br>
+                    <strong>应使用GitHub:</strong> ${envInfo.shouldUseGitHub ? '是' : '否'}
+                </div>
+            `;
+        }
+
+        // 测试数据保存和读取
+        async function testDataSaveLoad() {
+            const resultDiv = document.getElementById('dataManagerResult');
+
+            if (!window.dataManager) {
+                resultDiv.innerHTML = '<div class="test-result error">数据管理器未初始化</div>';
+                return;
+            }
+
+            try {
+                const testData = {
+                    message: '这是一个测试数据',
+                    timestamp: new Date().toISOString(),
+                    environment: window.dataManager.getEnvironmentInfo().environment
+                };
+
+                // 测试保存
+                resultDiv.innerHTML = '<div class="test-result info">正在测试数据保存...</div>';
+                const saveResult = await window.dataManager.saveData('test_data', testData);
+
+                // 测试读取
+                resultDiv.innerHTML += '<div class="test-result info">正在测试数据读取...</div>';
+                const loadedData = await window.dataManager.loadData('test_data');
+
+                if (loadedData && loadedData.message === testData.message) {
+                    resultDiv.innerHTML += `
+                        <div class="test-result success">
+                            ✅ 数据保存/读取测试成功！<br>
+                            <strong>保存位置:</strong> ${saveResult.storage}<br>
+                            <strong>数据内容:</strong> ${loadedData.message}<br>
+                            <strong>时间戳:</strong> ${loadedData.timestamp}
+                        </div>
+                    `;
+                } else {
+                    throw new Error('读取的数据与保存的数据不匹配');
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML += `<div class="test-result error">❌ 数据保存/读取测试失败: ${error.message}</div>`;
+            }
+        }
+
+        // 测试用户注册
+        async function testUserRegistration() {
+            const resultDiv = document.getElementById('userTestResult');
+            const username = document.getElementById('testUsername').value.trim();
+
+            if (!username) {
+                resultDiv.innerHTML = '<div class="test-result warning">请输入测试用户名</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="test-result info">正在测试用户注册...</div>';
+
+            try {
+                if (!window.auth) {
+                    throw new Error('认证模块未初始化');
+                }
+
+                // 模拟用户注册
+                const testUser = await window.auth.createUser(username, 'test123', 'user');
+
+                resultDiv.innerHTML = `
+                    <div class="test-result success">
+                        ✅ 用户注册测试成功！<br>
+                        <strong>用户名:</strong> ${testUser.username}<br>
+                        <strong>存储类型:</strong> ${testUser.storage_type}<br>
+                        <strong>创建时间:</strong> ${testUser.created_at}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result error">❌ 用户注册测试失败: ${error.message}</div>`;
+            }
+        }
+        
+        // 页面加载时执行
+        window.addEventListener('DOMContentLoaded', () => {
+            displayCurrentInfo();
+
+            // 等待模块初始化
+            setTimeout(() => {
+                displayEnvironmentResult();
+                testStorageStrategy();
+                testDataManager();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

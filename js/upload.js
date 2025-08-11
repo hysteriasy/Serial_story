@@ -13,7 +13,11 @@ class WorkUploader {
 
     // GitHub存储支持
     this.githubStorage = window.githubStorage;
-    this.preferredStorage = 'github'; // 优先使用GitHub存储
+    this.environmentManager = window.environmentManager;
+
+    // 根据环境自动选择存储策略
+    this.preferredStorage = this.environmentManager ?
+      (this.environmentManager.shouldUseGitHubStorage() ? 'github' : 'local') : 'local';
 
     // 作品分类配置
     this.categories = {
@@ -458,8 +462,10 @@ class WorkUploader {
     };
 
     try {
-      // 尝试保存到GitHub
       let githubResult = null;
+      let saveToLocal = true;
+
+      // 根据环境策略决定存储方式
       if (this.preferredStorage === 'github' && this.githubStorage) {
         try {
           githubResult = await this.githubStorage.uploadLiteratureWork(workInfo, user.username);
@@ -467,13 +473,25 @@ class WorkUploader {
           workInfo.githubPath = githubResult.path;
           workInfo.downloadUrl = githubResult.downloadUrl;
           console.log('✅ 文学作品已保存到GitHub');
+
+          // 如果是线上环境且GitHub保存成功，则不保存到本地
+          if (this.environmentManager && this.environmentManager.isOnlineEnvironment()) {
+            saveToLocal = false;
+            console.log('🌍 线上环境：仅使用GitHub存储');
+          }
         } catch (error) {
           console.warn('⚠️ GitHub保存失败，使用本地存储:', error.message);
+          workInfo.storage_type = 'local';
         }
+      } else {
+        workInfo.storage_type = 'local';
+        console.log('📱 本地环境：使用本地存储');
       }
 
-      // 保存到本地存储（作为备用或主要存储）
-      await this.saveToLocalStorage(workInfo, mainCategory, subcategory);
+      // 根据策略决定是否保存到本地存储
+      if (saveToLocal) {
+        await this.saveToLocalStorage(workInfo, mainCategory, subcategory);
+      }
 
       // 如果是生活随笔，同时保存到essays格式（兼容现有展示逻辑）
       if (subcategory === 'essay') {
@@ -531,8 +549,10 @@ class WorkUploader {
         storage_type: 'local' // 默认值，会根据实际保存位置更新
       };
 
-      // 尝试保存到GitHub
       let githubResult = null;
+      let saveToLocal = true;
+
+      // 根据环境策略决定存储方式
       if (this.preferredStorage === 'github' && this.githubStorage) {
         try {
           githubResult = await this.githubStorage.uploadMediaWork(workInfo, user.username);
@@ -540,13 +560,25 @@ class WorkUploader {
           workInfo.githubPath = githubResult.path;
           workInfo.downloadUrl = githubResult.downloadUrl;
           console.log('✅ 媒体作品已保存到GitHub');
+
+          // 如果是线上环境且GitHub保存成功，则不保存到本地
+          if (this.environmentManager && this.environmentManager.isOnlineEnvironment()) {
+            saveToLocal = false;
+            console.log('🌍 线上环境：仅使用GitHub存储');
+          }
         } catch (error) {
           console.warn('⚠️ GitHub保存失败，使用本地存储:', error.message);
+          workInfo.storage_type = 'local';
         }
+      } else {
+        workInfo.storage_type = 'local';
+        console.log('📱 本地环境：使用本地存储');
       }
 
-      // 保存到本地存储（作为备用或主要存储）
-      await this.saveToLocalStorage(workInfo, mainCategory, subcategory);
+      // 根据策略决定是否保存到本地存储
+      if (saveToLocal) {
+        await this.saveToLocalStorage(workInfo, mainCategory, subcategory);
+      }
 
       console.log('✅ 媒体作品保存成功');
       return workInfo;

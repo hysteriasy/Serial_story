@@ -1,3 +1,81 @@
+// 环境检测和存储策略管理模块
+class EnvironmentManager {
+  constructor() {
+    this.environment = this.detectEnvironment();
+    this.storageStrategy = this.determineStorageStrategy();
+    console.log(`🌍 环境检测: ${this.environment}, 存储策略: ${this.storageStrategy}`);
+  }
+
+  // 检测当前运行环境
+  detectEnvironment() {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const pathname = window.location.pathname;
+
+    // 检测是否为本地文件访问
+    if (protocol === 'file:') {
+      return 'local_file';
+    }
+
+    // 检测是否为GitHub Pages
+    if (hostname === 'hysteriasy.github.io' && pathname.startsWith('/Serial_story')) {
+      return 'github_pages';
+    }
+
+    // 检测是否为本地开发服务器
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')) {
+      return 'local_server';
+    }
+
+    // 其他情况视为生产环境
+    return 'production';
+  }
+
+  // 根据环境确定存储策略
+  determineStorageStrategy() {
+    switch (this.environment) {
+      case 'local_file':
+      case 'local_server':
+        return 'local_storage'; // 本地环境使用本地存储
+      case 'github_pages':
+      case 'production':
+        return 'github_storage'; // 线上环境使用GitHub存储
+      default:
+        return 'local_storage'; // 默认使用本地存储
+    }
+  }
+
+  // 获取当前环境
+  getEnvironment() {
+    return this.environment;
+  }
+
+  // 获取存储策略
+  getStorageStrategy() {
+    return this.storageStrategy;
+  }
+
+  // 是否为线上环境
+  isOnlineEnvironment() {
+    return this.environment === 'github_pages' || this.environment === 'production';
+  }
+
+  // 是否为本地环境
+  isLocalEnvironment() {
+    return this.environment === 'local_file' || this.environment === 'local_server';
+  }
+
+  // 是否应该使用GitHub存储
+  shouldUseGitHubStorage() {
+    return this.storageStrategy === 'github_storage';
+  }
+
+  // 是否应该使用本地存储
+  shouldUseLocalStorage() {
+    return this.storageStrategy === 'local_storage';
+  }
+}
+
 // GitHub仓库存储模块
 class GitHubStorage {
   constructor() {
@@ -6,7 +84,7 @@ class GitHubStorage {
     this.token = null; // GitHub Personal Access Token
     this.baseUrl = 'https://api.github.com';
     this.branch = 'main'; // 默认分支
-    
+
     // 初始化token
     this.initializeToken();
   }
@@ -306,9 +384,10 @@ class GitHubStorage {
 }
 
 // 创建全局实例
+window.environmentManager = new EnvironmentManager();
 window.githubStorage = new GitHubStorage();
 
 // 导出模块
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = GitHubStorage;
+  module.exports = { EnvironmentManager, GitHubStorage };
 }

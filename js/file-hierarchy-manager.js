@@ -913,7 +913,20 @@ class FileHierarchyManager {
         }
       }
 
-      // 3. 从Firebase删除（如果可用）
+      // 3. 从GitHub删除（如果可用且在网络环境）
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        try {
+          // 使用 dataManager 的 deleteData 方法，它会自动处理 GitHub 删除
+          await window.dataManager.deleteData(workKey, { category: 'works' });
+          console.log(`✅ 从GitHub删除文件: ${workKey}`);
+          deletedCount++;
+        } catch (error) {
+          console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
+          errors.push(`删除GitHub数据失败: ${error.message}`);
+        }
+      }
+
+      // 4. 从Firebase删除（如果可用）
       if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
         try {
           await firebase.database().ref(`userFiles/${owner}/${fileId}`).remove();
@@ -923,7 +936,7 @@ class FileHierarchyManager {
         }
       }
 
-      // 4. 处理旧格式随笔数据
+      // 5. 处理旧格式随笔数据
       if (fileId.startsWith('essay_legacy_')) {
         try {
           const essaysData = localStorage.getItem('essays');

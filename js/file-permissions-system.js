@@ -358,19 +358,38 @@ class FilePermissionsSystem {
   // 获取文件权限设置
   async getFilePermissions(fileId, owner) {
     try {
-      // 首先尝试从Firebase获取
+      // 在网络环境下，优先从 GitHub 获取数据
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        try {
+          const workKey = `work_${fileId}`;
+          const workData = await window.dataManager.loadData(workKey, {
+            category: 'works',
+            fallbackToLocal: true
+          });
+          if (workData && workData.permissions) {
+            return workData.permissions;
+          }
+        } catch (error) {
+          console.warn('从 GitHub 获取权限数据失败:', error);
+        }
+      }
+
+      // 尝试从Firebase获取
       if (window.firebaseAvailable && firebase.apps.length) {
         const snapshot = await firebase.database().ref(`userFiles/${owner}/${fileId}/permissions`).once('value');
-        return snapshot.val();
+        const firebaseData = snapshot.val();
+        if (firebaseData) {
+          return firebaseData;
+        }
       }
-      
+
       // 从本地存储获取
       const workData = localStorage.getItem(`work_${fileId}`);
       if (workData) {
         const work = JSON.parse(workData);
         return work.permissions;
       }
-      
+
       return null;
     } catch (error) {
       console.error('获取文件权限失败:', error);
@@ -381,19 +400,37 @@ class FilePermissionsSystem {
   // 保存文件权限设置
   async saveFilePermissions(fileId, owner, permissions) {
     try {
+      const workKey = `work_${fileId}`;
+      let workData = null;
+
+      // 首先获取完整的作品数据
+      const localData = localStorage.getItem(workKey);
+      if (localData) {
+        workData = JSON.parse(localData);
+        workData.permissions = permissions;
+
+        // 保存到本地存储
+        localStorage.setItem(workKey, JSON.stringify(workData));
+      }
+
+      // 在网络环境下，同步到 GitHub
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage() && workData) {
+        try {
+          await window.dataManager.saveData(workKey, workData, {
+            category: 'works',
+            commitMessage: `更新文件权限: ${workData.title || fileId}`
+          });
+          console.log(`✅ 权限设置已同步到 GitHub: ${fileId}`);
+        } catch (error) {
+          console.warn(`⚠️ GitHub 权限同步失败: ${error.message}`);
+        }
+      }
+
       // 保存到Firebase
       if (window.firebaseAvailable && firebase.apps.length) {
         await firebase.database().ref(`userFiles/${owner}/${fileId}/permissions`).set(permissions);
       }
-      
-      // 保存到本地存储
-      const workData = localStorage.getItem(`work_${fileId}`);
-      if (workData) {
-        const work = JSON.parse(workData);
-        work.permissions = permissions;
-        localStorage.setItem(`work_${fileId}`, JSON.stringify(work));
-      }
-      
+
       return true;
     } catch (error) {
       console.error('保存文件权限失败:', error);
