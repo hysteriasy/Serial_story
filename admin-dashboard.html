@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <title>管理仪表板 - 桑梓</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
+    <style>
+        /* 仪表板专用样式 */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .dashboard-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logs-container {
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .log-entry {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-timestamp {
+            color: #6c757d;
+            font-weight: bold;
+        }
+
+        .log-action {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .log-details {
+            color: #333;
+            margin-left: 1rem;
+        }
+
+        .refresh-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .btn-refresh {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-refresh:hover {
+            background: #218838;
+        }
+
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .system-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .status-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .status-online {
+            background: #28a745;
+        }
+
+        .status-warning {
+            background: #ffc107;
+        }
+
+        .status-error {
+            background: #dc3545;
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .access-denied-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .access-denied-title {
+            font-size: 2rem;
+            color: #dc3545;
+            margin-bottom: 1rem;
+        }
+
+        .access-denied-message {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">桑梓</a>
+            <ul class="nav-menu" id="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a href="literature.html" class="nav-link">文学</a>
+                </li>
+                <li class="nav-item">
+                    <a href="art.html" class="nav-link">艺术</a>
+                </li>
+                <li class="nav-item">
+                    <a href="music.html" class="nav-link">音乐</a>
+                </li>
+                <li class="nav-item">
+                    <a href="video.html" class="nav-link">视频</a>
+                </li>
+                <li class="nav-item" id="loginItem">
+                    <a href="login.html" class="nav-link">登录</a>
+                </li>
+                <li class="nav-item" id="userStatusItem" style="display: none;">
+                    <span class="nav-link">欢迎，<span id="currentUserName"></span></span>
+                    <a href="#" onclick="auth.logout()" class="nav-link">退出</a>
+                </li>
+                <li class="nav-item">
+                    <a href="upload.html" class="nav-link">作品上传</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- 权限不足提示（默认隐藏） -->
+        <div id="accessDenied" class="dashboard-container access-denied" style="display: none;">
+            <div class="access-denied-icon">🔒</div>
+            <h1 class="access-denied-title">访问被拒绝</h1>
+            <p class="access-denied-message">抱歉，您没有权限访问管理仪表板。<br>此页面仅限管理员使用。</p>
+            <a href="index.html" class="btn-primary" style="display: inline-block; width: auto; padding: 12px 24px; text-decoration: none;">返回首页</a>
+        </div>
+
+        <!-- 仪表板主界面（默认隐藏） -->
+        <div id="dashboardInterface" class="dashboard-container" style="display: none;">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">📊 管理仪表板</h1>
+                <p class="dashboard-subtitle">系统统计、操作日志和监控数据</p>
+            </div>
+
+            <!-- 系统统计 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number" id="totalUsers">0</span>
+                    <span class="stat-label">总用户数</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalWorks">0</span>
+                    <span class="stat-label">总作品数</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="storageUsed">0</span>
+                    <span class="stat-label">存储使用 (KB)</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="todayOperations">0</span>
+                    <span class="stat-label">今日操作</span>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- 操作日志 -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">📋 操作日志</h2>
+                    <div class="refresh-controls">
+                        <button class="btn-refresh" onclick="refreshLogs()">🔄 刷新日志</button>
+                        <div class="auto-refresh-toggle">
+                            <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+                            <label for="autoRefresh">自动刷新 (30秒)</label>
+                        </div>
+                    </div>
+                    <div class="logs-container" id="logsContainer">
+                        <div class="log-entry">
+                            <span class="log-timestamp">[加载中...]</span>
+                            <span class="log-action">系统</span>
+                            <div class="log-details">正在加载操作日志...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统状态 -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">⚡ 系统状态</h2>
+                    <div class="refresh-controls">
+                        <button class="btn-refresh" onclick="refreshSystemStatus()">🔄 刷新状态</button>
+                    </div>
+                    <div class="system-status">
+                        <div class="status-item">
+                            <div>
+                                <span class="status-indicator status-online" id="storageStatus"></span>
+                                <strong>存储系统</strong>
+                            </div>
+                            <div id="storageStatusText">正常</div>
+                        </div>
+                        <div class="status-item">
+                            <div>
+                                <span class="status-indicator status-online" id="authStatus"></span>
+                                <strong>认证系统</strong>
+                            </div>
+                            <div id="authStatusText">正常</div>
+                        </div>
+                        <div class="status-item">
+                            <div>
+                                <span class="status-indicator status-online" id="apiStatus"></span>
+                                <strong>API服务</strong>
+                            </div>
+                            <div id="apiStatusText">正常</div>
+                        </div>
+                        <div class="status-item">
+                            <div>
+                                <span class="status-indicator" id="environmentStatus"></span>
+                                <strong>运行环境</strong>
+                            </div>
+                            <div id="environmentStatusText">检测中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 桑梓. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <!-- 脚本 -->
+    <script src="js/ios-compatibility.js"></script>
+    <script src="js/storage-optimizer.js"></script>
+    <script src="js/github-storage.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/user-status.js"></script>
+    <script src="js/unified-button-styles.js"></script>
+    <script src="js/admin-logger.js"></script>
+
+    <script>
+        // 仪表板管理类
+        class AdminDashboard {
+            constructor() {
+                this.autoRefreshInterval = null;
+                this.isAutoRefreshEnabled = false;
+            }
+
+            // 初始化仪表板
+            async init() {
+                console.log('🚀 初始化管理仪表板...');
+
+                // 检查权限
+                if (!this.checkAdminPermission()) {
+                    return;
+                }
+
+                // 显示仪表板界面
+                document.getElementById('dashboardInterface').style.display = 'block';
+
+                // 加载数据
+                await this.loadDashboardData();
+
+                console.log('✅ 管理仪表板初始化完成');
+            }
+
+            // 检查管理员权限
+            checkAdminPermission() {
+                if (!auth || !auth.currentUser) {
+                    console.log('❌ 用户未登录，显示访问拒绝页面');
+                    document.getElementById('accessDenied').style.display = 'block';
+                    return false;
+                }
+
+                if (!auth.isAdmin || !auth.isAdmin()) {
+                    console.log('❌ 用户不是管理员，显示访问拒绝页面');
+                    document.getElementById('accessDenied').style.display = 'block';
+                    return false;
+                }
+
+                console.log('✅ 管理员权限验证通过');
+                return true;
+            }
+
+            // 加载仪表板数据
+            async loadDashboardData() {
+                try {
+                    await Promise.all([
+                        this.loadSystemStats(),
+                        this.loadOperationLogs(),
+                        this.loadSystemStatus()
+                    ]);
+                } catch (error) {
+                    console.error('加载仪表板数据失败:', error);
+                }
+            }
+
+            // 加载系统统计
+            async loadSystemStats() {
+                try {
+                    const stats = {
+                        totalUsers: JSON.parse(localStorage.getItem('users') || '[]').length,
+                        totalWorks: Object.keys(localStorage).filter(key => key.startsWith('work_')).length,
+                        storageUsed: Math.round(JSON.stringify(localStorage).length / 1024),
+                        todayOperations: this.getTodayOperationsCount()
+                    };
+
+                    document.getElementById('totalUsers').textContent = stats.totalUsers;
+                    document.getElementById('totalWorks').textContent = stats.totalWorks;
+                    document.getElementById('storageUsed').textContent = stats.storageUsed;
+                    document.getElementById('todayOperations').textContent = stats.todayOperations;
+
+                    console.log('📊 系统统计加载完成:', stats);
+                } catch (error) {
+                    console.error('加载系统统计失败:', error);
+                }
+            }
+
+            // 获取今日操作数量
+            getTodayOperationsCount() {
+                if (typeof adminLogger === 'undefined') return 0;
+
+                const today = new Date().toDateString();
+                const logs = adminLogger.getLogs();
+                return logs.filter(log => {
+                    const logDate = new Date(log.timestamp).toDateString();
+                    return logDate === today;
+                }).length;
+            }
+
+            // 加载操作日志
+            async loadOperationLogs() {
+                const container = document.getElementById('logsContainer');
+
+                if (typeof adminLogger === 'undefined') {
+                    container.innerHTML = `
+                        <div class="log-entry">
+                            <span class="log-timestamp">[系统]</span>
+                            <span class="log-action">警告</span>
+                            <div class="log-details">操作日志系统未加载</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const logs = adminLogger.getLogs().slice(0, 20); // 显示最近20条
+
+                if (logs.length === 0) {
+                    container.innerHTML = `
+                        <div class="log-entry">
+                            <span class="log-timestamp">[系统]</span>
+                            <span class="log-action">信息</span>
+                            <div class="log-details">暂无操作日志</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = logs.map(log => {
+                    const timestamp = new Date(log.timestamp).toLocaleString();
+                    const action = log.operation || log.action || '未知操作';
+                    const operator = log.operator || '系统';
+                    const details = log.details ? JSON.stringify(log.details) : '';
+
+                    return `
+                        <div class="log-entry">
+                            <span class="log-timestamp">[${timestamp}]</span>
+                            <span class="log-action">${action}</span>
+                            <div class="log-details">操作员: ${operator} ${details ? '| ' + details : ''}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                console.log('📋 操作日志加载完成，共', logs.length, '条记录');
+            }
+
+            // 加载系统状态
+            async loadSystemStatus() {
+                // 检测存储系统状态
+                this.updateStorageStatus();
+
+                // 检测认证系统状态
+                this.updateAuthStatus();
+
+                // 检测API服务状态
+                this.updateApiStatus();
+
+                // 检测运行环境
+                this.updateEnvironmentStatus();
+            }
+
+            // 更新存储系统状态
+            updateStorageStatus() {
+                const storageIndicator = document.getElementById('storageStatus');
+                const storageText = document.getElementById('storageStatusText');
+
+                try {
+                    // 测试localStorage可用性
+                    const testKey = 'storage_test_' + Date.now();
+                    localStorage.setItem(testKey, 'test');
+                    localStorage.removeItem(testKey);
+
+                    storageIndicator.className = 'status-indicator status-online';
+                    storageText.textContent = '正常';
+                } catch (error) {
+                    storageIndicator.className = 'status-indicator status-error';
+                    storageText.textContent = '异常';
+                }
+            }
+
+            // 更新认证系统状态
+            updateAuthStatus() {
+                const authIndicator = document.getElementById('authStatus');
+                const authText = document.getElementById('authStatusText');
+
+                if (typeof auth !== 'undefined' && auth.currentUser) {
+                    authIndicator.className = 'status-indicator status-online';
+                    authText.textContent = '已登录';
+                } else {
+                    authIndicator.className = 'status-indicator status-warning';
+                    authText.textContent = '未登录';
+                }
+            }
+
+            // 更新API服务状态
+            updateApiStatus() {
+                const apiIndicator = document.getElementById('apiStatus');
+                const apiText = document.getElementById('apiStatusText');
+
+                // 简单的API状态检测
+                if (window.location.protocol === 'https:') {
+                    apiIndicator.className = 'status-indicator status-online';
+                    apiText.textContent = 'HTTPS';
+                } else {
+                    apiIndicator.className = 'status-indicator status-warning';
+                    apiText.textContent = 'HTTP';
+                }
+            }
+
+            // 更新运行环境状态
+            updateEnvironmentStatus() {
+                const envIndicator = document.getElementById('environmentStatus');
+                const envText = document.getElementById('environmentStatusText');
+
+                if (window.location.hostname.includes('github.io')) {
+                    envIndicator.className = 'status-indicator status-online';
+                    envText.textContent = 'GitHub Pages';
+                } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    envIndicator.className = 'status-indicator status-warning';
+                    envText.textContent = '本地开发';
+                } else {
+                    envIndicator.className = 'status-indicator status-online';
+                    envText.textContent = '自定义域名';
+                }
+            }
+
+            // 切换自动刷新
+            toggleAutoRefresh() {
+                const checkbox = document.getElementById('autoRefresh');
+                this.isAutoRefreshEnabled = checkbox.checked;
+
+                if (this.isAutoRefreshEnabled) {
+                    this.autoRefreshInterval = setInterval(() => {
+                        this.loadDashboardData();
+                    }, 30000); // 30秒刷新一次
+                    console.log('✅ 自动刷新已启用');
+                } else {
+                    if (this.autoRefreshInterval) {
+                        clearInterval(this.autoRefreshInterval);
+                        this.autoRefreshInterval = null;
+                    }
+                    console.log('❌ 自动刷新已禁用');
+                }
+            }
+        }
+
+        // 全局仪表板实例
+        let dashboard;
+
+        // 全局函数
+        function refreshLogs() {
+            if (dashboard) {
+                dashboard.loadOperationLogs();
+            }
+        }
+
+        function refreshSystemStatus() {
+            if (dashboard) {
+                dashboard.loadSystemStatus();
+            }
+        }
+
+        function toggleAutoRefresh() {
+            if (dashboard) {
+                dashboard.toggleAutoRefresh();
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📊 管理仪表板页面加载完成');
+
+            // 等待auth系统初始化
+            function initDashboard() {
+                if (typeof auth !== 'undefined' && auth.currentUser !== undefined) {
+                    dashboard = new AdminDashboard();
+                    dashboard.init();
+                } else {
+                    setTimeout(initDashboard, 500);
+                }
+            }
+
+            initDashboard();
+        });
+    </script>
+</body>
+</html>

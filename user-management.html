@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="format-detection" content="telephone=no">
     <title>用户管理 - 桑梓</title>
+    <meta name="auto-header-footer" content="true">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
     <style>
@@ -42,11 +43,22 @@
             font-size: 1.1rem;
         }
 
-        .management-grid {
+        .users-section {
+            margin-bottom: 3rem;
+        }
+
+        .controls-grid {
             display: grid;
-            grid-template-columns: 1fr 350px;
+            grid-template-columns: 1fr 1fr;
             gap: 2rem;
             margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
         }
 
         .users-section {
@@ -331,32 +343,7 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <a href="index.html">桑梓</a>
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="index.html" class="nav-link">首页</a>
-                </li>
-                <li class="nav-item">
-                    <a href="essays.html" class="nav-link">生活随笔</a>
-                </li>
-                <li class="nav-item">
-                    <a href="poetry.html" class="nav-link">诗歌创作</a>
-                </li>
-                <li class="nav-item">
-                    <a href="upload.html" class="nav-link">作品上传</a>
-                </li>
-            </ul>
-            <div class="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
-        </div>
-    </nav>
+    <!-- 导航栏将由header-footer.js自动生成 -->
 
     <main class="main-content">
         <!-- 权限不足提示（默认隐藏） -->
@@ -394,101 +381,98 @@
                 </div>
             </div>
 
-            <div class="management-grid">
-                <!-- 用户列表 -->
-                <div class="users-section">
-                    <h2 class="section-title">👤 用户列表</h2>
-                    <table class="users-table">
-                        <thead>
-                            <tr>
-                                <th>用户名</th>
-                                <th>角色</th>
-                                <th>注册时间</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                            <!-- 用户数据将在这里动态加载 -->
-                        </tbody>
-                    </table>
-                </div>
+            <!-- 用户列表 -->
+            <div class="users-section">
+                <h2 class="section-title">👤 用户列表</h2>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>角色</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- 用户数据将在这里动态加载 -->
+                    </tbody>
+                </table>
+            </div>
 
-                <!-- 控制面板 -->
+            <!-- 控制面板 - 水平并列布局 -->
+            <div class="controls-grid">
+                <!-- 添加用户卡片 -->
                 <div class="controls-panel">
-                    <h2 class="section-title">⚙️ 操作面板</h2>
+                    <h2 class="section-title">➕ 添加新用户</h2>
 
-                    <!-- 添加用户区域 -->
-                    <div class="control-section">
-                        <h3 class="subsection-title">➕ 添加新用户</h3>
-
-                        <div class="control-group">
-                            <label for="newUsername">用户名</label>
-                            <input type="text" id="newUsername" class="form-input" placeholder="输入用户名">
-                        </div>
-
-                        <div class="control-group">
-                            <label for="newUserPassword">密码</label>
-                            <input type="password" id="newUserPassword" class="form-input" placeholder="输入密码">
-                        </div>
-
-                        <div class="control-group">
-                            <label for="newUserRole">角色</label>
-                            <select id="newUserRole" class="form-select">
-                                <option value="visitor">访客</option>
-                                <option value="friend">好友</option>
-                                <option value="admin">管理员</option>
-                            </select>
-                        </div>
-
-                        <div class="control-group">
-                            <button class="btn-primary" onclick="addNewUser()" style="background: #28a745;">➕ 添加用户</button>
-                        </div>
+                    <div class="control-group">
+                        <label for="newUsername">用户名</label>
+                        <input type="text" id="newUsername" class="form-input" placeholder="输入用户名">
                     </div>
 
-                    <!-- 编辑用户区域 -->
-                    <div class="control-section">
-                        <h3 class="subsection-title">✏️ 编辑用户</h3>
+                    <div class="control-group">
+                        <label for="newUserPassword">密码</label>
+                        <input type="password" id="newUserPassword" class="form-input" placeholder="输入密码">
+                    </div>
 
-                        <div class="control-group">
-                            <label for="selectedUser">选择用户</label>
-                            <select id="selectedUser" class="form-select" onchange="onUserSelectionChange()">
-                                <option value="">请选择用户</option>
-                            </select>
-                        </div>
+                    <div class="control-group">
+                        <label for="newUserRole">角色</label>
+                        <select id="newUserRole" class="form-select">
+                            <option value="visitor">访客</option>
+                            <option value="friend">好友</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
 
-                        <div class="control-group">
-                            <label for="editUsername">用户名</label>
-                            <input type="text" id="editUsername" class="form-input" placeholder="用户名">
-                        </div>
-
-                        <div class="control-group">
-                            <label for="newRole">角色</label>
-                            <select id="newRole" class="form-select">
-                                <option value="visitor">访客</option>
-                                <option value="friend">好友</option>
-                                <option value="admin">管理员</option>
-                            </select>
-                        </div>
-
-                        <div class="control-group">
-                            <button class="btn-primary" onclick="saveUserEdit()">保存修改</button>
-                            <button class="btn-primary" onclick="changeUserRole()">仅修改角色</button>
-                        </div>
-
-                        <div class="control-group">
-                            <label for="newPassword">重置密码</label>
-                            <input type="password" id="newPassword" class="form-input" placeholder="输入新密码">
-                        </div>
-
-                        <div class="control-group">
-                            <button class="btn-primary" onclick="resetUserPassword()">重置密码</button>
-                        </div>
-
-                        <div class="control-group">
-                            <button class="btn-primary" onclick="confirmDeleteUser()" style="background: #dc3545;">删除用户</button>
-                        </div>
+                    <div class="control-group">
+                        <button class="btn-primary" onclick="addNewUser()" style="background: #28a745;">➕ 添加用户</button>
                     </div>
                 </div>
+
+                <!-- 编辑用户卡片 -->
+                <div class="controls-panel">
+                    <h2 class="section-title">✏️ 编辑用户</h2>
+
+                    <div class="control-group">
+                        <label for="selectedUser">选择用户</label>
+                        <select id="selectedUser" class="form-select" onchange="onUserSelectionChange()">
+                            <option value="">请选择用户</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="editUsername">用户名</label>
+                        <input type="text" id="editUsername" class="form-input" placeholder="用户名">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="newRole">角色</label>
+                        <select id="newRole" class="form-select">
+                            <option value="visitor">访客</option>
+                            <option value="friend">好友</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <button class="btn-primary" onclick="saveUserEdit()">保存修改</button>
+                        <button class="btn-primary" onclick="changeUserRole()">仅修改角色</button>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="newPassword">重置密码</label>
+                        <input type="password" id="newPassword" class="form-input" placeholder="输入新密码">
+                    </div>
+
+                    <div class="control-group">
+                        <button class="btn-primary" onclick="resetUserPassword()">重置密码</button>
+                    </div>
+
+                    <div class="control-group">
+                        <button class="btn-primary" onclick="confirmDeleteUser()" style="background: #dc3545;">删除用户</button>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <!-- 操作日志 -->
@@ -501,33 +485,13 @@
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
-                <div class="footer-links">
-                    <a href="index.html" class="home-button">首页</a>
-                    <div class="works-dropdown">
-                        <span class="dropdown-trigger">作品展示 ▼</span>
-                        <div class="dropdown-menu">
-                            <a href="essays.html">生活随笔</a>
-                            <a href="poetry.html">诗歌创作</a>
-                            <a href="novels.html">小说连载</a>
-                            <a href="artworks.html">绘画作品</a>
-                            <a href="music.html">音乐作品</a>
-                            <a href="videos.html">视频作品</a>
-                        </div>
-                    </div>
-                    <a href="upload.html">上传作品</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- 页脚将由header-footer.js自动生成 -->
 
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/user-status.js"></script>
     <script src="js/admin-logger.js"></script>
+    <script src="js/header-footer.js"></script>
 
     <style>
         /* 页脚下拉菜单样式 */
@@ -713,10 +677,6 @@
                             <div class="action-buttons">
                                 <button class="btn-action btn-edit" onclick="userManagement.selectUser('${user.username}')">编辑</button>
                                 <button class="btn-action btn-reset" onclick="userManagement.resetPassword('${user.username}')">重置密码</button>
-                                ${user.username !== auth.currentUser.username ?
-                                    `<button class="btn-action btn-delete" onclick="userManagement.confirmDeleteUser('${user.username}')">删除</button>` :
-                                    ''
-                                }
                             </div>
                         </td>
                     `;
