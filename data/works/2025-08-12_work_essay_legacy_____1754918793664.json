@@ -1,0 +1,53 @@
+{
+  "id": "essay_legacy_____1754918793664",
+  "owner": "Linlin",
+  "title": "作品_essay_legacy_____1754918793664",
+  "createdAt": "2025-08-12T15:01:10.857Z",
+  "updatedAt": "2025-08-12T15:01:10.857Z",
+  "permissions": {
+    "level": "visitor",
+    "isPublic": false,
+    "requiredRole": "visitor",
+    "minRoleLevel": 2,
+    "customAccess": {
+      "whitelist": {
+        "enabled": false,
+        "users": [],
+        "roles": [],
+        "description": ""
+      },
+      "blacklist": {
+        "enabled": false,
+        "users": [],
+        "roles": [],
+        "description": ""
+      },
+      "specialPermissions": {
+        "allowAnonymous": false,
+        "allowComments": true,
+        "allowDownload": true,
+        "allowShare": true,
+        "expiryDate": null,
+        "maxViews": null,
+        "currentViews": 0
+      }
+    },
+    "metadata": {
+      "createdBy": "hysteria",
+      "createdAt": "2025-08-12T15:01:09.962Z",
+      "lastModifiedBy": "hysteria",
+      "lastModifiedAt": "2025-08-12T15:01:10.396Z",
+      "version": "1.0.1",
+      "changeHistory": [
+        {
+          "action": "updated",
+          "by": "hysteria",
+          "at": "2025-08-12T15:01:10.396Z",
+          "from": "unknown",
+          "to": "visitor",
+          "reason": "Permission update"
+        }
+      ]
+    }
+  }
+}
