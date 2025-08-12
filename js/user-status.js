@@ -27,13 +27,13 @@ class UserStatusManager {
     this.bindEvents();
     this.updateUserStatus();
 
-    // 定期检查登录状态变化（增加间隔时间，减少频繁更新）
+    // 定期检查登录状态变化（进一步增加间隔时间，减少频繁更新）
     this.updateInterval = setInterval(() => {
       // 只有在页面可见时才更新状态，避免后台页面的无意义更新
       if (!document.hidden) {
-        this.updateUserStatus();
+        this.updateUserStatus('timer');
       }
-    }, 10000); // 从5秒改为10秒
+    }, 30000); // 从10秒改为30秒，减少频率
 
     this.initialized = true;
     console.log('✅ 用户状态管理器已初始化');
@@ -454,7 +454,7 @@ class UserStatusManager {
   }
 
   // 更新用户状态显示（带节流机制）
-  updateUserStatus() {
+  updateUserStatus(source = 'manual') {
     // 节流检查：避免频繁更新
     const now = Date.now();
     if (this.isUpdating || (now - this.lastUpdateTime < this.updateThrottle)) {
@@ -465,8 +465,8 @@ class UserStatusManager {
     this.isUpdating = true;
     this.lastUpdateTime = now;
 
-    // 减少日志输出频率，只在状态真正改变时输出
-    const shouldLog = !this.lastLoggedState || (now - this.lastLogTime > 30000); // 30秒内最多输出一次日志
+    // 减少日志输出频率，只在状态真正改变时输出，定时器调用时更加静默
+    const shouldLog = source !== 'timer' && (!this.lastLoggedState || (now - this.lastLogTime > 60000)); // 60秒内最多输出一次日志
 
     try {
       const userStatusItem = document.getElementById('userStatusItem');
@@ -523,7 +523,7 @@ class UserStatusManager {
         `;
       }
 
-      if (shouldLog || stateChanged) {
+      if ((shouldLog || stateChanged) && source !== 'timer') {
         console.log('✅ 用户状态已更新 - 已登录:', auth.currentUser.username);
       }
     } else {
@@ -537,7 +537,7 @@ class UserStatusManager {
         userInfoDisplay.style.display = 'none';
       }
 
-      if (shouldLog || stateChanged) {
+      if ((shouldLog || stateChanged) && source !== 'timer') {
         console.log('✅ 用户状态已更新 - 未登录');
       }
     }

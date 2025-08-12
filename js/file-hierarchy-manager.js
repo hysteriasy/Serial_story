@@ -1028,13 +1028,14 @@ class FileHierarchyManager {
           }
         } catch (error) {
           // 只有在非404错误时才记录为错误
-          if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+          if (!error.message.includes('文件不存在') && !error.message.includes('404') &&
+              !error.message.includes('Not Found')) {
             console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
             errors.push(`删除GitHub数据失败: ${error.message}`);
             deletionLog.push(`❌ GitHub存储: ${error.message}`);
           } else {
-            deletionLog.push(`ℹ️ GitHub存储: ${workKey} (文件不存在)`);
-            console.log(`ℹ️ GitHub文件不存在，跳过删除: ${workKey}`);
+            // 文件不存在是正常情况，不记录为错误
+            deletionLog.push(`ℹ️ GitHub存储: ${workKey} (文件不存在，跳过删除)`);
           }
         }
       } else {

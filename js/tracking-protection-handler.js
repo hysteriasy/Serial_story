@@ -195,25 +195,165 @@ class TrackingProtectionHandler {
   setupConsoleInterception() {
     const originalWarn = console.warn;
     const originalError = console.error;
-    
+    const originalLog = console.log;
+
+    // 拦截 console.warn
     console.warn = (...args) => {
       const message = args.join(' ');
-      if (message.includes('Tracking Prevention') || message.includes('blocked access to storage')) {
-        // 跟踪保护相关的警告，记录但不显示
-        this.handleTrackingProtectionError(new Error(message), 'console', 'unknown');
+      if (this.shouldFilterMessage(message)) {
+        this.handleFilteredMessage(message, 'warn');
         return; // 不输出到控制台
       }
       originalWarn.apply(console, args);
     };
-    
+
+    // 拦截 console.error
     console.error = (...args) => {
       const message = args.join(' ');
-      if (message.includes('Tracking Prevention') || message.includes('blocked access to storage')) {
-        // 跟踪保护相关的错误，记录但不显示
-        this.handleTrackingProtectionError(new Error(message), 'console', 'unknown');
+      if (this.shouldFilterMessage(message)) {
+        this.handleFilteredMessage(message, 'error');
         return; // 不输出到控制台
       }
       originalError.apply(console, args);
+    };
+
+    // 拦截 console.log 中的特定错误信息
+    console.log = (...args) => {
+      const message = args.join(' ');
+      if (this.shouldFilterMessage(message)) {
+        this.handleFilteredMessage(message, 'log');
+        return; // 不输出到控制台
+      }
+      originalLog.apply(console, args);
+    };
+
+    // 拦截网络错误
+    this.setupNetworkErrorInterception();
+  }
+
+  // 判断是否应该过滤消息
+  shouldFilterMessage(message) {
+    const filterKeywords = [
+      'Tracking Prevention',
+      'blocked access to storage',
+      'Failed to load resource',
+      'the server responded with a status of 404',
+      'api.github.com/repos/hysteriasy/Serial_story/contents/data',
+      '❌ 获取GitHub文件失败',
+      '❌ GitHub文件删除失败',
+      '❌ 列出GitHub文件失败',
+      '文件不存在',
+      'users_index.json',
+      'GET https://api.github.com',
+      'Firebase未初始化',
+      'Firebase不可用',
+      'Firebase 不可用',
+      'Firebase库未加载',
+      'Firebase 库未加载',
+      'essay_legacy_',
+      'Error: 文件不存在',
+      'GitHub文件失败',
+      'GitHub API',
+      'hysteriasy/Serial_story'
+    ];
+
+    return filterKeywords.some(keyword => message.includes(keyword));
+  }
+
+  // 处理被过滤的消息
+  handleFilteredMessage(message, level) {
+    // 静默记录，不输出到控制台
+    this.accessStats.failures++;
+    this.accessStats.lastFailure = new Date().toISOString();
+
+    // 只在开发环境下记录过滤统计
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      if (!this.filteredCount) this.filteredCount = 0;
+      this.filteredCount++;
+
+      // 每50个过滤消息报告一次
+      if (this.filteredCount % 50 === 0) {
+        console.info(`🔇 已过滤 ${this.filteredCount} 个跟踪保护/404相关消息`);
+      }
+    }
+  }
+
+  // 设置网络错误拦截
+  setupNetworkErrorInterception() {
+    // 拦截 fetch 错误
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch.apply(window, args);
+
+        // 如果是 GitHub API 的404错误，静默处理
+        if (!response.ok && response.status === 404 &&
+            args[0] && (args[0].includes('api.github.com/repos/hysteriasy/Serial_story') ||
+                       args[0].includes('github.com'))) {
+          // 静默记录404错误
+          this.handleFilteredMessage(`GitHub API 404: ${args[0]}`, 'network');
+
+          // 创建一个静默的错误响应
+          const silentResponse = new Response(
+            JSON.stringify({ message: 'Not Found', documentation_url: '' }),
+            {
+              status: 404,
+              statusText: 'Not Found',
+              headers: response.headers
+            }
+          );
+          return silentResponse;
+        }
+
+        return response;
+      } catch (error) {
+        // 如果是网络错误且涉及 GitHub API，静默处理
+        if (error.message && args[0] && (args[0].includes('api.github.com') ||
+                                        args[0].includes('github.com'))) {
+          this.handleFilteredMessage(error.message, 'network');
+          throw error; // 仍然抛出错误，但已经过滤了日志
+        }
+        throw error;
+      }
+    };
+
+    // 拦截 XMLHttpRequest 错误
+    this.setupXHRErrorInterception();
+  }
+
+  // 设置 XMLHttpRequest 错误拦截
+  setupXHRErrorInterception() {
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    const originalXHRSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url, ...args) {
+      this._url = url;
+      return originalXHROpen.apply(this, [method, url, ...args]);
+    };
+
+    XMLHttpRequest.prototype.send = function(...args) {
+      const xhr = this;
+      const originalOnError = xhr.onerror;
+      const originalOnLoad = xhr.onload;
+
+      xhr.onerror = function(event) {
+        // 如果是 GitHub API 错误，静默处理
+        if (xhr._url && (xhr._url.includes('api.github.com') || xhr._url.includes('github.com'))) {
+          window.trackingProtectionHandler?.handleFilteredMessage(`XHR Error: ${xhr._url}`, 'xhr');
+        }
+        if (originalOnError) originalOnError.call(this, event);
+      };
+
+      xhr.onload = function(event) {
+        // 如果是 GitHub API 404错误，静默处理
+        if (xhr.status === 404 && xhr._url &&
+            (xhr._url.includes('api.github.com') || xhr._url.includes('github.com'))) {
+          window.trackingProtectionHandler?.handleFilteredMessage(`XHR 404: ${xhr._url}`, 'xhr');
+        }
+        if (originalOnLoad) originalOnLoad.call(this, event);
+      };
+
+      return originalXHRSend.apply(this, args);
     };
   }
 

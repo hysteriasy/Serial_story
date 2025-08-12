@@ -231,7 +231,10 @@ class GitHubStorage {
 
       return await response.json();
     } catch (error) {
-      console.error('❌ 获取GitHub文件失败:', error);
+      // 只在非404错误时输出错误日志，避免文件删除时的误导性错误
+      if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+        console.error('❌ 获取GitHub文件失败:', error);
+      }
       throw error;
     }
   }
@@ -287,7 +290,10 @@ class GitHubStorage {
       console.log(`✅ 文件删除成功: ${filePath}`);
       return { success: true, alreadyDeleted: false };
     } catch (error) {
-      console.error('❌ GitHub文件删除失败:', error);
+      // 只在非404错误时输出错误日志，避免文件删除时的误导性错误
+      if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+        console.error('❌ GitHub文件删除失败:', error);
+      }
       throw error;
     }
   }
@@ -393,7 +399,10 @@ class GitHubStorage {
 
       return await response.json();
     } catch (error) {
-      console.error('❌ 列出GitHub文件失败:', error);
+      // 只在非404错误时输出错误日志
+      if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+        console.error('❌ 列出GitHub文件失败:', error);
+      }
       throw error;
     }
   }

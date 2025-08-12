@@ -1,14 +1,24 @@
 // 作品上传管理系统
 class WorkUploader {
   constructor() {
-    // 使用全局Firebase配置
-    if (!firebase.apps.length) {
-      console.error('Firebase未初始化，请确保在script.js中正确配置');
-      return;
+    // 检查运行环境，在 GitHub Pages 环境下跳过 Firebase 初始化
+    const isGitHubPages = window.location.hostname === 'hysteriasy.github.io';
+
+    if (isGitHubPages) {
+      console.info('🌐 检测到 GitHub Pages 环境，跳过 Firebase 初始化');
+      this.storage = null;
+      this.database = null;
+    } else if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+      // 只在非 GitHub Pages 环境且 Firebase 可用时初始化
+      this.storage = firebase.storage();
+      this.database = firebase.database();
+      console.log('🔧 Firebase 存储已初始化');
+    } else {
+      console.info('📱 Firebase 不可用，使用本地/GitHub 存储模式');
+      this.storage = null;
+      this.database = null;
     }
 
-    this.storage = firebase.storage();
-    this.database = firebase.database();
     this.maxFileSize = 10 * 1024 * 1024; // 10MB
 
     // GitHub存储支持
@@ -1195,12 +1205,24 @@ class WorkUploader {
     if (!auth.currentUser) return;
 
     try {
+      // 检查是否在 GitHub Pages 环境
+      const isGitHubPages = window.location.hostname === 'hysteriasy.github.io';
+
+      if (isGitHubPages || !this.database) {
+        // GitHub Pages 环境或 Firebase 不可用，显示空列表
+        this.displayUserFiles({});
+        return;
+      }
+
       const snapshot = await this.database.ref(`userFiles/${auth.currentUser.username}`).once('value');
       const files = snapshot.val() || {};
 
       this.displayFileList(files);
     } catch (error) {
-      console.error('加载文件列表失败:', error);
+      // 静默处理错误，避免在 GitHub Pages 环境下产生误导性错误
+      if (!window.location.hostname.includes('github.io')) {
+        console.error('加载文件列表失败:', error);
+      }
     }
   }
 
@@ -1313,6 +1335,15 @@ class WorkUploader {
     }
 
     try {
+      // 检查是否在 GitHub Pages 环境
+      const isGitHubPages = window.location.hostname === 'hysteriasy.github.io';
+
+      if (isGitHubPages || !this.database || !this.storage) {
+        // GitHub Pages 环境或 Firebase 不可用，使用替代删除方法
+        this.showNotification('当前环境不支持此删除操作，请使用文件权限管理功能', 'warning');
+        return;
+      }
+
       // 获取文件信息
       const snapshot = await this.database.ref(`userFiles/${auth.currentUser.username}/${fileId}`).once('value');
       const fileInfo = snapshot.val();

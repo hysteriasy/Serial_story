@@ -1314,13 +1314,14 @@
     // 系统状态更新防重复机制
     let lastStatusUpdate = 0;
     let lastStatusHash = '';
+    let lastEnvironmentInfo = null; // 用于跟踪环境信息变化
 
-    // 更新系统状态显示
-    function updateSystemStatus(force = false) {
+    // 更新系统状态显示（优化版本，减少循环刷新）
+    function updateSystemStatus(force = false, source = 'unknown') {
       const now = Date.now();
 
-      // 防止频繁更新（除非强制更新）
-      if (!force && now - lastStatusUpdate < 5000) {
+      // 增加防抖时间，减少频繁更新（除非强制更新）
+      if (!force && now - lastStatusUpdate < 10000) { // 从5秒增加到10秒
         return;
       }
 
@@ -1329,12 +1330,15 @@
       const textElement = document.getElementById('statusText');
 
       if (!statusElement || !indicatorElement || !textElement) {
-        console.warn('⚠️ 系统状态元素未找到，跳过状态更新');
+        // 减少警告日志的频率
+        if (lastStatusUpdate === 0) {
+          console.warn('⚠️ 系统状态元素未找到，跳过状态更新');
+        }
         return;
       }
 
       // 只在首次更新或强制更新时显示调试信息
-      if (lastStatusUpdate === 0 || force) {
+      if (lastStatusUpdate === 0 || (force && source !== 'timer')) {
         console.log('🔍 系统状态检查 - 对象可用性:', {
           dataManager: !!window.dataManager,
           environmentManager: !!window.environmentManager,
@@ -1342,7 +1346,8 @@
           dataManagerGetEnvInfo: !!(window.dataManager && window.dataManager.getEnvironmentInfo),
           currentURL: window.location.href,
           hostname: window.location.hostname,
-          pathname: window.location.pathname
+          pathname: window.location.pathname,
+          source: source
         });
       }
 
@@ -1354,13 +1359,23 @@
         shouldUseGitHub: false
       };
 
-      // 优先使用dataManager的环境信息
+      // 优先使用dataManager的环境信息（减少重复日志）
       if (window.dataManager && typeof window.dataManager.getEnvironmentInfo === 'function') {
         try {
           environmentInfo = window.dataManager.getEnvironmentInfo();
-          console.log('✅ 从dataManager获取环境信息:', environmentInfo);
+
+          // 只在首次更新、强制更新或环境信息发生变化时输出
+          const envChanged = !lastEnvironmentInfo ||
+            JSON.stringify(lastEnvironmentInfo) !== JSON.stringify(environmentInfo);
+
+          if ((lastStatusUpdate === 0 || force || envChanged) && source !== 'timer') {
+            console.log('✅ 从dataManager获取环境信息:', environmentInfo);
+            lastEnvironmentInfo = { ...environmentInfo };
+          }
         } catch (error) {
-          console.error('❌ dataManager.getEnvironmentInfo()调用失败:', error);
+          if (lastStatusUpdate === 0) {
+            console.error('❌ dataManager.getEnvironmentInfo()调用失败:', error);
+          }
         }
       }
       // 回退到environmentManager
@@ -1372,9 +1387,19 @@
             isOnline: window.environmentManager.isOnlineEnvironment(),
             shouldUseGitHub: window.environmentManager.shouldUseGitHubStorage()
           };
-          console.log('✅ 从environmentManager获取环境信息:', environmentInfo);
+
+          // 只在首次更新、强制更新或环境信息发生变化时输出
+          const envChanged = !lastEnvironmentInfo ||
+            JSON.stringify(lastEnvironmentInfo) !== JSON.stringify(environmentInfo);
+
+          if ((lastStatusUpdate === 0 || force || envChanged) && source !== 'timer') {
+            console.log('✅ 从environmentManager获取环境信息:', environmentInfo);
+            lastEnvironmentInfo = { ...environmentInfo };
+          }
         } catch (error) {
-          console.error('❌ environmentManager调用失败:', error);
+          if (lastStatusUpdate === 0) {
+            console.error('❌ environmentManager调用失败:', error);
+          }
         }
       }
       // 最后的回退：手动检测
@@ -2171,8 +2196,8 @@
             }
           }
 
-          // 定期更新系统状态（每30秒）
-          setInterval(() => updateSystemStatus(false), 30000);
+          // 定期更新系统状态（每60秒，减少频率）
+          setInterval(() => updateSystemStatus(false, 'timer'), 60000);
         });
       }, 100);
     });
