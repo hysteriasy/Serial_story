@@ -395,18 +395,40 @@ class FilePermissionsUI {
   // 保存权限设置
   async savePermissions() {
     try {
-      const selectedLevel = document.querySelector('input[name="permissionLevel"]:checked').value;
-      const reason = document.getElementById('changeReason').value.trim();
-      
+      console.log(`🔐 开始保存权限设置: ${this.currentFileId} (所有者: ${this.currentOwner})`);
+
+      // 检查必要的元素是否存在
+      const levelRadio = document.querySelector('input[name="permissionLevel"]:checked');
+      if (!levelRadio) {
+        this.showNotification('请选择权限级别', 'error');
+        return;
+      }
+
+      const selectedLevel = levelRadio.value;
+      const reasonElement = document.getElementById('changeReason');
+      const reason = reasonElement ? reasonElement.value.trim() : '';
+
+      console.log(`📋 权限设置详情: 级别=${selectedLevel}, 原因="${reason}"`);
+
       let customSettings = {};
-      
+
       if (selectedLevel === 'custom') {
         customSettings = this.collectCustomSettings();
+        console.log(`⚙️ 自定义设置:`, customSettings);
       }
-      
+
+      // 检查权限系统是否可用
+      if (!window.filePermissionsSystem) {
+        throw new Error('权限系统未初始化');
+      }
+
       // 创建新的权限结构
       const newPermissions = window.filePermissionsSystem.createPermissionStructure(selectedLevel, customSettings);
-      
+      console.log(`📝 创建的权限结构:`, newPermissions);
+
+      // 显示保存进度
+      this.showNotification('正在保存权限设置...', 'info');
+
       // 保存权限
       const result = await window.filePermissionsSystem.updatePermissions(
         this.currentFileId,
@@ -414,22 +436,26 @@ class FilePermissionsUI {
         newPermissions,
         reason
       );
-      
+
+      console.log(`💾 权限保存结果:`, result);
+
       if (result.success) {
         this.showNotification('权限设置已保存', 'success');
         this.closeModal();
-        
+
         // 刷新文件层级显示
         if (window.fileHierarchyManager) {
+          console.log('🔄 刷新文件层级显示');
           window.fileHierarchyManager.refreshHierarchy();
         }
       } else {
-        this.showNotification(result.message, 'error');
+        console.error('❌ 权限保存失败:', result.message);
+        this.showNotification(result.message || '保存权限失败', 'error');
       }
-      
+
     } catch (error) {
-      console.error('保存权限失败:', error);
-      this.showNotification('保存权限失败', 'error');
+      console.error('❌ 保存权限过程中发生错误:', error);
+      this.showNotification(`保存权限失败: ${error.message}`, 'error');
     }
   }
 

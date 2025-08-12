@@ -358,41 +358,71 @@ class FilePermissionsSystem {
   // 获取文件权限设置
   async getFilePermissions(fileId, owner) {
     try {
-      // 在网络环境下，优先从 GitHub 获取数据
+      const workKey = `work_${fileId}`;
+      console.log(`🔍 获取文件权限: ${fileId} (所有者: ${owner})`);
+
+      // 1. 在网络环境下，优先从 GitHub 获取数据
       if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        console.log(`🌐 尝试从 GitHub 获取权限数据: ${workKey}`);
         try {
-          const workKey = `work_${fileId}`;
           const workData = await window.dataManager.loadData(workKey, {
             category: 'works',
-            fallbackToLocal: true
+            fallbackToLocal: false // 先不回退，单独处理
           });
           if (workData && workData.permissions) {
+            console.log(`✅ 从 GitHub 获取到权限数据: ${fileId}`);
             return workData.permissions;
+          } else if (workData) {
+            console.log(`⚠️ GitHub 中的作品数据没有权限信息: ${fileId}`);
+          } else {
+            console.log(`ℹ️ GitHub 中未找到作品数据: ${fileId}`);
           }
         } catch (error) {
-          console.warn('从 GitHub 获取权限数据失败:', error);
+          console.warn(`⚠️ 从 GitHub 获取权限数据失败: ${error.message}`);
         }
       }
 
-      // 尝试从Firebase获取
-      if (window.firebaseAvailable && firebase.apps.length) {
-        const snapshot = await firebase.database().ref(`userFiles/${owner}/${fileId}/permissions`).once('value');
-        const firebaseData = snapshot.val();
-        if (firebaseData) {
-          return firebaseData;
+      // 2. 从本地存储获取
+      console.log(`📱 尝试从本地存储获取权限数据: ${workKey}`);
+      const localWorkData = localStorage.getItem(workKey);
+      if (localWorkData) {
+        try {
+          const work = JSON.parse(localWorkData);
+          if (work.permissions) {
+            console.log(`✅ 从本地存储获取到权限数据: ${fileId}`);
+            return work.permissions;
+          } else {
+            console.log(`⚠️ 本地作品数据没有权限信息: ${fileId}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ 解析本地作品数据失败: ${error.message}`);
+        }
+      } else {
+        console.log(`ℹ️ 本地存储中未找到作品数据: ${fileId}`);
+      }
+
+      // 3. 尝试从Firebase获取（如果可用）
+      if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
+        console.log(`🔥 尝试从 Firebase 获取权限数据: userFiles/${owner}/${fileId}/permissions`);
+        try {
+          const snapshot = await firebase.database().ref(`userFiles/${owner}/${fileId}/permissions`).once('value');
+          const firebaseData = snapshot.val();
+          if (firebaseData) {
+            console.log(`✅ 从 Firebase 获取到权限数据: ${fileId}`);
+            return firebaseData;
+          } else {
+            console.log(`ℹ️ Firebase 中未找到权限数据: ${fileId}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ 从 Firebase 获取权限数据失败: ${error.message}`);
         }
       }
 
-      // 从本地存储获取
-      const workData = localStorage.getItem(`work_${fileId}`);
-      if (workData) {
-        const work = JSON.parse(workData);
-        return work.permissions;
-      }
-
+      // 4. 如果都没有找到，返回默认权限
+      console.log(`ℹ️ 未找到权限数据，返回 null: ${fileId}`);
       return null;
     } catch (error) {
-      console.error('获取文件权限失败:', error);
+      console.error(`❌ 获取文件权限失败: ${fileId}`, error);
       return null;
     }
   }
@@ -403,18 +433,51 @@ class FilePermissionsSystem {
       const workKey = `work_${fileId}`;
       let workData = null;
 
-      // 首先获取完整的作品数据
-      const localData = localStorage.getItem(workKey);
-      if (localData) {
-        workData = JSON.parse(localData);
-        workData.permissions = permissions;
-
-        // 保存到本地存储
-        localStorage.setItem(workKey, JSON.stringify(workData));
+      // 首先尝试获取完整的作品数据
+      // 1. 优先从 GitHub 获取（如果在网络环境）
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        try {
+          workData = await window.dataManager.loadData(workKey, {
+            category: 'works',
+            fallbackToLocal: true
+          });
+          console.log(`📁 从 GitHub 获取作品数据用于权限更新: ${fileId}`);
+        } catch (error) {
+          console.warn(`⚠️ 从 GitHub 获取作品数据失败: ${error.message}`);
+        }
       }
 
+      // 2. 如果 GitHub 获取失败，从本地存储获取
+      if (!workData) {
+        const localData = localStorage.getItem(workKey);
+        if (localData) {
+          workData = JSON.parse(localData);
+          console.log(`📱 从本地存储获取作品数据用于权限更新: ${fileId}`);
+        }
+      }
+
+      // 3. 如果都没有数据，创建基本的作品数据结构
+      if (!workData) {
+        console.warn(`⚠️ 未找到作品数据，创建基本结构: ${fileId}`);
+        workData = {
+          id: fileId,
+          owner: owner,
+          title: `作品_${fileId}`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      // 更新权限数据
+      workData.permissions = permissions;
+      workData.updatedAt = new Date().toISOString();
+
+      // 保存到本地存储
+      localStorage.setItem(workKey, JSON.stringify(workData));
+      console.log(`💾 权限数据已保存到本地存储: ${fileId}`);
+
       // 在网络环境下，同步到 GitHub
-      if (window.dataManager && window.dataManager.shouldUseGitHubStorage() && workData) {
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
         try {
           await window.dataManager.saveData(workKey, workData, {
             category: 'works',
@@ -423,6 +486,7 @@ class FilePermissionsSystem {
           console.log(`✅ 权限设置已同步到 GitHub: ${fileId}`);
         } catch (error) {
           console.warn(`⚠️ GitHub 权限同步失败: ${error.message}`);
+          // GitHub 同步失败不应该阻止本地保存
         }
       }
 

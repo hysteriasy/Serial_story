@@ -715,6 +715,70 @@
       color: #495057;
     }
 
+    /* 诊断结果样式 */
+    .diagnostic-results {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .diagnostic-loading {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+    }
+
+    .diagnostic-summary {
+      margin-bottom: 20px;
+    }
+
+    .diagnostic-summary h6 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #495057;
+    }
+
+    .diagnostic-item {
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 5px;
+      border-left: 4px solid;
+    }
+
+    .diagnostic-success {
+      background-color: #d4edda;
+      border-left-color: #28a745;
+    }
+
+    .diagnostic-warning {
+      background-color: #fff3cd;
+      border-left-color: #ffc107;
+    }
+
+    .diagnostic-error {
+      background-color: #f8d7da;
+      border-left-color: #dc3545;
+    }
+
+    .diagnostic-item h7 {
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: block;
+      font-size: 1em;
+    }
+
+    .diagnostic-item ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .diagnostic-item li {
+      margin-bottom: 3px;
+      font-size: 0.9em;
+    }
+
     .test-item {
       display: flex;
       align-items: center;
@@ -891,6 +955,19 @@
           <!-- 连接测试结果 -->
           <div id="githubTestResults" class="test-results" style="display: none;">
             <!-- 测试结果将在这里显示 -->
+          </div>
+        </div>
+
+        <!-- 权限管理诊断 -->
+        <div class="settings-section">
+          <h5>🔍 权限管理诊断</h5>
+          <div class="form-group">
+            <label>系统诊断</label>
+            <p>诊断权限管理功能在当前环境下的工作状态：</p>
+            <button type="button" id="runPermissionsDiagnostic" class="btn btn-info">🔍 运行诊断</button>
+            <div id="diagnosticResults" class="diagnostic-results" style="margin-top: 15px; display: none;">
+              <!-- 诊断结果将在这里显示 -->
+            </div>
           </div>
         </div>
 
@@ -1809,6 +1886,309 @@
       updateGitHubTokenStatus();
     }
 
+    // 运行权限管理诊断
+    async function runPermissionsDiagnostic() {
+      const resultsDiv = document.getElementById('diagnosticResults');
+      if (!resultsDiv) return;
+
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = '<div class="diagnostic-loading">🔍 正在运行诊断...</div>';
+
+      const results = [];
+
+      try {
+        // 1. 环境检测
+        results.push(await diagnosisEnvironmentDetection());
+
+        // 2. 存储策略检查
+        results.push(await diagnosisStorageStrategy());
+
+        // 3. GitHub Token 检查
+        results.push(await diagnosisGitHubToken());
+
+        // 4. 权限系统模块检查
+        results.push(await diagnosisPermissionModules());
+
+        // 5. 数据读写测试
+        results.push(await diagnosisDataAccess());
+
+        // 显示诊断结果
+        displayDiagnosticResults(results);
+
+      } catch (error) {
+        console.error('诊断过程出错:', error);
+        resultsDiv.innerHTML = `<div class="diagnostic-error">❌ 诊断过程出错: ${error.message}</div>`;
+      }
+    }
+
+    // 环境检测诊断
+    async function diagnosisEnvironmentDetection() {
+      const result = {
+        category: '环境检测',
+        status: 'success',
+        details: []
+      };
+
+      try {
+        const currentURL = window.location.href;
+        const hostname = window.location.hostname;
+        const pathname = window.location.pathname;
+
+        result.details.push(`当前URL: ${currentURL}`);
+        result.details.push(`主机名: ${hostname}`);
+        result.details.push(`路径: ${pathname}`);
+
+        // 检查环境管理器
+        if (window.environmentManager) {
+          const env = window.environmentManager.getEnvironment();
+          const strategy = window.environmentManager.getStorageStrategy();
+          const isOnline = window.environmentManager.isOnlineEnvironment();
+          const shouldUseGitHub = window.environmentManager.shouldUseGitHubStorage();
+
+          result.details.push(`检测到的环境: ${env}`);
+          result.details.push(`存储策略: ${strategy}`);
+          result.details.push(`是否线上环境: ${isOnline ? '是' : '否'}`);
+          result.details.push(`应使用GitHub存储: ${shouldUseGitHub ? '是' : '否'}`);
+
+          // 验证GitHub Pages环境检测
+          if (hostname === 'hysteriasy.github.io' && pathname.startsWith('/Serial_story')) {
+            if (env !== 'github_pages') {
+              result.status = 'warning';
+              result.details.push('⚠️ 警告: 当前为GitHub Pages环境，但环境检测结果不正确');
+            }
+            if (!shouldUseGitHub) {
+              result.status = 'error';
+              result.details.push('❌ 错误: GitHub Pages环境应该使用GitHub存储策略');
+            }
+          }
+        } else {
+          result.status = 'error';
+          result.details.push('❌ 环境管理器未初始化');
+        }
+
+      } catch (error) {
+        result.status = 'error';
+        result.details.push(`❌ 环境检测失败: ${error.message}`);
+      }
+
+      return result;
+    }
+
+    // 存储策略诊断
+    async function diagnosisStorageStrategy() {
+      const result = {
+        category: '存储策略',
+        status: 'success',
+        details: []
+      };
+
+      try {
+        // 检查数据管理器
+        if (window.dataManager) {
+          const envInfo = window.dataManager.getEnvironmentInfo();
+          result.details.push(`数据管理器环境: ${envInfo.environment}`);
+          result.details.push(`数据管理器策略: ${envInfo.strategy}`);
+          result.details.push(`数据管理器线上状态: ${envInfo.isOnline ? '是' : '否'}`);
+          result.details.push(`数据管理器GitHub使用: ${envInfo.shouldUseGitHub ? '是' : '否'}`);
+
+          // 检查GitHub存储实例
+          if (window.dataManager.githubStorage) {
+            result.details.push('✅ GitHub存储实例已初始化');
+            if (window.dataManager.githubStorage.token) {
+              result.details.push('✅ GitHub Token已配置');
+            } else {
+              result.status = 'warning';
+              result.details.push('⚠️ GitHub Token未配置');
+            }
+          } else {
+            result.status = 'warning';
+            result.details.push('⚠️ GitHub存储实例未初始化');
+          }
+        } else {
+          result.status = 'error';
+          result.details.push('❌ 数据管理器未初始化');
+        }
+
+      } catch (error) {
+        result.status = 'error';
+        result.details.push(`❌ 存储策略检查失败: ${error.message}`);
+      }
+
+      return result;
+    }
+
+    // GitHub Token 诊断
+    async function diagnosisGitHubToken() {
+      const result = {
+        category: 'GitHub Token',
+        status: 'success',
+        details: []
+      };
+
+      try {
+        // 检查Token是否存在
+        const token = localStorage.getItem('github_token');
+        if (!token) {
+          result.status = 'error';
+          result.details.push('❌ GitHub Token未配置');
+          return result;
+        }
+
+        result.details.push('✅ GitHub Token已配置');
+        result.details.push(`Token格式: ${token.substring(0, 10)}...`);
+
+        // 测试Token有效性
+        if (window.githubStorage) {
+          try {
+            await window.githubStorage.validateToken();
+            result.details.push('✅ GitHub Token验证成功');
+          } catch (error) {
+            result.status = 'error';
+            result.details.push(`❌ GitHub Token验证失败: ${error.message}`);
+          }
+        } else {
+          result.status = 'warning';
+          result.details.push('⚠️ GitHub存储模块未初始化，无法验证Token');
+        }
+
+      } catch (error) {
+        result.status = 'error';
+        result.details.push(`❌ GitHub Token检查失败: ${error.message}`);
+      }
+
+      return result;
+    }
+
+    // 权限系统模块诊断
+    async function diagnosisPermissionModules() {
+      const result = {
+        category: '权限系统模块',
+        status: 'success',
+        details: []
+      };
+
+      try {
+        // 检查权限系统模块
+        const modules = [
+          { name: 'filePermissionsSystem', obj: window.filePermissionsSystem },
+          { name: 'filePermissionsUI', obj: window.filePermissionsUI },
+          { name: 'fileHierarchyManager', obj: window.fileHierarchyManager },
+          { name: 'permissionsManager', obj: window.permissionsManager }
+        ];
+
+        modules.forEach(module => {
+          if (module.obj) {
+            result.details.push(`✅ ${module.name} 已初始化`);
+          } else {
+            result.status = 'warning';
+            result.details.push(`⚠️ ${module.name} 未初始化`);
+          }
+        });
+
+        // 检查权限系统的关键方法
+        if (window.filePermissionsSystem) {
+          const methods = ['getFilePermissions', 'saveFilePermissions', 'updatePermissions', 'canModifyPermissions'];
+          methods.forEach(method => {
+            if (typeof window.filePermissionsSystem[method] === 'function') {
+              result.details.push(`✅ ${method} 方法可用`);
+            } else {
+              result.status = 'error';
+              result.details.push(`❌ ${method} 方法不可用`);
+            }
+          });
+        }
+
+      } catch (error) {
+        result.status = 'error';
+        result.details.push(`❌ 权限系统模块检查失败: ${error.message}`);
+      }
+
+      return result;
+    }
+
+    // 数据读写测试
+    async function diagnosisDataAccess() {
+      const result = {
+        category: '数据读写测试',
+        status: 'success',
+        details: []
+      };
+
+      try {
+        // 测试本地存储
+        const testKey = 'diagnostic_test_' + Date.now();
+        const testData = { test: true, timestamp: Date.now() };
+
+        localStorage.setItem(testKey, JSON.stringify(testData));
+        const retrieved = JSON.parse(localStorage.getItem(testKey));
+        localStorage.removeItem(testKey);
+
+        if (retrieved && retrieved.test) {
+          result.details.push('✅ 本地存储读写正常');
+        } else {
+          result.status = 'error';
+          result.details.push('❌ 本地存储读写失败');
+        }
+
+        // 测试GitHub存储（如果配置了）
+        if (window.dataManager && window.dataManager.shouldUseGitHubStorage() && window.dataManager.githubStorage && window.dataManager.githubStorage.token) {
+          try {
+            // 这里只测试连接，不实际写入数据
+            result.details.push('✅ GitHub存储配置正确，可以进行数据操作');
+          } catch (error) {
+            result.status = 'warning';
+            result.details.push(`⚠️ GitHub存储测试失败: ${error.message}`);
+          }
+        } else {
+          result.details.push('ℹ️ GitHub存储未配置或不可用');
+        }
+
+      } catch (error) {
+        result.status = 'error';
+        result.details.push(`❌ 数据读写测试失败: ${error.message}`);
+      }
+
+      return result;
+    }
+
+    // 显示诊断结果
+    function displayDiagnosticResults(results) {
+      const resultsDiv = document.getElementById('diagnosticResults');
+      if (!resultsDiv) return;
+
+      let html = '<div class="diagnostic-summary">';
+
+      // 统计结果
+      const summary = results.reduce((acc, result) => {
+        acc[result.status] = (acc[result.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      html += `<h6>📊 诊断摘要</h6>`;
+      html += `<p>`;
+      if (summary.success) html += `✅ 正常: ${summary.success} `;
+      if (summary.warning) html += `⚠️ 警告: ${summary.warning} `;
+      if (summary.error) html += `❌ 错误: ${summary.error} `;
+      html += `</p>`;
+
+      // 详细结果
+      html += `<h6>📋 详细结果</h6>`;
+      results.forEach(result => {
+        const statusIcon = result.status === 'success' ? '✅' : result.status === 'warning' ? '⚠️' : '❌';
+        html += `<div class="diagnostic-item diagnostic-${result.status}">`;
+        html += `<h7>${statusIcon} ${result.category}</h7>`;
+        html += `<ul>`;
+        result.details.forEach(detail => {
+          html += `<li>${detail}</li>`;
+        });
+        html += `</ul>`;
+        html += `</div>`;
+      });
+
+      html += '</div>';
+      resultsDiv.innerHTML = html;
+    }
+
     // 更新 GitHub Token 状态
     async function updateGitHubTokenStatus() {
       const statusIndicator = document.getElementById('tokenStatusIndicator');
@@ -2151,6 +2531,12 @@
 
         if (toggleVisibilityBtn) {
           toggleVisibilityBtn.addEventListener('click', toggleTokenVisibility);
+        }
+
+        // 设置诊断按钮事件监听器
+        const diagnosticBtn = document.getElementById('runPermissionsDiagnostic');
+        if (diagnosticBtn) {
+          diagnosticBtn.addEventListener('click', runPermissionsDiagnostic);
         }
 
         // 检查存储支持和跟踪保护

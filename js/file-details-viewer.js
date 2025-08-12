@@ -241,30 +241,70 @@ class FileDetailsViewer {
   // 获取文件信息
   async getFileInfo(fileId, owner) {
     try {
-      // 尝试从localStorage获取
       const workKey = `work_${fileId}`;
-      const workData = localStorage.getItem(workKey);
-      if (workData) {
-        return JSON.parse(workData);
-      }
+      console.log(`🔍 获取文件信息: ${fileId} (所有者: ${owner})`);
 
-      // 尝试从Firebase获取
-      if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
-        const snapshot = await firebase.database().ref(`userFiles/${owner}/${fileId}`).once('value');
-        const fileData = snapshot.val();
-        if (fileData) {
-          return fileData;
+      // 1. 在网络环境下，优先从 GitHub 获取数据
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        console.log(`🌐 尝试从 GitHub 获取文件信息: ${workKey}`);
+        try {
+          const workData = await window.dataManager.loadData(workKey, {
+            category: 'works',
+            fallbackToLocal: false
+          });
+          if (workData) {
+            console.log(`✅ 从 GitHub 获取到文件信息: ${fileId}`);
+            return workData;
+          } else {
+            console.log(`ℹ️ GitHub 中未找到文件信息: ${fileId}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ 从 GitHub 获取文件信息失败: ${error.message}`);
         }
       }
 
-      // 如果是旧格式随笔，从essays中查找
+      // 2. 从本地存储获取
+      console.log(`📱 尝试从本地存储获取文件信息: ${workKey}`);
+      const localWorkData = localStorage.getItem(workKey);
+      if (localWorkData) {
+        try {
+          const workData = JSON.parse(localWorkData);
+          console.log(`✅ 从本地存储获取到文件信息: ${fileId}`);
+          return workData;
+        } catch (error) {
+          console.warn(`⚠️ 解析本地文件信息失败: ${error.message}`);
+        }
+      } else {
+        console.log(`ℹ️ 本地存储中未找到文件信息: ${fileId}`);
+      }
+
+      // 3. 尝试从Firebase获取
+      if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
+        console.log(`🔥 尝试从 Firebase 获取文件信息: userFiles/${owner}/${fileId}`);
+        try {
+          const snapshot = await firebase.database().ref(`userFiles/${owner}/${fileId}`).once('value');
+          const fileData = snapshot.val();
+          if (fileData) {
+            console.log(`✅ 从 Firebase 获取到文件信息: ${fileId}`);
+            return fileData;
+          } else {
+            console.log(`ℹ️ Firebase 中未找到文件信息: ${fileId}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ 从 Firebase 获取文件信息失败: ${error.message}`);
+        }
+      }
+
+      // 4. 如果是旧格式随笔，从essays中查找
       if (fileId.startsWith('essay_legacy_')) {
+        console.log(`📚 尝试从旧格式随笔中查找: ${fileId}`);
         const essaysData = localStorage.getItem('essays');
         if (essaysData) {
           const essays = JSON.parse(essaysData);
           const titleFromId = fileId.replace('essay_legacy_', '').split('_')[0];
           const essay = essays.find(essay => essay.title.replace(/[^a-zA-Z0-9]/g, '_') === titleFromId);
           if (essay) {
+            console.log(`✅ 从旧格式随笔中找到文件信息: ${fileId}`);
             return {
               ...essay,
               mainCategory: 'literature',
@@ -277,9 +317,10 @@ class FileDetailsViewer {
         }
       }
 
+      console.log(`ℹ️ 未找到文件信息: ${fileId}`);
       return null;
     } catch (error) {
-      console.error('获取文件信息失败:', error);
+      console.error(`❌ 获取文件信息失败: ${fileId}`, error);
       return null;
     }
   }

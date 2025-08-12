@@ -1086,15 +1086,17 @@ class FileHierarchyManager {
 
       // 6. 删除权限设置（如果存在）
       try {
-        const permissionKey = `permissions_${fileId}_${owner}`;
-        if (localStorage.getItem(permissionKey)) {
-          localStorage.removeItem(permissionKey);
+        // 检查旧格式的权限设置键
+        const oldPermissionKey = `permissions_${fileId}_${owner}`;
+        if (localStorage.getItem(oldPermissionKey)) {
+          localStorage.removeItem(oldPermissionKey);
           deletedCount++;
-          deletionLog.push(`✅ 权限设置: ${permissionKey}`);
-          console.log(`✅ 删除权限设置: ${permissionKey}`);
-        } else {
-          deletionLog.push(`ℹ️ 权限设置: 不存在`);
+          deletionLog.push(`✅ 旧格式权限设置: ${oldPermissionKey}`);
+          console.log(`✅ 删除旧格式权限设置: ${oldPermissionKey}`);
         }
+
+        // 权限设置现在存储在作品数据中，已经在步骤1中删除了
+        deletionLog.push(`ℹ️ 权限设置: 已包含在作品数据中删除`);
       } catch (error) {
         errors.push(`删除权限设置失败: ${error.message}`);
         deletionLog.push(`❌ 权限设置: ${error.message}`);
