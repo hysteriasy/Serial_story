@@ -720,18 +720,80 @@
             }
 
             selectUser(username) {
+                console.log('🔍 选择用户:', username);
+
                 const user = this.users.find(u => u.username === username);
-                if (user) {
-                    document.getElementById('selectedUser').value = username;
-                    document.getElementById('newRole').value = user.role;
-                    document.getElementById('editUsername').value = username;
+                if (!user) {
+                    console.error('❌ 用户不存在:', username);
+                    alert('用户不存在');
+                    return;
+                }
+
+                try {
+                    // 填充编辑表单
+                    const selectedUserElement = document.getElementById('selectedUser');
+                    const newRoleElement = document.getElementById('newRole');
+                    const editUsernameElement = document.getElementById('editUsername');
+
+                    if (selectedUserElement) {
+                        selectedUserElement.value = username;
+                    } else {
+                        console.warn('⚠️ selectedUser元素未找到');
+                    }
+
+                    if (newRoleElement) {
+                        newRoleElement.value = user.role;
+                    } else {
+                        console.warn('⚠️ newRole元素未找到');
+                    }
+
+                    if (editUsernameElement) {
+                        editUsernameElement.value = username;
+                    } else {
+                        console.warn('⚠️ editUsername元素未找到');
+                    }
+
                     this.currentUser = user;
 
-                    // 滚动到编辑区域
-                    document.querySelector('.control-section:nth-child(2)').scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    // 滚动到编辑区域 - 使用多种兼容的选择器
+                    let editPanel = null;
+
+                    // 方法1：使用controls-grid下的第二个controls-panel
+                    editPanel = document.querySelector('.controls-grid .controls-panel:nth-child(2)');
+
+                    if (!editPanel) {
+                        // 方法2：查找包含selectedUser元素的面板
+                        const selectedUserElement = document.getElementById('selectedUser');
+                        if (selectedUserElement) {
+                            editPanel = selectedUserElement.closest('.controls-panel');
+                        }
+                    }
+
+                    if (!editPanel) {
+                        // 方法3：查找包含"编辑用户"标题的面板
+                        const editTitles = document.querySelectorAll('h2.section-title');
+                        for (const title of editTitles) {
+                            if (title.textContent.includes('编辑用户')) {
+                                editPanel = title.closest('.controls-panel');
+                                break;
+                            }
+                        }
+                    }
+
+                    if (editPanel) {
+                        console.log('✅ 滚动到编辑用户面板');
+                        editPanel.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    } else {
+                        console.warn('⚠️ 无法找到编辑用户面板，跳过滚动');
+                    }
+
+                    console.log('✅ 用户选择完成:', username);
+                } catch (error) {
+                    console.error('❌ 选择用户时发生错误:', error);
+                    alert('选择用户时发生错误，请刷新页面重试');
                 }
             }
 
