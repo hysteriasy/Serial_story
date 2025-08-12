@@ -158,6 +158,23 @@
             padding: 1.5rem;
         }
 
+        .control-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .subsection-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
         .control-group {
             margin-bottom: 1.5rem;
         }
@@ -399,38 +416,77 @@
                 <!-- 控制面板 -->
                 <div class="controls-panel">
                     <h2 class="section-title">⚙️ 操作面板</h2>
-                    
-                    <div class="control-group">
-                        <label for="selectedUser">选择用户</label>
-                        <select id="selectedUser" class="form-select">
-                            <option value="">请选择用户</option>
-                        </select>
+
+                    <!-- 添加用户区域 -->
+                    <div class="control-section">
+                        <h3 class="subsection-title">➕ 添加新用户</h3>
+
+                        <div class="control-group">
+                            <label for="newUsername">用户名</label>
+                            <input type="text" id="newUsername" class="form-input" placeholder="输入用户名">
+                        </div>
+
+                        <div class="control-group">
+                            <label for="newUserPassword">密码</label>
+                            <input type="password" id="newUserPassword" class="form-input" placeholder="输入密码">
+                        </div>
+
+                        <div class="control-group">
+                            <label for="newUserRole">角色</label>
+                            <select id="newUserRole" class="form-select">
+                                <option value="visitor">访客</option>
+                                <option value="friend">好友</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <button class="btn-primary" onclick="addNewUser()" style="background: #28a745;">➕ 添加用户</button>
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label for="newRole">新角色</label>
-                        <select id="newRole" class="form-select">
-                            <option value="visitor">访客</option>
-                            <option value="friend">好友</option>
-                            <option value="admin">管理员</option>
-                        </select>
-                    </div>
+                    <!-- 编辑用户区域 -->
+                    <div class="control-section">
+                        <h3 class="subsection-title">✏️ 编辑用户</h3>
 
-                    <div class="control-group">
-                        <button class="btn-primary" onclick="changeUserRole()">修改角色</button>
-                    </div>
+                        <div class="control-group">
+                            <label for="selectedUser">选择用户</label>
+                            <select id="selectedUser" class="form-select" onchange="onUserSelectionChange()">
+                                <option value="">请选择用户</option>
+                            </select>
+                        </div>
 
-                    <div class="control-group">
-                        <label for="newPassword">新密码</label>
-                        <input type="password" id="newPassword" class="form-input" placeholder="输入新密码">
-                    </div>
+                        <div class="control-group">
+                            <label for="editUsername">用户名</label>
+                            <input type="text" id="editUsername" class="form-input" placeholder="用户名">
+                        </div>
 
-                    <div class="control-group">
-                        <button class="btn-primary" onclick="resetUserPassword()">重置密码</button>
-                    </div>
+                        <div class="control-group">
+                            <label for="newRole">角色</label>
+                            <select id="newRole" class="form-select">
+                                <option value="visitor">访客</option>
+                                <option value="friend">好友</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
 
-                    <div class="control-group">
-                        <button class="btn-primary" onclick="deleteUser()" style="background: #dc3545;">删除用户</button>
+                        <div class="control-group">
+                            <button class="btn-primary" onclick="saveUserEdit()">保存修改</button>
+                            <button class="btn-primary" onclick="changeUserRole()">仅修改角色</button>
+                        </div>
+
+                        <div class="control-group">
+                            <label for="newPassword">重置密码</label>
+                            <input type="password" id="newPassword" class="form-input" placeholder="输入新密码">
+                        </div>
+
+                        <div class="control-group">
+                            <button class="btn-primary" onclick="resetUserPassword()">重置密码</button>
+                        </div>
+
+                        <div class="control-group">
+                            <button class="btn-primary" onclick="confirmDeleteUser()" style="background: #dc3545;">删除用户</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -708,7 +764,14 @@
                 if (user) {
                     document.getElementById('selectedUser').value = username;
                     document.getElementById('newRole').value = user.role;
+                    document.getElementById('editUsername').value = username;
                     this.currentUser = user;
+
+                    // 滚动到编辑区域
+                    document.querySelector('.control-section:nth-child(2)').scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
                 }
             }
 
@@ -809,8 +872,9 @@
             }
         }
 
-        function confirmDeleteUser() {
-            const selectedUsername = document.getElementById('selectedUser').value;
+        function confirmDeleteUser(username = null) {
+            // 如果传入了用户名参数，使用传入的用户名；否则从下拉框获取
+            const selectedUsername = username || document.getElementById('selectedUser').value;
 
             if (!selectedUsername) {
                 alert('请选择要删除的用户');
@@ -823,12 +887,13 @@
             }
 
             if (confirm(`确定要删除用户 ${selectedUsername} 吗？此操作不可撤销！`)) {
-                deleteUser();
+                deleteUser(selectedUsername);
             }
         }
 
-        function deleteUser() {
-            const selectedUsername = document.getElementById('selectedUser').value;
+        function deleteUser(username = null) {
+            // 如果传入了用户名参数，使用传入的用户名；否则从下拉框获取
+            const selectedUsername = username || document.getElementById('selectedUser').value;
 
             const userIndex = userManagement.users.findIndex(u => u.username === selectedUsername);
             if (userIndex !== -1) {
@@ -852,6 +917,156 @@
 
                 alert('用户删除成功！');
                 userManagement.loadOperationLogs();
+            }
+        }
+
+        // 添加新用户
+        function addNewUser() {
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newUserPassword').value.trim();
+            const role = document.getElementById('newUserRole').value;
+
+            if (!username || !password) {
+                alert('请填写完整的用户信息');
+                return;
+            }
+
+            // 检查用户名是否已存在
+            if (userManagement.users.find(u => u.username === username)) {
+                alert('用户名已存在，请选择其他用户名');
+                return;
+            }
+
+            // 验证用户名格式
+            if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]{2,20}$/.test(username)) {
+                alert('用户名只能包含字母、数字、下划线和中文，长度2-20个字符');
+                return;
+            }
+
+            // 验证密码强度
+            if (password.length < 6) {
+                alert('密码长度至少6个字符');
+                return;
+            }
+
+            const newUser = {
+                username: username,
+                password: password,
+                role: role,
+                registeredAt: new Date().toISOString()
+            };
+
+            // 添加用户
+            userManagement.users.push(newUser);
+            userManagement.saveUsers();
+            userManagement.renderUsers();
+            userManagement.updateStats();
+            userManagement.populateUserSelect();
+
+            // 记录操作日志
+            if (typeof adminLogger !== 'undefined') {
+                adminLogger.logUserManagement('create', username, {
+                    role: role,
+                    createdBy: auth.currentUser.username
+                });
+            }
+
+            // 清空表单
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newUserPassword').value = '';
+            document.getElementById('newUserRole').value = 'visitor';
+
+            alert(`用户 ${username} 添加成功！`);
+            userManagement.loadOperationLogs();
+        }
+
+        // 保存用户编辑
+        function saveUserEdit() {
+            const selectedUsername = document.getElementById('selectedUser').value;
+            const newUsername = document.getElementById('editUsername').value.trim();
+            const newRole = document.getElementById('newRole').value;
+
+            if (!selectedUsername) {
+                alert('请先选择要编辑的用户');
+                return;
+            }
+
+            if (!newUsername) {
+                alert('用户名不能为空');
+                return;
+            }
+
+            // 验证新用户名格式
+            if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]{2,20}$/.test(newUsername)) {
+                alert('用户名只能包含字母、数字、下划线和中文，长度2-20个字符');
+                return;
+            }
+
+            // 如果用户名发生变化，检查新用户名是否已存在
+            if (newUsername !== selectedUsername) {
+                if (userManagement.users.find(u => u.username === newUsername)) {
+                    alert('新用户名已存在，请选择其他用户名');
+                    return;
+                }
+            }
+
+            const userIndex = userManagement.users.findIndex(u => u.username === selectedUsername);
+            if (userIndex === -1) {
+                alert('用户不存在');
+                return;
+            }
+
+            const oldUsername = userManagement.users[userIndex].username;
+            const oldRole = userManagement.users[userIndex].role;
+
+            // 更新用户信息
+            userManagement.users[userIndex].username = newUsername;
+            userManagement.users[userIndex].role = newRole;
+
+            userManagement.saveUsers();
+            userManagement.renderUsers();
+            userManagement.updateStats();
+            userManagement.populateUserSelect();
+
+            // 记录操作日志
+            if (typeof adminLogger !== 'undefined') {
+                const changes = [];
+                if (oldUsername !== newUsername) {
+                    changes.push(`用户名: ${oldUsername} → ${newUsername}`);
+                }
+                if (oldRole !== newRole) {
+                    changes.push(`角色: ${oldRole} → ${newRole}`);
+                }
+
+                adminLogger.logUserManagement('edit', newUsername, {
+                    changes: changes.join(', '),
+                    editedBy: auth.currentUser.username
+                });
+            }
+
+            // 更新选择框
+            document.getElementById('selectedUser').value = newUsername;
+
+            alert('用户信息修改成功！');
+            userManagement.loadOperationLogs();
+        }
+
+        // 用户选择变化处理
+        function onUserSelectionChange() {
+            const selectedUsername = document.getElementById('selectedUser').value;
+            if (selectedUsername) {
+                const user = userManagement.users.find(u => u.username === selectedUsername);
+                if (user) {
+                    document.getElementById('editUsername').value = user.username;
+                    document.getElementById('newRole').value = user.role;
+                    userManagement.currentUser = user;
+                }
+            } else {
+                // 清空编辑表单
+                document.getElementById('editUsername').value = '';
+                document.getElementById('newRole').value = 'visitor';
+                document.getElementById('newPassword').value = '';
+                userManagement.currentUser = null;
             }
         }
 
