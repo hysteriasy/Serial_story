@@ -468,22 +468,22 @@ const auth = {
               }
             } catch (error) {
               // 只有在非404错误时才记录警告
-              if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+              if (!error.message.includes('文件不存在') && !error.message.includes('404') && error.status !== 404) {
                 console.warn(`从 GitHub 获取用户 ${username} 数据失败:`, error);
               }
+              // 404错误静默处理，这是正常情况
             }
           }
           console.log(`✅ 从 GitHub 获取到 ${userIndex.users.length} 个用户索引`);
         } else {
-          console.log('ℹ️ GitHub 用户索引文件不存在，将从本地存储构建');
+          // 静默处理，不输出日志（首次使用时这是正常情况）
         }
       } catch (error) {
         // 只有在非404错误时才记录警告
-        if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+        if (!error.message.includes('文件不存在') && !error.message.includes('404') && error.status !== 404) {
           console.warn('⚠️ GitHub 用户数据获取失败:', error.message);
-        } else {
-          console.log('ℹ️ GitHub 用户索引文件不存在，这是正常现象');
         }
+        // 404错误静默处理，这是正常情况
       }
     }
 
@@ -1285,12 +1285,14 @@ const auth = {
           fallbackToLocal: true
         });
       } catch (error) {
-        // 如果索引文件不存在，创建新的索引
-        if (error.message.includes('文件不存在') || error.message.includes('404')) {
-          console.log('ℹ️ 用户索引文件不存在，创建新索引');
+        // 如果索引文件不存在，创建新的索引（这是正常情况）
+        if (error.message.includes('文件不存在') || error.message.includes('404') || error.status === 404) {
+          // 静默处理，不输出日志（首次使用时这是正常情况）
           userIndex = null;
         } else {
-          throw error;
+          // 只有非预期错误才输出日志
+          console.warn('⚠️ 获取用户索引时发生非预期错误:', error.message);
+          userIndex = null; // 继续执行，创建新索引
         }
       }
 

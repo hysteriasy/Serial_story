@@ -1010,17 +1010,19 @@ class FileHierarchyManager {
       // 3. 从GitHub删除（如果可用且在网络环境）
       if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
         try {
-          console.log(`🌐 尝试从GitHub删除: ${workKey}`);
+          // 只在调试模式下输出详细日志
+          if (window.location.search.includes('debug=true')) {
+            console.log(`🌐 尝试从GitHub删除: ${workKey}`);
+          }
+
           const deleteResult = await window.dataManager.deleteData(workKey, { category: 'works' });
 
           if (deleteResult.githubResult) {
             if (deleteResult.githubResult.alreadyDeleted) {
               deletionLog.push(`ℹ️ GitHub存储: ${workKey} (文件已不存在)`);
-              console.log(`ℹ️ GitHub文件已不存在: ${workKey}`);
             } else {
               deletedCount++;
               deletionLog.push(`✅ GitHub存储: ${workKey}`);
-              console.log(`✅ 从GitHub删除文件: ${workKey}`);
             }
           } else {
             // GitHub删除被跳过（可能是token未配置等）
@@ -1029,7 +1031,7 @@ class FileHierarchyManager {
         } catch (error) {
           // 只有在非404错误时才记录为错误
           if (!error.message.includes('文件不存在') && !error.message.includes('404') &&
-              !error.message.includes('Not Found')) {
+              !error.message.includes('Not Found') && error.status !== 404) {
             console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
             errors.push(`删除GitHub数据失败: ${error.message}`);
             deletionLog.push(`❌ GitHub存储: ${error.message}`);

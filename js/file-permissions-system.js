@@ -370,35 +370,56 @@ class FilePermissionsSystem {
             fallbackToLocal: false // 先不回退，单独处理
           });
           if (workData && workData.permissions) {
-            console.log(`✅ 从 GitHub 获取到权限数据: ${fileId}`);
+            // 只在调试模式下输出详细日志
+            if (window.location.search.includes('debug=true')) {
+              console.log(`✅ 从 GitHub 获取到权限数据: ${fileId}`);
+            }
             return workData.permissions;
           } else if (workData) {
-            console.log(`⚠️ GitHub 中的作品数据没有权限信息: ${fileId}`);
+            // 只在调试模式下输出详细日志
+            if (window.location.search.includes('debug=true')) {
+              console.log(`⚠️ GitHub 中的作品数据没有权限信息: ${fileId}`);
+            }
           } else {
-            console.log(`ℹ️ GitHub 中未找到作品数据: ${fileId}`);
+            // 只在调试模式下输出详细日志
+            if (window.location.search.includes('debug=true')) {
+              console.log(`ℹ️ GitHub 中未找到作品数据: ${fileId}`);
+            }
           }
         } catch (error) {
-          console.warn(`⚠️ 从 GitHub 获取权限数据失败: ${error.message}`);
+          // 只有非404错误才输出警告
+          if (!error.message.includes('文件不存在') && !error.message.includes('404') && error.status !== 404) {
+            console.warn(`⚠️ 从 GitHub 获取权限数据失败: ${error.message}`);
+          }
         }
       }
 
       // 2. 从本地存储获取
-      console.log(`📱 尝试从本地存储获取权限数据: ${workKey}`);
+      if (window.location.search.includes('debug=true')) {
+        console.log(`📱 尝试从本地存储获取权限数据: ${workKey}`);
+      }
+
       const localWorkData = localStorage.getItem(workKey);
       if (localWorkData) {
         try {
           const work = JSON.parse(localWorkData);
           if (work.permissions) {
-            console.log(`✅ 从本地存储获取到权限数据: ${fileId}`);
+            if (window.location.search.includes('debug=true')) {
+              console.log(`✅ 从本地存储获取到权限数据: ${fileId}`);
+            }
             return work.permissions;
           } else {
-            console.log(`⚠️ 本地作品数据没有权限信息: ${fileId}`);
+            if (window.location.search.includes('debug=true')) {
+              console.log(`⚠️ 本地作品数据没有权限信息: ${fileId}`);
+            }
           }
         } catch (error) {
           console.warn(`⚠️ 解析本地作品数据失败: ${error.message}`);
         }
       } else {
-        console.log(`ℹ️ 本地存储中未找到作品数据: ${fileId}`);
+        if (window.location.search.includes('debug=true')) {
+          console.log(`ℹ️ 本地存储中未找到作品数据: ${fileId}`);
+        }
       }
 
       // 3. 尝试从Firebase获取（如果可用）

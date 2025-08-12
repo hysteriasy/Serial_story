@@ -224,15 +224,19 @@ class GitHubStorage {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('文件不存在');
+          // 404 错误是正常情况，不需要在控制台显示错误
+          const error = new Error('文件不存在');
+          error.status = 404;
+          error.isExpected = true; // 标记为预期错误
+          throw error;
         }
         throw new Error(`获取文件失败: ${response.status}`);
       }
 
       return await response.json();
     } catch (error) {
-      // 只在非404错误时输出错误日志，避免文件删除时的误导性错误
-      if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+      // 只有非预期错误才输出到控制台
+      if (!error.isExpected) {
         console.error('❌ 获取GitHub文件失败:', error);
       }
       throw error;
@@ -252,8 +256,8 @@ class GitHubStorage {
         fileInfo = await this.getFile(filePath);
       } catch (error) {
         // 如果文件不存在，直接返回成功（文件已经不存在了）
-        if (error.message.includes('文件不存在') || error.message.includes('404')) {
-          console.log(`ℹ️ 文件已不存在，无需删除: ${filePath}`);
+        if (error.status === 404 || error.message.includes('文件不存在')) {
+          // 静默处理，不输出日志（这是正常情况）
           return { success: true, alreadyDeleted: true };
         }
         throw error;
@@ -279,7 +283,7 @@ class GitHubStorage {
       if (!response.ok) {
         // 如果删除时文件已不存在，也视为成功
         if (response.status === 404) {
-          console.log(`ℹ️ 文件在删除过程中已不存在: ${filePath}`);
+          // 静默处理，不输出日志（这是正常情况）
           return { success: true, alreadyDeleted: true };
         }
 
@@ -287,11 +291,14 @@ class GitHubStorage {
         throw new Error(`删除文件失败: ${response.status} - ${errorData.message}`);
       }
 
-      console.log(`✅ 文件删除成功: ${filePath}`);
+      // 只在调试模式下输出成功日志
+      if (window.location.search.includes('debug=true')) {
+        console.log(`✅ 文件删除成功: ${filePath}`);
+      }
       return { success: true, alreadyDeleted: false };
     } catch (error) {
-      // 只在非404错误时输出错误日志，避免文件删除时的误导性错误
-      if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+      // 只有非预期错误才输出到控制台
+      if (!error.message.includes('文件不存在') && error.status !== 404) {
         console.error('❌ GitHub文件删除失败:', error);
       }
       throw error;
@@ -399,10 +406,7 @@ class GitHubStorage {
 
       return await response.json();
     } catch (error) {
-      // 只在非404错误时输出错误日志
-      if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
-        console.error('❌ 列出GitHub文件失败:', error);
-      }
+      console.error('❌ 列出GitHub文件失败:', error);
       throw error;
     }
   }

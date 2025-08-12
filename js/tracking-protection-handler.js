@@ -197,9 +197,32 @@ class TrackingProtectionHandler {
     const originalError = console.error;
     const originalLog = console.log;
 
+    // 跟踪保护相关的错误消息模式
+    const trackingProtectionPatterns = [
+      /tracking prevention blocked access to storage/i,
+      /blocked access to storage for/i,
+      /storage access denied/i,
+      /privacy protection/i,
+      /cross-site tracking/i,
+      /third-party storage/i
+    ];
+
+    // 检查是否是跟踪保护相关的消息
+    const isTrackingProtectionMessage = (message) => {
+      const msgStr = String(message);
+      return trackingProtectionPatterns.some(pattern => pattern.test(msgStr));
+    };
+
     // 拦截 console.warn
     console.warn = (...args) => {
       const message = args.join(' ');
+
+      // 检查是否是跟踪保护相关的消息
+      if (isTrackingProtectionMessage(message)) {
+        this.handleTrackingProtectionConsoleMessage(message, 'warn');
+        return; // 静默处理跟踪保护消息
+      }
+
       if (this.shouldFilterMessage(message)) {
         this.handleFilteredMessage(message, 'warn');
         return; // 不输出到控制台
@@ -210,6 +233,13 @@ class TrackingProtectionHandler {
     // 拦截 console.error
     console.error = (...args) => {
       const message = args.join(' ');
+
+      // 检查是否是跟踪保护相关的消息
+      if (isTrackingProtectionMessage(message)) {
+        this.handleTrackingProtectionConsoleMessage(message, 'error');
+        return; // 静默处理跟踪保护消息
+      }
+
       if (this.shouldFilterMessage(message)) {
         this.handleFilteredMessage(message, 'error');
         return; // 不输出到控制台
@@ -220,6 +250,7 @@ class TrackingProtectionHandler {
     // 拦截 console.log 中的特定错误信息
     console.log = (...args) => {
       const message = args.join(' ');
+
       if (this.shouldFilterMessage(message)) {
         this.handleFilteredMessage(message, 'log');
         return; // 不输出到控制台
@@ -233,31 +264,52 @@ class TrackingProtectionHandler {
 
   // 判断是否应该过滤消息
   shouldFilterMessage(message) {
-    const filterKeywords = [
-      'Tracking Prevention',
-      'blocked access to storage',
-      'Failed to load resource',
-      'the server responded with a status of 404',
-      'api.github.com/repos/hysteriasy/Serial_story/contents/data',
-      '❌ 获取GitHub文件失败',
-      '❌ GitHub文件删除失败',
-      '❌ 列出GitHub文件失败',
-      '文件不存在',
-      'users_index.json',
-      'GET https://api.github.com',
-      'Firebase未初始化',
-      'Firebase不可用',
-      'Firebase 不可用',
-      'Firebase库未加载',
-      'Firebase 库未加载',
-      'essay_legacy_',
-      'Error: 文件不存在',
-      'GitHub文件失败',
-      'GitHub API',
-      'hysteriasy/Serial_story'
+    // 已知的正常错误模式，这些错误不需要在控制台显示
+    const normalErrorPatterns = [
+      // GitHub API 404 错误（文件不存在是正常情况）
+      /the server responded with a status of 404.*api\.github\.com/i,
+      /❌ 获取GitHub文件失败.*文件不存在/i,
+      /❌ GitHub文件删除失败.*文件不存在/i,
+      /Error: 文件不存在/i,
+
+      // 用户索引文件不存在（首次使用时正常）
+      /users_index\.json.*404/i,
+      /data\/system\/.*users_index\.json/i,
+
+      // Firebase 相关的预期错误
+      /Firebase未初始化/i,
+      /Firebase不可用/i,
+      /Firebase库未加载/i,
+
+      // 旧格式随笔文件不存在（正常情况）
+      /essay_legacy_.*文件不存在/i,
+      /work_essay_legacy_.*404/i,
+
+      // 网络请求失败（GitHub API）
+      /Failed to load resource.*api\.github\.com.*404/i,
+      /GET https:\/\/api\.github\.com.*404/i
     ];
 
-    return filterKeywords.some(keyword => message.includes(keyword));
+    // 检查是否匹配正常错误模式
+    return normalErrorPatterns.some(pattern => pattern.test(message));
+  }
+
+  // 处理跟踪保护相关的控制台消息
+  handleTrackingProtectionConsoleMessage(message, level) {
+    // 静默处理跟踪保护消息，只在调试模式下记录
+    if (window.location.search.includes('debug=true')) {
+      console.info(`🛡️ [跟踪保护] ${level.toUpperCase()}: ${message}`);
+    }
+
+    // 更新跟踪保护状态
+    this.storageBlocked = true;
+    this.fallbackMode = true;
+
+    // 只在首次检测到时通知用户
+    if (!this.userNotified) {
+      this.showTrackingProtectionNotification();
+      this.userNotified = true;
+    }
   }
 
   // 处理被过滤的消息
