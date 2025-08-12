@@ -779,6 +779,102 @@
       font-size: 0.9em;
     }
 
+    /* 数据迁移样式 */
+    .migration-controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .migration-controls .btn {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .migration-options {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 5px;
+    }
+
+    .migration-options label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.9em;
+    }
+
+    .migration-results {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .migration-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .migration-stat {
+      text-align: center;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+
+    .migration-stat .number {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .migration-stat .label {
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    .migration-log {
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.85em;
+      line-height: 1.4;
+    }
+
+    .migration-log .log-entry {
+      margin-bottom: 2px;
+      padding: 2px 0;
+    }
+
+    .migration-log .log-success {
+      color: #28a745;
+    }
+
+    .migration-log .log-error {
+      color: #dc3545;
+    }
+
+    .migration-log .log-warning {
+      color: #ffc107;
+    }
+
+    .migration-log .log-info {
+      color: #17a2b8;
+    }
+
     .test-item {
       display: flex;
       align-items: center;
@@ -971,6 +1067,38 @@
           </div>
         </div>
 
+        <!-- 旧格式数据迁移 -->
+        <div class="settings-section">
+          <h5>🔄 旧格式数据迁移</h5>
+          <div class="form-group">
+            <label>数据迁移工具</label>
+            <p>识别、转换和清理旧格式随笔数据，确保数据结构符合当前的权限管理系统：</p>
+
+            <div class="migration-controls">
+              <button type="button" id="scanLegacyData" class="btn btn-secondary">🔍 扫描旧格式数据</button>
+              <button type="button" id="previewMigration" class="btn btn-info">👁️ 预览迁移</button>
+              <button type="button" id="executeMigration" class="btn btn-warning">🚀 执行迁移</button>
+              <button type="button" id="cleanupLegacyData" class="btn btn-danger">🧹 清理旧数据</button>
+            </div>
+
+            <div class="migration-options" style="margin-top: 10px;">
+              <label>
+                <input type="checkbox" id="uploadToGitHub" checked> 上传到 GitHub
+              </label>
+              <label>
+                <input type="checkbox" id="backupBeforeMigration" checked> 迁移前备份
+              </label>
+              <label>
+                <input type="checkbox" id="cleanupAfterMigration"> 迁移后清理
+              </label>
+            </div>
+
+            <div id="migrationResults" class="migration-results" style="margin-top: 15px; display: none;">
+              <!-- 迁移结果将在这里显示 -->
+            </div>
+          </div>
+        </div>
+
         <!-- 文件权限设置 -->
         <div class="settings-section">
           <h5>📁 文件权限设置</h5>
@@ -1083,6 +1211,7 @@
   <script src="js/content-access-control.js"></script>
   <script src="js/batch-permissions-manager.js"></script>
   <script src="js/permissions-import-export.js"></script>
+  <script src="js/legacy-data-migrator.js"></script>
   <script src="js/login-records-manager.js"></script>
   <script src="js/upload.js"></script>
   <script src="js/github-token-manager.js"></script>
@@ -2189,6 +2318,280 @@
       resultsDiv.innerHTML = html;
     }
 
+    // 数据迁移功能
+    let migrator = null;
+
+    // 扫描旧格式数据
+    async function scanLegacyData() {
+      const resultsDiv = document.getElementById('migrationResults');
+      if (!resultsDiv) return;
+
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = '<div class="migration-loading">🔍 正在扫描旧格式数据...</div>';
+
+      try {
+        migrator = new window.LegacyDataMigrator();
+        const legacyData = await migrator.identifyLegacyData();
+
+        let html = '<div class="migration-scan-results">';
+        html += `<h6>📊 扫描结果</h6>`;
+        html += `<p>发现 <strong>${legacyData.length}</strong> 条旧格式数据</p>`;
+
+        if (legacyData.length > 0) {
+          html += `<div class="migration-stats">`;
+
+          const typeStats = legacyData.reduce((acc, item) => {
+            acc[item.type] = (acc[item.type] || 0) + 1;
+            return acc;
+          }, {});
+
+          Object.entries(typeStats).forEach(([type, count]) => {
+            html += `<div class="migration-stat">`;
+            html += `<div class="number">${count}</div>`;
+            html += `<div class="label">${type === 'essay' ? '旧格式随笔' : '旧格式作品'}</div>`;
+            html += `</div>`;
+          });
+
+          html += `</div>`;
+
+          html += `<h6>📋 数据详情</h6>`;
+          html += `<div class="migration-log">`;
+          legacyData.forEach(item => {
+            const title = item.data.title || item.id;
+            html += `<div class="log-entry log-info">📄 ${item.type}: ${title} (来源: ${item.source})</div>`;
+          });
+          html += `</div>`;
+        }
+
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+
+      } catch (error) {
+        console.error('扫描旧格式数据失败:', error);
+        resultsDiv.innerHTML = `<div class="migration-error">❌ 扫描失败: ${error.message}</div>`;
+      }
+    }
+
+    // 预览迁移
+    async function previewMigration() {
+      const resultsDiv = document.getElementById('migrationResults');
+      if (!resultsDiv) return;
+
+      if (!migrator) {
+        migrator = new window.LegacyDataMigrator();
+      }
+
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = '<div class="migration-loading">👁️ 正在预览迁移...</div>';
+
+      try {
+        const result = await migrator.migrateLegacyData({ dryRun: true });
+
+        let html = '<div class="migration-preview-results">';
+        html += `<h6>👁️ 迁移预览</h6>`;
+
+        html += `<div class="migration-stats">`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.totalFound}</div>`;
+        html += `<div class="label">发现数据</div>`;
+        html += `</div>`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.converted}</div>`;
+        html += `<div class="label">可转换</div>`;
+        html += `</div>`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.errors}</div>`;
+        html += `<div class="label">错误</div>`;
+        html += `</div>`;
+        html += `</div>`;
+
+        if (result.log.length > 0) {
+          html += `<h6>📋 预览日志</h6>`;
+          html += `<div class="migration-log">`;
+          result.log.forEach(logEntry => {
+            let logClass = 'log-info';
+            if (logEntry.includes('✅')) logClass = 'log-success';
+            else if (logEntry.includes('❌')) logClass = 'log-error';
+            else if (logEntry.includes('⚠️')) logClass = 'log-warning';
+
+            html += `<div class="log-entry ${logClass}">${logEntry}</div>`;
+          });
+          html += `</div>`;
+        }
+
+        if (result.errors.length > 0) {
+          html += `<h6>❌ 错误详情</h6>`;
+          html += `<div class="migration-log">`;
+          result.errors.forEach(error => {
+            html += `<div class="log-entry log-error">[${error.timestamp}] ${error.message}</div>`;
+          });
+          html += `</div>`;
+        }
+
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+
+      } catch (error) {
+        console.error('预览迁移失败:', error);
+        resultsDiv.innerHTML = `<div class="migration-error">❌ 预览失败: ${error.message}</div>`;
+      }
+    }
+
+    // 执行迁移
+    async function executeMigration() {
+      const resultsDiv = document.getElementById('migrationResults');
+      if (!resultsDiv) return;
+
+      // 获取选项
+      const uploadToGitHub = document.getElementById('uploadToGitHub').checked;
+      const backupBeforeMigration = document.getElementById('backupBeforeMigration').checked;
+      const cleanupAfterMigration = document.getElementById('cleanupAfterMigration').checked;
+
+      // 确认对话框
+      const confirmMessage = `确定要执行数据迁移吗？\n\n配置:\n- 上传到 GitHub: ${uploadToGitHub ? '是' : '否'}\n- 迁移前备份: ${backupBeforeMigration ? '是' : '否'}\n- 迁移后清理: ${cleanupAfterMigration ? '是' : '否'}`;
+
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      if (!migrator) {
+        migrator = new window.LegacyDataMigrator();
+      }
+
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = '<div class="migration-loading">🚀 正在执行迁移...</div>';
+
+      try {
+        const result = await migrator.migrateLegacyData({
+          dryRun: false,
+          uploadToGitHub,
+          backupBeforeMigration,
+          cleanupAfterMigration
+        });
+
+        let html = '<div class="migration-execution-results">';
+        html += `<h6>🚀 迁移执行结果</h6>`;
+
+        const statusIcon = result.success ? '✅' : '❌';
+        const statusText = result.success ? '成功' : '失败';
+        html += `<p><strong>${statusIcon} 迁移${statusText}</strong></p>`;
+
+        html += `<div class="migration-stats">`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.totalFound}</div>`;
+        html += `<div class="label">发现数据</div>`;
+        html += `</div>`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.converted}</div>`;
+        html += `<div class="label">已转换</div>`;
+        html += `</div>`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.uploaded}</div>`;
+        html += `<div class="label">已上传</div>`;
+        html += `</div>`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.cleaned}</div>`;
+        html += `<div class="label">已清理</div>`;
+        html += `</div>`;
+        html += `<div class="migration-stat">`;
+        html += `<div class="number">${result.stats.errors}</div>`;
+        html += `<div class="label">错误</div>`;
+        html += `</div>`;
+        html += `</div>`;
+
+        if (result.log.length > 0) {
+          html += `<h6>📋 执行日志</h6>`;
+          html += `<div class="migration-log">`;
+          result.log.forEach(logEntry => {
+            let logClass = 'log-info';
+            if (logEntry.includes('✅')) logClass = 'log-success';
+            else if (logEntry.includes('❌')) logClass = 'log-error';
+            else if (logEntry.includes('⚠️')) logClass = 'log-warning';
+
+            html += `<div class="log-entry ${logClass}">${logEntry}</div>`;
+          });
+          html += `</div>`;
+        }
+
+        if (result.errors.length > 0) {
+          html += `<h6>❌ 错误详情</h6>`;
+          html += `<div class="migration-log">`;
+          result.errors.forEach(error => {
+            html += `<div class="log-entry log-error">[${error.timestamp}] ${error.message}</div>`;
+          });
+          html += `</div>`;
+        }
+
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+
+        // 如果成功，刷新文件层级显示
+        if (result.success && window.fileHierarchyManager) {
+          setTimeout(() => {
+            window.fileHierarchyManager.refreshHierarchy();
+          }, 1000);
+        }
+
+      } catch (error) {
+        console.error('执行迁移失败:', error);
+        resultsDiv.innerHTML = `<div class="migration-error">❌ 迁移失败: ${error.message}</div>`;
+      }
+    }
+
+    // 清理旧数据
+    async function cleanupLegacyData() {
+      const resultsDiv = document.getElementById('migrationResults');
+      if (!resultsDiv) return;
+
+      // 确认对话框
+      if (!confirm('确定要清理所有旧格式数据吗？\n\n⚠️ 此操作不可逆，建议先执行迁移或备份！')) {
+        return;
+      }
+
+      if (!migrator) {
+        migrator = new window.LegacyDataMigrator();
+      }
+
+      resultsDiv.style.display = 'block';
+      resultsDiv.innerHTML = '<div class="migration-loading">🧹 正在清理旧格式数据...</div>';
+
+      try {
+        await migrator.cleanupLegacyData();
+
+        let html = '<div class="migration-cleanup-results">';
+        html += `<h6>🧹 清理完成</h6>`;
+        html += `<p>✅ 已清理 ${migrator.stats.cleaned} 个旧格式数据项</p>`;
+
+        if (migrator.migrationLog.length > 0) {
+          html += `<h6>📋 清理日志</h6>`;
+          html += `<div class="migration-log">`;
+          migrator.migrationLog.forEach(logEntry => {
+            let logClass = 'log-info';
+            if (logEntry.includes('✅')) logClass = 'log-success';
+            else if (logEntry.includes('❌')) logClass = 'log-error';
+            else if (logEntry.includes('⚠️')) logClass = 'log-warning';
+
+            html += `<div class="log-entry ${logClass}">${logEntry}</div>`;
+          });
+          html += `</div>`;
+        }
+
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+
+        // 刷新文件层级显示
+        if (window.fileHierarchyManager) {
+          setTimeout(() => {
+            window.fileHierarchyManager.refreshHierarchy();
+          }, 1000);
+        }
+
+      } catch (error) {
+        console.error('清理旧数据失败:', error);
+        resultsDiv.innerHTML = `<div class="migration-error">❌ 清理失败: ${error.message}</div>`;
+      }
+    }
+
     // 更新 GitHub Token 状态
     async function updateGitHubTokenStatus() {
       const statusIndicator = document.getElementById('tokenStatusIndicator');
@@ -2537,6 +2940,27 @@
         const diagnosticBtn = document.getElementById('runPermissionsDiagnostic');
         if (diagnosticBtn) {
           diagnosticBtn.addEventListener('click', runPermissionsDiagnostic);
+        }
+
+        // 设置数据迁移按钮事件监听器
+        const scanBtn = document.getElementById('scanLegacyData');
+        if (scanBtn) {
+          scanBtn.addEventListener('click', scanLegacyData);
+        }
+
+        const previewBtn = document.getElementById('previewMigration');
+        if (previewBtn) {
+          previewBtn.addEventListener('click', previewMigration);
+        }
+
+        const executeBtn = document.getElementById('executeMigration');
+        if (executeBtn) {
+          executeBtn.addEventListener('click', executeMigration);
+        }
+
+        const cleanupBtn = document.getElementById('cleanupLegacyData');
+        if (cleanupBtn) {
+          cleanupBtn.addEventListener('click', cleanupLegacyData);
         }
 
         // 检查存储支持和跟踪保护

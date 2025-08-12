@@ -237,55 +237,183 @@ class FileHierarchyManager {
   // 获取用户文件
   async getUserFiles(username) {
     const files = [];
+    const fileIds = new Set(); // 用于去重
 
     try {
-      // 从Firebase获取
+      // 1. 优先从 GitHub 获取（如果在网络环境）
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        console.log(`🌐 从 GitHub 获取用户 ${username} 的文件...`);
+        try {
+          const githubFiles = await this.getGitHubUserFiles(username);
+          for (const file of githubFiles) {
+            if (!fileIds.has(file.fileId)) {
+              files.push(file);
+              fileIds.add(file.fileId);
+            }
+          }
+          console.log(`✅ 从 GitHub 获取到 ${githubFiles.length} 个文件`);
+        } catch (githubError) {
+          // 只有非404错误才输出警告
+          if (!githubError.message.includes('文件不存在') && githubError.status !== 404) {
+            console.warn(`从 GitHub 获取用户 ${username} 的文件失败:`, githubError.message);
+          }
+        }
+      }
+
+      // 2. 从本地存储获取
+      console.log(`📱 从本地存储获取用户 ${username} 的文件...`);
+      const localFiles = await this.getLocalUserFiles(username);
+      for (const file of localFiles) {
+        if (!fileIds.has(file.fileId)) {
+          files.push(file);
+          fileIds.add(file.fileId);
+        }
+      }
+      console.log(`✅ 从本地存储获取到 ${localFiles.length} 个文件`);
+
+      // 3. 从Firebase获取（如果可用）
       if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
+        console.log(`🔥 从 Firebase 获取用户 ${username} 的文件...`);
         try {
           const snapshot = await firebase.database().ref(`userFiles/${username}`).once('value');
           const userFiles = snapshot.val() || {};
 
           for (const [fileId, fileInfo] of Object.entries(userFiles)) {
-            // 确保有权限设置
-            if (!fileInfo.permissions) {
-              fileInfo.permissions = this.createDefaultPermissions(fileInfo);
-            }
+            if (!fileIds.has(fileId)) {
+              // 确保有权限设置
+              if (!fileInfo.permissions) {
+                fileInfo.permissions = this.createDefaultPermissions(fileInfo);
+              }
 
-            // 检查当前用户是否有权限查看此文件
-            const accessResult = await window.filePermissionsSystem.checkFileAccess(
-              fileInfo.permissions,
-              auth.currentUser
-            );
+              // 检查当前用户是否有权限查看此文件
+              const accessResult = await window.filePermissionsSystem.checkFileAccess(
+                fileInfo.permissions,
+                auth.currentUser
+              );
 
-            if (accessResult.hasAccess) {
-              files.push({
-                ...fileInfo,
-                fileId: fileId,
-                owner: username,
-                accessLevel: accessResult.level
-              });
+              if (accessResult.hasAccess) {
+                files.push({
+                  ...fileInfo,
+                  fileId: fileId,
+                  owner: username,
+                  accessLevel: accessResult.level
+                });
+                fileIds.add(fileId);
+              }
             }
           }
+          console.log(`✅ 从 Firebase 获取到 ${Object.keys(userFiles).length} 个文件`);
         } catch (firebaseError) {
           console.warn(`从Firebase获取用户 ${username} 的文件失败:`, firebaseError);
         }
       }
 
-      // 从本地存储获取（作为备份）
-      const localFiles = await this.getLocalUserFiles(username);
+      console.log(`📁 用户 ${username} 共有 ${files.length} 个可访问文件`);
+      return files;
+    } catch (error) {
+      console.error(`获取用户 ${username} 的文件失败:`, error);
+      return [];
+    }
+  }
 
-      // 合并并去重
-      const allFiles = [...files];
-      for (const localFile of localFiles) {
-        if (!files.find(f => f.fileId === localFile.fileId)) {
-          allFiles.push(localFile);
+  // 从 GitHub 获取用户文件
+  async getGitHubUserFiles(username) {
+    const files = [];
+
+    try {
+      if (!window.dataManager || !window.dataManager.shouldUseGitHubStorage()) {
+        return files;
+      }
+
+      // 获取 GitHub 中的所有作品文件
+      const githubFiles = await this.listGitHubWorkFiles();
+
+      for (const fileInfo of githubFiles) {
+        try {
+          // 加载文件内容
+          const workData = await window.dataManager.loadData(fileInfo.key, {
+            category: 'works',
+            fallbackToLocal: false
+          });
+
+          if (workData && (workData.uploadedBy === username || workData.author === username)) {
+            // 确保有权限设置
+            if (!workData.permissions) {
+              workData.permissions = this.createDefaultPermissions(workData);
+            }
+
+            // 检查当前用户是否有权限查看此文件
+            const accessResult = await window.filePermissionsSystem.checkFileAccess(
+              workData.permissions,
+              auth.currentUser
+            );
+
+            if (accessResult.hasAccess) {
+              files.push({
+                ...workData,
+                fileId: workData.id,
+                owner: username,
+                accessLevel: accessResult.level,
+                source: 'github'
+              });
+            }
+          }
+        } catch (error) {
+          // 静默处理单个文件的错误
+          if (window.location.search.includes('debug=true')) {
+            console.warn(`加载 GitHub 文件失败: ${fileInfo.key}`, error.message);
+          }
         }
       }
 
-      console.log(`📁 用户 ${username} 共有 ${allFiles.length} 个可访问文件`);
-      return allFiles;
+      return files;
     } catch (error) {
-      console.error(`获取用户 ${username} 的文件失败:`, error);
+      console.warn(`从 GitHub 获取用户文件失败:`, error.message);
+      return [];
+    }
+  }
+
+  // 列出 GitHub 中的作品文件
+  async listGitHubWorkFiles() {
+    try {
+      if (!window.githubStorage || !window.githubStorage.token) {
+        return [];
+      }
+
+      // 获取 data/works 目录下的所有文件
+      const response = await fetch(
+        `https://api.github.com/repos/hysteriasy/Serial_story/contents/data/works`,
+        {
+          headers: {
+            'Authorization': `token ${window.githubStorage.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          // 目录不存在是正常情况
+          return [];
+        }
+        throw new Error(`GitHub API 错误: ${response.status}`);
+      }
+
+      const files = await response.json();
+      return files
+        .filter(file => file.type === 'file' && file.name.endsWith('.json'))
+        .map(file => ({
+          name: file.name,
+          key: file.name.replace('.json', ''),
+          path: file.path,
+          sha: file.sha
+        }));
+
+    } catch (error) {
+      // 只有非404错误才输出警告
+      if (!error.message.includes('404') && error.status !== 404) {
+        console.warn('列出 GitHub 作品文件失败:', error.message);
+      }
       return [];
     }
   }
