@@ -126,6 +126,8 @@
         .action-buttons {
             display: flex;
             gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
         }
 
         .btn-action {
@@ -418,7 +420,7 @@
                     <div class="control-group">
                         <label for="newUserRole">角色</label>
                         <select id="newUserRole" class="form-select">
-                            <option value="visitor">访客</option>
+                            <option value="visitor" selected>访客</option>
                             <option value="friend">好友</option>
                             <option value="admin">管理员</option>
                         </select>
@@ -456,7 +458,6 @@
 
                     <div class="control-group">
                         <button class="btn-primary" onclick="saveUserEdit()">保存修改</button>
-                        <button class="btn-primary" onclick="changeUserRole()">仅修改角色</button>
                     </div>
 
                     <div class="control-group">
@@ -676,7 +677,6 @@
                         <td>
                             <div class="action-buttons">
                                 <button class="btn-action btn-edit" onclick="userManagement.selectUser('${user.username}')">编辑</button>
-                                <button class="btn-action btn-reset" onclick="userManagement.resetPassword('${user.username}')">重置密码</button>
                             </div>
                         </td>
                     `;
@@ -764,42 +764,7 @@
         }
 
         // 用户管理操作函数
-        function changeUserRole() {
-            const selectedUsername = document.getElementById('selectedUser').value;
-            const newRole = document.getElementById('newRole').value;
 
-            if (!selectedUsername) {
-                alert('请选择要修改的用户');
-                return;
-            }
-
-            if (selectedUsername === auth.currentUser.username && newRole !== 'admin') {
-                alert('不能修改自己的管理员权限');
-                return;
-            }
-
-            if (confirm(`确定要将用户 ${selectedUsername} 的角色修改为 ${userManagement.getRoleDisplayName(newRole)} 吗？`)) {
-                const user = userManagement.users.find(u => u.username === selectedUsername);
-                if (user) {
-                    const oldRole = user.role;
-                    user.role = newRole;
-                    userManagement.saveUsers();
-                    userManagement.renderUsers();
-                    userManagement.updateStats();
-
-                    // 记录操作日志
-                    if (typeof adminLogger !== 'undefined') {
-                        adminLogger.logUserManagement('role_change', selectedUsername, {
-                            oldRole: oldRole,
-                            newRole: newRole
-                        });
-                    }
-
-                    alert('角色修改成功！');
-                    userManagement.loadOperationLogs();
-                }
-            }
-        }
 
         function resetUserPassword() {
             const selectedUsername = document.getElementById('selectedUser').value;
@@ -880,6 +845,22 @@
             }
         }
 
+        // 初始化添加用户表单
+        function initAddUserForm() {
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newUserPassword').value = '';
+            document.getElementById('newUserRole').value = 'visitor';
+            console.log('✅ 添加用户表单已初始化');
+        }
+
+        // 清空添加用户表单
+        function clearAddUserForm() {
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newUserPassword').value = '';
+            document.getElementById('newUserRole').value = 'visitor';
+            console.log('✅ 添加用户表单已清空');
+        }
+
         // 添加新用户
         function addNewUser() {
             const username = document.getElementById('newUsername').value.trim();
@@ -932,9 +913,7 @@
             }
 
             // 清空表单
-            document.getElementById('newUsername').value = '';
-            document.getElementById('newUserPassword').value = '';
-            document.getElementById('newUserRole').value = 'visitor';
+            clearAddUserForm();
 
             alert(`用户 ${username} 添加成功！`);
             userManagement.loadOperationLogs();
@@ -945,6 +924,7 @@
             const selectedUsername = document.getElementById('selectedUser').value;
             const newUsername = document.getElementById('editUsername').value.trim();
             const newRole = document.getElementById('newRole').value;
+            const newPassword = document.getElementById('newPassword').value.trim();
 
             if (!selectedUsername) {
                 alert('请先选择要编辑的用户');
@@ -970,6 +950,12 @@
                 }
             }
 
+            // 验证密码格式（如果提供了新密码）
+            if (newPassword && newPassword.length < 6) {
+                alert('密码长度不能少于6个字符');
+                return;
+            }
+
             const userIndex = userManagement.users.findIndex(u => u.username === selectedUsername);
             if (userIndex === -1) {
                 alert('用户不存在');
@@ -982,6 +968,11 @@
             // 更新用户信息
             userManagement.users[userIndex].username = newUsername;
             userManagement.users[userIndex].role = newRole;
+
+            // 如果提供了新密码，则更新密码
+            if (newPassword) {
+                userManagement.users[userIndex].password = newPassword;
+            }
 
             userManagement.saveUsers();
             userManagement.renderUsers();
@@ -997,6 +988,9 @@
                 if (oldRole !== newRole) {
                     changes.push(`角色: ${oldRole} → ${newRole}`);
                 }
+                if (newPassword) {
+                    changes.push('密码已重置');
+                }
 
                 adminLogger.logUserManagement('edit', newUsername, {
                     changes: changes.join(', '),
@@ -1006,6 +1000,9 @@
 
             // 更新选择框
             document.getElementById('selectedUser').value = newUsername;
+
+            // 清空密码字段
+            document.getElementById('newPassword').value = '';
 
             alert('用户信息修改成功！');
             userManagement.loadOperationLogs();
@@ -1036,6 +1033,8 @@
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
             userManagement = new UserManagement();
+            // 初始化添加用户表单
+            initAddUserForm();
         });
     </script>
 </body>
