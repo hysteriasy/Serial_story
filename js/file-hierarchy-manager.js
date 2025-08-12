@@ -1011,14 +1011,31 @@ class FileHierarchyManager {
       if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
         try {
           console.log(`🌐 尝试从GitHub删除: ${workKey}`);
-          await window.dataManager.deleteData(workKey, { category: 'works' });
-          deletedCount++;
-          deletionLog.push(`✅ GitHub存储: ${workKey}`);
-          console.log(`✅ 从GitHub删除文件: ${workKey}`);
+          const deleteResult = await window.dataManager.deleteData(workKey, { category: 'works' });
+
+          if (deleteResult.githubResult) {
+            if (deleteResult.githubResult.alreadyDeleted) {
+              deletionLog.push(`ℹ️ GitHub存储: ${workKey} (文件已不存在)`);
+              console.log(`ℹ️ GitHub文件已不存在: ${workKey}`);
+            } else {
+              deletedCount++;
+              deletionLog.push(`✅ GitHub存储: ${workKey}`);
+              console.log(`✅ 从GitHub删除文件: ${workKey}`);
+            }
+          } else {
+            // GitHub删除被跳过（可能是token未配置等）
+            deletionLog.push(`ℹ️ GitHub存储: 跳过删除 ${workKey}`);
+          }
         } catch (error) {
-          console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
-          errors.push(`删除GitHub数据失败: ${error.message}`);
-          deletionLog.push(`❌ GitHub存储: ${error.message}`);
+          // 只有在非404错误时才记录为错误
+          if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+            console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
+            errors.push(`删除GitHub数据失败: ${error.message}`);
+            deletionLog.push(`❌ GitHub存储: ${error.message}`);
+          } else {
+            deletionLog.push(`ℹ️ GitHub存储: ${workKey} (文件不存在)`);
+            console.log(`ℹ️ GitHub文件不存在，跳过删除: ${workKey}`);
+          }
         }
       } else {
         deletionLog.push(`ℹ️ GitHub存储: 未启用或不可用`);
@@ -1292,6 +1309,61 @@ class FileHierarchyManager {
   bindEvents(container) {
     // 这里可以添加其他事件绑定
     console.log('文件层级管理器事件已绑定');
+  }
+
+  // 显示通知消息
+  showNotification(message, type = 'info') {
+    // 尝试使用全局通知函数
+    if (typeof showNotification !== 'undefined') {
+      showNotification(message, type);
+      return;
+    }
+
+    // 创建简单的通知
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+
+    // 添加样式
+    notification.style.cssText = `
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: ${this.getNotificationColor(type)};
+      color: white;
+      padding: 15px 20px;
+      border-radius: 5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10001;
+      animation: slideInRight 0.3s ease;
+      max-width: 300px;
+      word-wrap: break-word;
+    `;
+
+    document.body.appendChild(notification);
+
+    // 自动移除通知
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.remove();
+          }
+        }, 300);
+      }
+    }, 3000);
+  }
+
+  // 获取通知颜色
+  getNotificationColor(type) {
+    const colors = {
+      success: '#4CAF50',
+      error: '#f44336',
+      warning: '#ff9800',
+      info: '#2196F3'
+    };
+    return colors[type] || colors.info;
   }
 
   // 添加层级管理器样式

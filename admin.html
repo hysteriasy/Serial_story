@@ -989,6 +989,7 @@
   <script src="js/ios-compatibility.js"></script>
 
   <!-- 核心环境和存储管理脚本 - 必须在其他脚本之前加载 -->
+  <script src="js/tracking-protection-handler.js"></script>
   <script src="js/storage-optimizer.js"></script>
   <script src="js/github-storage.js"></script>
   <script src="js/data-manager.js"></script>
@@ -1472,15 +1473,28 @@
       lastStatusUpdate = now;
     }
 
-    // 检查浏览器存储支持
+    // 检查浏览器存储支持（增强版）
     function checkStorageSupport() {
       try {
         const testKey = 'storage_test';
-        localStorage.setItem(testKey, 'test');
+        const testValue = `test_${Date.now()}`;
+        localStorage.setItem(testKey, testValue);
+        const retrieved = localStorage.getItem(testKey);
         localStorage.removeItem(testKey);
-        return true;
+
+        if (retrieved === testValue) {
+          return true;
+        } else {
+          throw new Error('存储读写不一致');
+        }
       } catch (error) {
-        console.warn('本地存储不可用:', error);
+        // 检查是否是跟踪保护错误
+        if (error.message.includes('Tracking Prevention') ||
+            error.message.includes('blocked access to storage')) {
+          showTrackingProtectionWarning();
+        } else {
+          console.warn('本地存储不可用:', error);
+        }
         return false;
       }
     }
@@ -1498,6 +1512,96 @@
       }
 
       showNotification('浏览器存储被阻止，用户管理功能可能无法正常工作。请检查浏览器设置或隐私模式。', 'error');
+    }
+
+    // 显示跟踪保护警告
+    function showTrackingProtectionWarning() {
+      const statusElement = document.getElementById('systemStatus');
+      const indicatorElement = document.getElementById('statusIndicator');
+      const textElement = document.getElementById('statusText');
+
+      if (statusElement && indicatorElement && textElement) {
+        statusElement.className = 'system-status warning';
+        indicatorElement.className = 'status-indicator warning';
+        textElement.textContent = '跟踪保护已启用 - 兼容模式';
+      }
+
+      // 显示详细的跟踪保护提示
+      showTrackingProtectionModal();
+    }
+
+    // 显示跟踪保护模态框
+    function showTrackingProtectionModal() {
+      // 避免重复显示
+      if (document.getElementById('trackingProtectionModal')) {
+        return;
+      }
+
+      const modal = document.createElement('div');
+      modal.id = 'trackingProtectionModal';
+      modal.className = 'modal';
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+          <div class="modal-header">
+            <h3>🛡️ 浏览器隐私保护提醒</h3>
+            <span class="close-btn" onclick="closeTrackingProtectionModal()">&times;</span>
+          </div>
+          <div class="modal-body">
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px; margin-bottom: 20px;">
+              <p><strong>检测到浏览器的跟踪保护功能限制了本地存储访问。</strong></p>
+              <p>系统已自动切换到兼容模式，核心功能仍可正常使用。</p>
+            </div>
+
+            <h4>🔍 什么是跟踪保护？</h4>
+            <p>现代浏览器的跟踪保护功能会限制网站对本地存储的访问，以保护用户隐私和防止跨站跟踪。</p>
+
+            <h4>📋 对本站的影响：</h4>
+            <ul>
+              <li>用户登录状态可能无法长期保持</li>
+              <li>文件权限设置可能无法本地缓存</li>
+              <li>部分个性化设置可能在刷新后丢失</li>
+              <li>控制台可能出现存储访问警告（已自动过滤）</li>
+            </ul>
+
+            <h4>💡 推荐解决方案：</h4>
+            <div style="background: #e8f5e8; border: 1px solid #c3e6cb; border-radius: 5px; padding: 15px; margin: 10px 0;">
+              <p><strong>🔑 配置 GitHub Token（推荐）</strong></p>
+              <p>在"系统设置"标签页中配置 GitHub Token，可以绕过本地存储限制，实现完整的数据同步功能。</p>
+            </div>
+
+            <h4>🔧 其他解决方案：</h4>
+            <ol>
+              <li><strong>添加到信任站点：</strong>将 hysteriasy.github.io 添加到浏览器的信任站点列表</li>
+              <li><strong>调整隐私设置：</strong>在浏览器设置中降低跟踪保护级别</li>
+              <li><strong>使用其他浏览器：</strong>某些浏览器的隐私限制较少</li>
+              <li><strong>禁用扩展：</strong>某些隐私保护扩展可能加强了限制</li>
+            </ol>
+
+            <h4>📊 当前状态：</h4>
+            <p>✅ 系统已自动切换到兼容模式<br>
+            ✅ 核心功能仍可正常使用<br>
+            ✅ 错误日志已自动过滤<br>
+            ${window.dataManager && window.dataManager.shouldUseGitHubStorage() ?
+              '✅ GitHub 存储可用，数据同步正常' :
+              '⚠️ 建议配置 GitHub Token 以获得最佳体验'}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeTrackingProtectionModal()">我知道了</button>
+            <button class="btn btn-primary" onclick="closeTrackingProtectionModal(); switchAdminTab('settings');">去配置 GitHub Token</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+    // 关闭跟踪保护模态框
+    function closeTrackingProtectionModal() {
+      const modal = document.getElementById('trackingProtectionModal');
+      if (modal) {
+        modal.remove();
+      }
     }
 
     // 加载用户列表函数（异步版本）
@@ -2024,10 +2128,20 @@
           toggleVisibilityBtn.addEventListener('click', toggleTokenVisibility);
         }
 
-        // 检查存储支持
+        // 检查存储支持和跟踪保护
         if (!checkStorageSupport()) {
           showStorageWarning();
         }
+
+        // 延迟检查跟踪保护状态
+        setTimeout(() => {
+          if (window.trackingProtectionHandler) {
+            const status = window.trackingProtectionHandler.getStorageStatusReport();
+            if (status.storageBlocked) {
+              console.log('🛡️ 检测到跟踪保护限制，已启用兼容模式');
+            }
+          }
+        }, 2000);
 
         // 延迟初始化系统状态显示，确保环境管理器已加载
         setTimeout(() => {

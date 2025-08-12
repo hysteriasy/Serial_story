@@ -244,8 +244,18 @@ class GitHubStorage {
 
     try {
       // 先获取文件的SHA
-      const fileInfo = await this.getFile(filePath);
-      
+      let fileInfo;
+      try {
+        fileInfo = await this.getFile(filePath);
+      } catch (error) {
+        // 如果文件不存在，直接返回成功（文件已经不存在了）
+        if (error.message.includes('文件不存在') || error.message.includes('404')) {
+          console.log(`ℹ️ 文件已不存在，无需删除: ${filePath}`);
+          return { success: true, alreadyDeleted: true };
+        }
+        throw error;
+      }
+
       const response = await fetch(
         `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`,
         {
@@ -264,12 +274,18 @@ class GitHubStorage {
       );
 
       if (!response.ok) {
+        // 如果删除时文件已不存在，也视为成功
+        if (response.status === 404) {
+          console.log(`ℹ️ 文件在删除过程中已不存在: ${filePath}`);
+          return { success: true, alreadyDeleted: true };
+        }
+
         const errorData = await response.json();
         throw new Error(`删除文件失败: ${response.status} - ${errorData.message}`);
       }
 
       console.log(`✅ 文件删除成功: ${filePath}`);
-      return true;
+      return { success: true, alreadyDeleted: false };
     } catch (error) {
       console.error('❌ GitHub文件删除失败:', error);
       throw error;

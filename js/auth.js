@@ -467,13 +467,23 @@ const auth = {
                 });
               }
             } catch (error) {
-              console.warn(`从 GitHub 获取用户 ${username} 数据失败:`, error);
+              // 只有在非404错误时才记录警告
+              if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+                console.warn(`从 GitHub 获取用户 ${username} 数据失败:`, error);
+              }
             }
           }
           console.log(`✅ 从 GitHub 获取到 ${userIndex.users.length} 个用户索引`);
+        } else {
+          console.log('ℹ️ GitHub 用户索引文件不存在，将从本地存储构建');
         }
       } catch (error) {
-        console.warn('⚠️ GitHub 用户数据获取失败:', error.message);
+        // 只有在非404错误时才记录警告
+        if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+          console.warn('⚠️ GitHub 用户数据获取失败:', error.message);
+        } else {
+          console.log('ℹ️ GitHub 用户索引文件不存在，这是正常现象');
+        }
       }
     }
 
@@ -1267,19 +1277,41 @@ const auth = {
 
     try {
       const userIndexKey = 'users_index';
-      let userIndex = await window.dataManager.loadData(userIndexKey, {
-        category: 'system',
-        fallbackToLocal: true
-      });
+      let userIndex;
+
+      try {
+        userIndex = await window.dataManager.loadData(userIndexKey, {
+          category: 'system',
+          fallbackToLocal: true
+        });
+      } catch (error) {
+        // 如果索引文件不存在，创建新的索引
+        if (error.message.includes('文件不存在') || error.message.includes('404')) {
+          console.log('ℹ️ 用户索引文件不存在，创建新索引');
+          userIndex = null;
+        } else {
+          throw error;
+        }
+      }
 
       if (!userIndex) {
-        userIndex = { users: [], lastUpdated: new Date().toISOString() };
+        // 从本地存储构建初始索引
+        const localUsers = this.getLocalUsersList();
+        userIndex = {
+          users: [...localUsers],
+          lastUpdated: new Date().toISOString(),
+          createdFrom: 'local_storage'
+        };
+        console.log(`📋 从本地存储构建用户索引，包含 ${localUsers.length} 个用户`);
       }
+
+      let indexChanged = false;
 
       if (action === 'add') {
         if (!userIndex.users.includes(username)) {
           userIndex.users.push(username);
           userIndex.lastUpdated = new Date().toISOString();
+          indexChanged = true;
           console.log(`✅ 用户 ${username} 已添加到索引`);
         }
       } else if (action === 'remove') {
@@ -1287,19 +1319,24 @@ const auth = {
         if (index > -1) {
           userIndex.users.splice(index, 1);
           userIndex.lastUpdated = new Date().toISOString();
+          indexChanged = true;
           console.log(`✅ 用户 ${username} 已从索引中移除`);
         }
       }
 
-      // 保存更新后的索引
-      await window.dataManager.saveData(userIndexKey, userIndex, {
-        category: 'system',
-        commitMessage: `更新用户索引: ${action} ${username}`
-      });
+      // 只有在索引发生变化时才保存
+      if (indexChanged || !userIndex.createdFrom) {
+        await window.dataManager.saveData(userIndexKey, userIndex, {
+          category: 'system',
+          commitMessage: `更新用户索引: ${action} ${username}`
+        });
+        console.log(`💾 用户索引已保存到 GitHub`);
+      }
 
     } catch (error) {
       console.error('更新用户索引失败:', error);
-      throw error;
+      // 不抛出错误，避免影响主要功能
+      console.warn('⚠️ 用户索引更新失败，但不影响主要功能');
     }
   }
 };

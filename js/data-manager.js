@@ -118,25 +118,40 @@ class DataManager {
   // 删除数据
   async deleteData(key, options = {}) {
     const { category = 'general' } = options;
-    
+
     try {
+      let githubDeleteResult = null;
+
       // 从GitHub删除
       if (this.shouldUseGitHubStorage() && this.githubStorage && this.githubStorage.token) {
         try {
           const filePath = this.generateGitHubPath(key, category);
-          await this.githubStorage.deleteFile(filePath, `删除数据: ${key}`);
-          console.log(`✅ 从GitHub删除数据: ${key}`);
+          githubDeleteResult = await this.githubStorage.deleteFile(filePath, `删除数据: ${key}`);
+
+          if (githubDeleteResult.alreadyDeleted) {
+            console.log(`ℹ️ GitHub文件已不存在: ${key}`);
+          } else {
+            console.log(`✅ 从GitHub删除数据: ${key}`);
+          }
         } catch (error) {
-          console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
+          // 只有在非404错误时才记录警告
+          if (!error.message.includes('文件不存在') && !error.message.includes('404')) {
+            console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
+          } else {
+            console.log(`ℹ️ GitHub文件不存在，跳过删除: ${key}`);
+          }
         }
       }
-      
+
       // 从本地存储删除
       localStorage.removeItem(key);
       console.log(`📱 从本地存储删除数据: ${key}`);
-      
-      return { success: true };
-      
+
+      return {
+        success: true,
+        githubResult: githubDeleteResult
+      };
+
     } catch (error) {
       console.error(`❌ 数据删除失败: ${key}`, error);
       throw error;

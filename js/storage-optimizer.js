@@ -7,28 +7,83 @@ class StorageOptimizer {
     this.batchOperations = [];
     this.isProcessingBatch = false;
     this.lastAccessTime = new Map();
-    this.accessThrottle = 50; // 50ms 节流
-    
+    this.accessThrottle = 100; // 增加到100ms节流，减少频繁访问
+
+    // 跟踪保护相关
+    this.trackingProtectionDetected = false;
+    this.consecutiveFailures = 0;
+    this.maxConsecutiveFailures = 3;
+    this.retryDelay = 1000; // 重试延迟
+    this.silentMode = false; // 静默模式，减少日志输出
+
     // 初始化时检查存储可用性
     this.storageAvailable = this.checkStorageAvailability();
-    
+
     console.log(`📦 存储优化器初始化 - 存储可用: ${this.storageAvailable}`);
+
+    // 如果跟踪保护处理器可用，集成它
+    this.integrateTrackingProtectionHandler();
   }
 
-  // 检查存储可用性
+  // 集成跟踪保护处理器
+  integrateTrackingProtectionHandler() {
+    if (window.trackingProtectionHandler) {
+      console.log('📦 集成跟踪保护处理器');
+      // 定期检查跟踪保护状态
+      setInterval(() => {
+        const status = window.trackingProtectionHandler.getStorageStatusReport();
+        this.trackingProtectionDetected = status.storageBlocked;
+        if (this.trackingProtectionDetected && !this.silentMode) {
+          this.silentMode = true;
+          console.log('📦 检测到跟踪保护，启用静默模式');
+        }
+      }, 30000);
+    }
+  }
+
+  // 检查存储可用性（增强版）
   checkStorageAvailability() {
     try {
       const testKey = '__storage_test__';
-      localStorage.setItem(testKey, 'test');
+      const testValue = `test_${Date.now()}`;
+
+      localStorage.setItem(testKey, testValue);
+      const retrieved = localStorage.getItem(testKey);
       localStorage.removeItem(testKey);
-      return true;
+
+      if (retrieved === testValue) {
+        this.consecutiveFailures = 0;
+        return true;
+      } else {
+        throw new Error('存储读写不一致');
+      }
     } catch (error) {
-      console.warn('⚠️ 本地存储不可用:', error.message);
+      this.consecutiveFailures++;
+
+      // 检查是否是跟踪保护错误
+      if (this.isTrackingProtectionError(error)) {
+        this.trackingProtectionDetected = true;
+        if (!this.silentMode) {
+          console.warn('🛡️ 检测到跟踪保护限制:', error.message);
+          this.silentMode = true;
+        }
+      } else if (!this.silentMode) {
+        console.warn('⚠️ 本地存储不可用:', error.message);
+      }
+
       return false;
     }
   }
 
-  // 安全的获取操作（带缓存和节流）
+  // 判断是否是跟踪保护错误
+  isTrackingProtectionError(error) {
+    const message = error.message.toLowerCase();
+    return message.includes('tracking prevention') ||
+           message.includes('blocked access to storage') ||
+           message.includes('privacy protection');
+  }
+
+  // 安全的获取操作（带缓存和节流，增强错误处理）
   safeGetItem(key) {
     if (!this.storageAvailable) {
       return null;
@@ -46,21 +101,58 @@ class StorageOptimizer {
       return this.cache.get(key) || null;
     }
 
-    try {
+    return this.retryStorageOperation(() => {
       const value = localStorage.getItem(key);
       this.cache.set(key, value);
       this.lastAccessTime.set(key, now);
       return value;
-    } catch (error) {
-      console.warn(`⚠️ 读取存储失败 (${key}):`, error.message);
-      return null;
-    }
+    }, 'get', key);
   }
 
-  // 安全的设置操作（批量处理）
+  // 重试存储操作
+  retryStorageOperation(operation, operationType, key, maxRetries = 2) {
+    let lastError;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = operation();
+        this.consecutiveFailures = 0;
+        return result;
+      } catch (error) {
+        lastError = error;
+        this.consecutiveFailures++;
+
+        if (this.isTrackingProtectionError(error)) {
+          this.trackingProtectionDetected = true;
+          if (!this.silentMode) {
+            console.warn(`🛡️ 跟踪保护阻止存储访问 (${operationType}:${key})`);
+            this.silentMode = true;
+          }
+          break; // 跟踪保护错误不重试
+        }
+
+        if (attempt < maxRetries) {
+          // 等待后重试
+          const delay = this.retryDelay * (attempt + 1);
+          setTimeout(() => {}, delay);
+        }
+      }
+    }
+
+    // 所有重试都失败了
+    if (!this.silentMode || this.consecutiveFailures <= this.maxConsecutiveFailures) {
+      console.warn(`⚠️ 存储操作失败 (${operationType}:${key}):`, lastError.message);
+    }
+
+    return operationType === 'get' ? null : false;
+  }
+
+  // 安全的设置操作（批量处理，增强错误处理）
   safeSetItem(key, value, immediate = false) {
     if (!this.storageAvailable) {
-      console.warn('⚠️ 存储不可用，跳过设置操作');
+      if (!this.silentMode) {
+        console.warn('⚠️ 存储不可用，跳过设置操作');
+      }
       return false;
     }
 
@@ -68,7 +160,10 @@ class StorageOptimizer {
     this.cache.set(key, value);
 
     if (immediate) {
-      return this.performSetItem(key, value);
+      return this.retryStorageOperation(() => {
+        localStorage.setItem(key, value);
+        return true;
+      }, 'set', key);
     } else {
       // 添加到批量操作队列
       this.batchOperations.push({ key, value, type: 'set' });
@@ -77,7 +172,7 @@ class StorageOptimizer {
     }
   }
 
-  // 安全的删除操作
+  // 安全的删除操作（增强错误处理）
   safeRemoveItem(key, immediate = false) {
     if (!this.storageAvailable) {
       return false;
@@ -88,7 +183,10 @@ class StorageOptimizer {
     this.lastAccessTime.delete(key);
 
     if (immediate) {
-      return this.performRemoveItem(key);
+      return this.retryStorageOperation(() => {
+        localStorage.removeItem(key);
+        return true;
+      }, 'remove', key);
     } else {
       // 添加到批量操作队列
       this.batchOperations.push({ key, type: 'remove' });
