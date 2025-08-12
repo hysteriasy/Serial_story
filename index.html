@@ -270,35 +270,7 @@
             </div>
         </section>
 
-        <!-- 管理员专用区域 -->
-        <section id="admin-section" class="admin-only" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 0;">
-            <div class="container">
-                <h2 class="section-title" style="color: white; text-align: center; margin-bottom: 40px;">
-                    👑 管理员控制面板
-                </h2>
-                <div class="admin-dashboard" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
-                    <div class="admin-card" style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px; text-align: center; backdrop-filter: blur(10px);">
-                        <h3 style="margin-bottom: 15px;">📝 内容管理</h3>
-                        <p style="margin-bottom: 20px; opacity: 0.9;">管理网站内容和文章</p>
-                        <a href="upload.html" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; display: inline-block;">进入管理</a>
-                    </div>
-                    <div class="admin-card" style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px; text-align: center; backdrop-filter: blur(10px);">
-                        <h3 style="margin-bottom: 15px;">👥 用户管理</h3>
-                        <p style="margin-bottom: 20px; opacity: 0.9;">管理用户账户和权限</p>
-                        <a href="admin.html" class="btn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; text-decoration: none; padding: 10px 20px; border-radius: 6px; display: inline-block;">用户管理</a>
-                    </div>
-                    <div class="admin-card" style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 12px; text-align: center; backdrop-filter: blur(10px);">
-                        <h3 style="margin-bottom: 15px;">📊 系统统计</h3>
-                        <p style="margin-bottom: 20px; opacity: 0.9;">查看网站访问统计</p>
-                        <button class="btn" onclick="showStats()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer;">查看统计</button>
-                    </div>
-                </div>
-                <div class="admin-welcome" style="text-align: center; margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-                    <h4 style="margin-bottom: 10px;">欢迎回来，管理员！</h4>
-                    <p style="opacity: 0.9;">您拥有完整的系统管理权限</p>
-                </div>
-            </div>
-        </section>
+
 
         <!-- 认证用户专用内容 -->
         <section id="auth-section" class="auth-required" style="display: none; background: #f8f9fa; padding: 40px 0;">
@@ -367,11 +339,25 @@
                     <h2 class="admin-title">🔧 管理员控制面板</h2>
                     <p class="admin-subtitle">系统管理和用户权限控制</p>
                     <div class="admin-buttons">
+                        <a href="upload.html" class="admin-btn">
+                            <div class="admin-btn-icon">📝</div>
+                            <div class="admin-btn-content">
+                                <h3>内容管理</h3>
+                                <p>管理网站内容和文章发布</p>
+                            </div>
+                        </a>
                         <a href="user-management.html" class="admin-btn">
                             <div class="admin-btn-icon">👥</div>
                             <div class="admin-btn-content">
                                 <h3>用户管理</h3>
                                 <p>管理用户账户、角色权限和操作日志</p>
+                            </div>
+                        </a>
+                        <a href="admin.html" class="admin-btn">
+                            <div class="admin-btn-icon">⚙️</div>
+                            <div class="admin-btn-content">
+                                <h3>系统管理</h3>
+                                <p>系统设置、权限管理和配置</p>
                             </div>
                         </a>
                         <a href="#" class="admin-btn" onclick="showSystemStats()">
@@ -1041,24 +1027,13 @@
                 console.warn('⚠️ 没有找到 .auth-required 元素');
             }
 
-            // 如果是管理员，显示管理功能
+            // 如果是管理员，显示管理员控制面板
             if (auth.isAdmin()) {
-                console.log('👑 用户是管理员，显示管理员专用内容...');
-                const adminElements = document.querySelectorAll('.admin-only');
-                console.log('🔍 找到 .admin-only 元素数量:', adminElements.length);
-
-                adminElements.forEach((el, index) => {
-                    console.log(`🔄 显示 .admin-only 元素 ${index + 1}:`, el);
-                    el.style.display = 'block';
-                });
-
-                if (adminElements.length > 0) {
-                    console.log('✅ 管理员专用内容已显示');
-                } else {
-                    console.warn('⚠️ 没有找到 .admin-only 元素');
-                }
+                console.log('👑 用户是管理员，显示管理员控制面板...');
+                updateAdminSection(true);
             } else {
-                console.log('👤 用户不是管理员，跳过管理员内容显示');
+                console.log('👤 用户不是管理员，隐藏管理员控制面板');
+                updateAdminSection(false);
             }
         }
 
@@ -1067,8 +1042,8 @@
             const authElements = document.querySelectorAll('.auth-required');
             authElements.forEach(el => el.style.display = 'none');
 
-            const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => el.style.display = 'none');
+            // 隐藏管理员控制面板
+            updateAdminSection(false);
         }
 
         function logout() {
