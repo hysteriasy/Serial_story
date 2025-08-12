@@ -203,6 +203,12 @@
       border-color: #ffeaa7;
     }
 
+    .system-status.warning {
+      background-color: #fff3cd;
+      color: #856404;
+      border-color: #ffeaa7;
+    }
+
     .system-status.error {
       background-color: #f8d7da;
       color: #721c24;
@@ -223,6 +229,11 @@
 
     .status-indicator.offline {
       background-color: #ffc107;
+    }
+
+    .status-indicator.warning {
+      background-color: #ffc107;
+      animation: pulse 2s infinite;
     }
 
     .status-indicator.error {
@@ -1322,15 +1333,66 @@
 
       if (!statusElement || !indicatorElement || !textElement) return;
 
-      if (window.firebaseAvailable) {
-        statusElement.className = 'system-status online';
-        indicatorElement.className = 'status-indicator online';
-        textElement.textContent = '在线模式 - Firebase连接正常';
-      } else {
-        statusElement.className = 'system-status offline';
-        indicatorElement.className = 'status-indicator offline';
-        textElement.textContent = '离线模式 - 使用本地存储';
+      // 获取环境信息
+      let environmentInfo = { environment: 'unknown', strategy: 'local_storage', isOnline: false };
+      if (window.dataManager && window.dataManager.getEnvironmentInfo) {
+        environmentInfo = window.dataManager.getEnvironmentInfo();
+      } else if (window.environmentManager) {
+        environmentInfo = {
+          environment: window.environmentManager.getEnvironment(),
+          strategy: window.environmentManager.getStorageStrategy(),
+          isOnline: window.environmentManager.isOnlineEnvironment(),
+          shouldUseGitHub: window.environmentManager.shouldUseGitHubStorage()
+        };
       }
+
+      // 检查GitHub Token状态
+      const hasGitHubToken = !!localStorage.getItem('github_token');
+
+      // 根据环境和存储策略确定状态
+      let statusClass, indicatorClass, statusText;
+
+      if (environmentInfo.isOnline) {
+        // 线上环境（GitHub Pages）
+        if (hasGitHubToken && environmentInfo.shouldUseGitHub) {
+          statusClass = 'system-status online';
+          indicatorClass = 'status-indicator online';
+          statusText = `网络环境 - GitHub存储已启用 (${environmentInfo.environment})`;
+        } else if (environmentInfo.shouldUseGitHub) {
+          statusClass = 'system-status warning';
+          indicatorClass = 'status-indicator warning';
+          statusText = `网络环境 - GitHub Token未配置 (${environmentInfo.environment})`;
+        } else {
+          statusClass = 'system-status online';
+          indicatorClass = 'status-indicator online';
+          statusText = `网络环境 - 本地存储模式 (${environmentInfo.environment})`;
+        }
+      } else {
+        // 本地环境
+        if (window.firebaseAvailable) {
+          statusClass = 'system-status online';
+          indicatorClass = 'status-indicator online';
+          statusText = `本地环境 - Firebase连接正常 (${environmentInfo.environment})`;
+        } else {
+          statusClass = 'system-status offline';
+          indicatorClass = 'status-indicator offline';
+          statusText = `本地环境 - 本地存储模式 (${environmentInfo.environment})`;
+        }
+      }
+
+      // 更新UI
+      statusElement.className = statusClass;
+      indicatorElement.className = indicatorClass;
+      textElement.textContent = statusText;
+
+      // 在控制台输出详细信息
+      console.log('🔧 系统状态更新:', {
+        environment: environmentInfo.environment,
+        strategy: environmentInfo.strategy,
+        isOnline: environmentInfo.isOnline,
+        hasGitHubToken,
+        firebaseAvailable: window.firebaseAvailable
+      });
     }
 
     // 检查浏览器存储支持

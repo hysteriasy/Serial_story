@@ -705,9 +705,10 @@ class FileHierarchyManager {
   // 删除文件
   async deleteFile(fileId, owner) {
     try {
-      // 检查权限
-      if (!auth.isAdmin || !auth.isAdmin()) {
-        this.showNotification('只有管理员可以删除文件', 'error');
+      // 增强权限检查
+      const permissionCheck = await this.checkDeletePermission(fileId, owner);
+      if (!permissionCheck.allowed) {
+        this.showNotification(permissionCheck.reason, 'error');
         return;
       }
 
@@ -732,11 +733,14 @@ class FileHierarchyManager {
         fileNode.style.transform = 'translateX(-20px)';
       }
 
+      // 显示删除进度
+      this.showNotification('正在删除文件...', 'info');
+
       // 执行删除操作
       const result = await this.performFileDelete(fileId, owner);
 
       if (result.success) {
-        this.showNotification(`文件 "${fileName}" 已成功删除`, 'success');
+        this.showNotification(`文件 "${fileName}" 已成功删除 (删除了 ${result.deletedCount} 个数据源)`, 'success');
 
         // 智能刷新：保持位置和展开状态
         await this.smartRefreshAfterDelete(currentState, fileId, owner);
@@ -746,12 +750,81 @@ class FileHierarchyManager {
           fileNode.style.opacity = '1';
           fileNode.style.transform = 'translateX(0)';
         }
-        this.showNotification(`删除失败: ${result.message}`, 'error');
+
+        // 显示详细错误信息
+        let errorMessage = `删除失败: ${result.message}`;
+        if (result.errors && result.errors.length > 0) {
+          errorMessage += '\n详细错误:\n' + result.errors.join('\n');
+        }
+        this.showNotification(errorMessage, 'error');
       }
 
     } catch (error) {
       console.error('删除文件失败:', error);
-      this.showNotification('删除文件时发生错误', 'error');
+      this.showNotification(`删除文件时发生错误: ${error.message}`, 'error');
+    }
+  }
+
+  // 检查删除权限
+  async checkDeletePermission(fileId, owner) {
+    try {
+      // 检查用户是否已登录
+      if (!auth.currentUser) {
+        return {
+          allowed: false,
+          reason: '请先登录'
+        };
+      }
+
+      // 检查是否为管理员
+      if (auth.isAdmin && auth.isAdmin()) {
+        return {
+          allowed: true,
+          reason: '管理员权限'
+        };
+      }
+
+      // 检查是否为文件所有者
+      if (auth.currentUser.username === owner) {
+        return {
+          allowed: true,
+          reason: '文件所有者权限'
+        };
+      }
+
+      // 检查是否有特殊权限（如果有权限系统）
+      if (window.filePermissionsSystem) {
+        try {
+          const fileInfo = await this.getFileInfo(fileId, owner);
+          if (fileInfo && fileInfo.permissions) {
+            const accessCheck = await window.filePermissionsSystem.checkFileAccess(
+              fileInfo.permissions,
+              auth.currentUser
+            );
+
+            if (accessCheck.hasAccess && accessCheck.level === 'admin') {
+              return {
+                allowed: true,
+                reason: '特殊管理权限'
+              };
+            }
+          }
+        } catch (error) {
+          console.warn('权限系统检查失败:', error);
+        }
+      }
+
+      return {
+        allowed: false,
+        reason: '权限不足：只有管理员或文件所有者可以删除文件'
+      };
+
+    } catch (error) {
+      console.error('权限检查失败:', error);
+      return {
+        allowed: false,
+        reason: `权限检查失败: ${error.message}`
+      };
     }
   }
 
@@ -886,12 +959,24 @@ class FileHierarchyManager {
     try {
       let deletedCount = 0;
       const errors = [];
+      const deletionLog = [];
+
+      console.log(`🗑️ 开始删除文件: ${fileId} (所有者: ${owner})`);
 
       // 1. 从localStorage删除work_*文件
       const workKey = `work_${fileId}`;
-      if (localStorage.getItem(workKey)) {
-        localStorage.removeItem(workKey);
-        deletedCount++;
+      try {
+        if (localStorage.getItem(workKey)) {
+          localStorage.removeItem(workKey);
+          deletedCount++;
+          deletionLog.push(`✅ 本地存储: ${workKey}`);
+          console.log(`✅ 从本地存储删除: ${workKey}`);
+        } else {
+          deletionLog.push(`ℹ️ 本地存储: ${workKey} 不存在`);
+        }
+      } catch (error) {
+        errors.push(`删除本地存储失败: ${error.message}`);
+        deletionLog.push(`❌ 本地存储: ${error.message}`);
       }
 
       // 2. 从公共作品列表中删除引用
@@ -902,28 +987,41 @@ class FileHierarchyManager {
           const publicWorksData = localStorage.getItem(publicWorksKey);
           if (publicWorksData) {
             const publicWorksList = JSON.parse(publicWorksData);
+            const originalLength = publicWorksList.length;
             const filteredList = publicWorksList.filter(work => work.id !== fileId);
-            if (filteredList.length !== publicWorksList.length) {
+
+            if (filteredList.length !== originalLength) {
               localStorage.setItem(publicWorksKey, JSON.stringify(filteredList));
               deletedCount++;
+              deletionLog.push(`✅ 公共列表 ${category}: 删除了引用`);
+              console.log(`✅ 从 ${category} 公共列表删除引用`);
+            } else {
+              deletionLog.push(`ℹ️ 公共列表 ${category}: 无引用`);
             }
+          } else {
+            deletionLog.push(`ℹ️ 公共列表 ${category}: 列表不存在`);
           }
         } catch (error) {
           errors.push(`删除 ${category} 类别引用失败: ${error.message}`);
+          deletionLog.push(`❌ 公共列表 ${category}: ${error.message}`);
         }
       }
 
       // 3. 从GitHub删除（如果可用且在网络环境）
       if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
         try {
-          // 使用 dataManager 的 deleteData 方法，它会自动处理 GitHub 删除
+          console.log(`🌐 尝试从GitHub删除: ${workKey}`);
           await window.dataManager.deleteData(workKey, { category: 'works' });
-          console.log(`✅ 从GitHub删除文件: ${workKey}`);
           deletedCount++;
+          deletionLog.push(`✅ GitHub存储: ${workKey}`);
+          console.log(`✅ 从GitHub删除文件: ${workKey}`);
         } catch (error) {
           console.warn(`⚠️ 从GitHub删除失败: ${error.message}`);
           errors.push(`删除GitHub数据失败: ${error.message}`);
+          deletionLog.push(`❌ GitHub存储: ${error.message}`);
         }
+      } else {
+        deletionLog.push(`ℹ️ GitHub存储: 未启用或不可用`);
       }
 
       // 4. 从Firebase删除（如果可用）
@@ -931,9 +1029,14 @@ class FileHierarchyManager {
         try {
           await firebase.database().ref(`userFiles/${owner}/${fileId}`).remove();
           deletedCount++;
+          deletionLog.push(`✅ Firebase: userFiles/${owner}/${fileId}`);
+          console.log(`✅ 从Firebase删除: userFiles/${owner}/${fileId}`);
         } catch (error) {
           errors.push(`删除Firebase数据失败: ${error.message}`);
+          deletionLog.push(`❌ Firebase: ${error.message}`);
         }
+      } else {
+        deletionLog.push(`ℹ️ Firebase: 不可用`);
       }
 
       // 5. 处理旧格式随笔数据
@@ -943,30 +1046,67 @@ class FileHierarchyManager {
           if (essaysData) {
             const essays = JSON.parse(essaysData);
             const fileInfo = await this.getFileInfo(fileId, owner);
+            const originalLength = essays.length;
             const filteredEssays = essays.filter(essay => essay.title !== fileInfo?.title);
-            if (filteredEssays.length !== essays.length) {
+
+            if (filteredEssays.length !== originalLength) {
               localStorage.setItem('essays', JSON.stringify(filteredEssays));
               deletedCount++;
+              deletionLog.push(`✅ 旧格式随笔: 删除了引用`);
+              console.log(`✅ 从旧格式随笔删除引用`);
+            } else {
+              deletionLog.push(`ℹ️ 旧格式随笔: 无引用`);
             }
+          } else {
+            deletionLog.push(`ℹ️ 旧格式随笔: 数据不存在`);
           }
         } catch (error) {
           errors.push(`删除旧格式随笔失败: ${error.message}`);
+          deletionLog.push(`❌ 旧格式随笔: ${error.message}`);
         }
       }
 
+      // 6. 删除权限设置（如果存在）
+      try {
+        const permissionKey = `permissions_${fileId}_${owner}`;
+        if (localStorage.getItem(permissionKey)) {
+          localStorage.removeItem(permissionKey);
+          deletedCount++;
+          deletionLog.push(`✅ 权限设置: ${permissionKey}`);
+          console.log(`✅ 删除权限设置: ${permissionKey}`);
+        } else {
+          deletionLog.push(`ℹ️ 权限设置: 不存在`);
+        }
+      } catch (error) {
+        errors.push(`删除权限设置失败: ${error.message}`);
+        deletionLog.push(`❌ 权限设置: ${error.message}`);
+      }
+
+      // 输出删除日志
+      console.log('🗑️ 删除操作完成，详细日志:');
+      deletionLog.forEach(log => console.log(`  ${log}`));
+
+      const success = deletedCount > 0;
+      const message = success
+        ? `成功删除 ${deletedCount} 个数据项` + (errors.length > 0 ? ` (部分失败: ${errors.length} 个错误)` : '')
+        : errors.length > 0 ? errors.join('; ') : '没有找到要删除的数据';
+
       return {
-        success: deletedCount > 0,
-        message: errors.length > 0 ? errors.join('; ') : `成功删除 ${deletedCount} 个数据项`,
+        success,
+        message,
         deletedCount,
-        errors
+        errors,
+        deletionLog
       };
 
     } catch (error) {
+      console.error('❌ 删除操作异常:', error);
       return {
         success: false,
-        message: error.message,
+        message: `删除操作异常: ${error.message}`,
         deletedCount: 0,
-        errors: [error.message]
+        errors: [error.message],
+        deletionLog: [`❌ 异常: ${error.message}`]
       };
     }
   }
@@ -974,23 +1114,46 @@ class FileHierarchyManager {
   // 获取文件信息
   async getFileInfo(fileId, owner) {
     try {
-      // 尝试从localStorage获取
       const workKey = `work_${fileId}`;
-      const workData = localStorage.getItem(workKey);
-      if (workData) {
-        return JSON.parse(workData);
-      }
 
-      // 尝试从Firebase获取
-      if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
-        const snapshot = await firebase.database().ref(`userFiles/${owner}/${fileId}`).once('value');
-        const fileData = snapshot.val();
-        if (fileData) {
-          return fileData;
+      // 1. 优先从GitHub获取（如果在网络环境）
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        try {
+          const githubData = await window.dataManager.loadData(workKey, {
+            category: 'works',
+            fallbackToLocal: false
+          });
+          if (githubData) {
+            console.log(`📁 从GitHub获取文件信息: ${fileId}`);
+            return githubData;
+          }
+        } catch (error) {
+          console.warn(`⚠️ 从GitHub获取文件信息失败: ${error.message}`);
         }
       }
 
-      // 如果是旧格式随笔，从essays中查找
+      // 2. 从localStorage获取
+      const workData = localStorage.getItem(workKey);
+      if (workData) {
+        console.log(`📱 从本地存储获取文件信息: ${fileId}`);
+        return JSON.parse(workData);
+      }
+
+      // 3. 从Firebase获取
+      if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
+        try {
+          const snapshot = await firebase.database().ref(`userFiles/${owner}/${fileId}`).once('value');
+          const fileData = snapshot.val();
+          if (fileData) {
+            console.log(`🔥 从Firebase获取文件信息: ${fileId}`);
+            return fileData;
+          }
+        } catch (error) {
+          console.warn(`⚠️ 从Firebase获取文件信息失败: ${error.message}`);
+        }
+      }
+
+      // 4. 如果是旧格式随笔，从essays中查找
       if (fileId.startsWith('essay_legacy_')) {
         const essaysData = localStorage.getItem('essays');
         if (essaysData) {
