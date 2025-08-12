@@ -6,6 +6,10 @@ class UserStatusManager {
     this.lastUpdateTime = 0;
     this.updateThrottle = 1000; // 1秒节流
     this.isUpdating = false;
+
+    // 状态跟踪变量，用于减少重复日志
+    this.lastLoggedState = null;
+    this.lastLogTime = 0;
   }
 
   // 初始化用户状态管理
@@ -23,10 +27,13 @@ class UserStatusManager {
     this.bindEvents();
     this.updateUserStatus();
 
-    // 定期检查登录状态变化
+    // 定期检查登录状态变化（增加间隔时间，减少频繁更新）
     this.updateInterval = setInterval(() => {
-      this.updateUserStatus();
-    }, 5000);
+      // 只有在页面可见时才更新状态，避免后台页面的无意义更新
+      if (!document.hidden) {
+        this.updateUserStatus();
+      }
+    }, 10000); // 从5秒改为10秒
 
     this.initialized = true;
     console.log('✅ 用户状态管理器已初始化');
@@ -451,11 +458,15 @@ class UserStatusManager {
     // 节流检查：避免频繁更新
     const now = Date.now();
     if (this.isUpdating || (now - this.lastUpdateTime < this.updateThrottle)) {
+      // 静默跳过，避免控制台噪音
       return;
     }
 
     this.isUpdating = true;
     this.lastUpdateTime = now;
+
+    // 减少日志输出频率，只在状态真正改变时输出
+    const shouldLog = !this.lastLoggedState || (now - this.lastLogTime > 30000); // 30秒内最多输出一次日志
 
     try {
       const userStatusItem = document.getElementById('userStatusItem');
@@ -465,8 +476,23 @@ class UserStatusManager {
       const userInfoContent = document.getElementById('userInfoContent');
 
     if (!userStatusItem || !loginItem) {
+      if (shouldLog) {
+        console.log('👤 用户状态元素未找到，跳过更新');
+      }
       return; // 元素还未创建
     }
+
+    const currentState = {
+      isLoggedIn: !!(typeof auth !== 'undefined' && auth.currentUser),
+      username: auth?.currentUser?.username || null,
+      role: auth?.currentUser?.role || null
+    };
+
+    // 检查状态是否真正改变
+    const stateChanged = !this.lastLoggedState ||
+      this.lastLoggedState.isLoggedIn !== currentState.isLoggedIn ||
+      this.lastLoggedState.username !== currentState.username ||
+      this.lastLoggedState.role !== currentState.role;
 
     if (typeof auth !== 'undefined' && auth.currentUser) {
       // 用户已登录，显示用户信息，隐藏登录按钮
@@ -497,7 +523,9 @@ class UserStatusManager {
         `;
       }
 
-      console.log('✅ 用户状态已更新 - 已登录:', auth.currentUser.username);
+      if (shouldLog || stateChanged) {
+        console.log('✅ 用户状态已更新 - 已登录:', auth.currentUser.username);
+      }
     } else {
       // 用户未登录，显示登录按钮，隐藏用户状态
       userStatusItem.style.display = 'none';
@@ -509,8 +537,17 @@ class UserStatusManager {
         userInfoDisplay.style.display = 'none';
       }
 
-      console.log('✅ 用户状态已更新 - 未登录');
+      if (shouldLog || stateChanged) {
+        console.log('✅ 用户状态已更新 - 未登录');
+      }
     }
+
+    // 记录当前状态和日志时间
+    if (stateChanged || shouldLog) {
+      this.lastLoggedState = currentState;
+      this.lastLogTime = now;
+    }
+
     } catch (error) {
       console.error('❌ 更新用户状态失败:', error);
     } finally {

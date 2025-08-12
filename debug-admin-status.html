@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin状态调试工具 - 桑梓</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .debug-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        
+        .debug-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        
+        .debug-result {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .info {
+            background: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+        
+        .warning {
+            background: #fefcbf;
+            color: #744210;
+            border: 1px solid #f6e05e;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        
+        .btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #3182ce;
+        }
+        
+        .current-url {
+            background: #edf2f7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+
+        .real-time-log {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Admin页面状态调试工具</h1>
+        
+        <div class="debug-section">
+            <div class="debug-title">当前环境信息</div>
+            <div class="current-url">
+                <strong>URL:</strong> <span id="currentUrl"></span><br>
+                <strong>协议:</strong> <span id="protocol"></span><br>
+                <strong>主机:</strong> <span id="hostname"></span><br>
+                <strong>路径:</strong> <span id="pathname"></span>
+            </div>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">脚本加载状态检查</div>
+            <div id="scriptLoadStatus"></div>
+            <button class="btn" onclick="checkScriptLoading()">检查脚本加载</button>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">环境管理器状态</div>
+            <div id="environmentManagerStatus"></div>
+            <button class="btn" onclick="checkEnvironmentManager()">检查环境管理器</button>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">数据管理器状态</div>
+            <div id="dataManagerStatus"></div>
+            <button class="btn" onclick="checkDataManager()">检查数据管理器</button>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">模拟Admin页面状态更新</div>
+            <div id="adminStatusSimulation"></div>
+            <button class="btn" onclick="simulateAdminStatus()">模拟状态更新</button>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">实时控制台日志</div>
+            <div id="realTimeLog" class="real-time-log"></div>
+            <button class="btn" onclick="clearRealTimeLog()">清除日志</button>
+            <button class="btn" onclick="toggleLogCapture()" id="logToggleBtn">开始捕获日志</button>
+        </div>
+    </div>
+
+    <!-- 加载必要的脚本 -->
+    <script src="js/ios-compatibility.js"></script>
+    <script src="js/storage-optimizer.js"></script>
+    <script src="js/github-storage.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/script.js"></script>
+    
+    <script>
+        let logCapturing = false;
+        let originalConsoleLog = console.log;
+        let originalConsoleWarn = console.warn;
+        let originalConsoleError = console.error;
+        let logBuffer = [];
+        
+        // 显示当前环境信息
+        function displayCurrentInfo() {
+            document.getElementById('currentUrl').textContent = window.location.href;
+            document.getElementById('protocol').textContent = window.location.protocol;
+            document.getElementById('hostname').textContent = window.location.hostname;
+            document.getElementById('pathname').textContent = window.location.pathname;
+        }
+        
+        // 检查脚本加载状态
+        function checkScriptLoading() {
+            const resultDiv = document.getElementById('scriptLoadStatus');
+            
+            const scripts = [
+                { name: 'iOS兼容性', obj: 'window.iOSCompatibility' },
+                { name: '存储优化器', obj: 'window.storageOptimizer' },
+                { name: 'GitHub存储', obj: 'window.githubStorage' },
+                { name: '环境管理器', obj: 'window.environmentManager' },
+                { name: '数据管理器', obj: 'window.dataManager' },
+                { name: '认证系统', obj: 'window.auth' }
+            ];
+            
+            let html = '';
+            scripts.forEach(script => {
+                const isLoaded = eval(script.obj);
+                const status = isLoaded ? 'success' : 'error';
+                const statusText = isLoaded ? '✅ 已加载' : '❌ 未加载';
+                
+                html += `
+                    <div class="debug-result ${status}">
+                        <strong>${script.name}:</strong> ${statusText}
+                        ${isLoaded ? `\n对象类型: ${typeof isLoaded}` : ''}
+                    </div>
+                `;
+            });
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        // 检查环境管理器
+        function checkEnvironmentManager() {
+            const resultDiv = document.getElementById('environmentManagerStatus');
+            
+            try {
+                if (window.environmentManager) {
+                    const envInfo = {
+                        environment: window.environmentManager.getEnvironment(),
+                        strategy: window.environmentManager.getStorageStrategy(),
+                        isOnline: window.environmentManager.isOnlineEnvironment(),
+                        shouldUseGitHub: window.environmentManager.shouldUseGitHubStorage()
+                    };
+                    
+                    resultDiv.innerHTML = `
+                        <div class="debug-result success">
+                            <strong>环境管理器状态:</strong> ✅ 正常
+                            <strong>环境信息:</strong>
+                            ${JSON.stringify(envInfo, null, 2)}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="debug-result error">
+                            <strong>环境管理器状态:</strong> ❌ 未找到
+                            window.environmentManager 不存在
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="debug-result error">
+                        <strong>环境管理器检查失败:</strong>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 检查数据管理器
+        function checkDataManager() {
+            const resultDiv = document.getElementById('dataManagerStatus');
+            
+            try {
+                if (window.dataManager) {
+                    let envInfo = null;
+                    if (typeof window.dataManager.getEnvironmentInfo === 'function') {
+                        envInfo = window.dataManager.getEnvironmentInfo();
+                    }
+                    
+                    resultDiv.innerHTML = `
+                        <div class="debug-result success">
+                            <strong>数据管理器状态:</strong> ✅ 正常
+                            <strong>getEnvironmentInfo方法:</strong> ${typeof window.dataManager.getEnvironmentInfo}
+                            ${envInfo ? `<strong>环境信息:</strong>\n${JSON.stringify(envInfo, null, 2)}` : ''}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="debug-result error">
+                            <strong>数据管理器状态:</strong> ❌ 未找到
+                            window.dataManager 不存在
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="debug-result error">
+                        <strong>数据管理器检查失败:</strong>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 模拟Admin页面状态更新
+        function simulateAdminStatus() {
+            const resultDiv = document.getElementById('adminStatusSimulation');
+            
+            // 复制admin.html中的updateSystemStatus逻辑
+            try {
+                let environmentInfo = { 
+                    environment: 'unknown', 
+                    strategy: 'local_storage', 
+                    isOnline: false,
+                    shouldUseGitHub: false
+                };
+
+                // 优先使用dataManager的环境信息
+                if (window.dataManager && typeof window.dataManager.getEnvironmentInfo === 'function') {
+                    try {
+                        environmentInfo = window.dataManager.getEnvironmentInfo();
+                        console.log('✅ 从dataManager获取环境信息:', environmentInfo);
+                    } catch (error) {
+                        console.error('❌ dataManager.getEnvironmentInfo()调用失败:', error);
+                    }
+                } 
+                // 回退到environmentManager
+                else if (window.environmentManager) {
+                    try {
+                        environmentInfo = {
+                            environment: window.environmentManager.getEnvironment(),
+                            strategy: window.environmentManager.getStorageStrategy(),
+                            isOnline: window.environmentManager.isOnlineEnvironment(),
+                            shouldUseGitHub: window.environmentManager.shouldUseGitHubStorage()
+                        };
+                        console.log('✅ 从environmentManager获取环境信息:', environmentInfo);
+                    } catch (error) {
+                        console.error('❌ environmentManager调用失败:', error);
+                    }
+                } 
+                // 最后的回退：手动检测
+                else {
+                    console.warn('⚠️ 环境管理器不可用，使用手动检测');
+                    const hostname = window.location.hostname;
+                    const pathname = window.location.pathname;
+                    
+                    if (hostname === 'hysteriasy.github.io' && pathname.startsWith('/Serial_story')) {
+                        environmentInfo = {
+                            environment: 'github_pages',
+                            strategy: 'github_storage',
+                            isOnline: true,
+                            shouldUseGitHub: true
+                        };
+                        console.log('🔧 手动检测为GitHub Pages环境:', environmentInfo);
+                    }
+                }
+
+                const hasGitHubToken = !!localStorage.getItem('github_token');
+                
+                let statusText;
+                if (environmentInfo.isOnline) {
+                    if (hasGitHubToken && environmentInfo.shouldUseGitHub) {
+                        statusText = `网络环境 - GitHub存储已启用 (${environmentInfo.environment})`;
+                    } else if (environmentInfo.shouldUseGitHub) {
+                        statusText = `网络环境 - GitHub Token未配置 (${environmentInfo.environment})`;
+                    } else {
+                        statusText = `网络环境 - 本地存储模式 (${environmentInfo.environment})`;
+                    }
+                } else {
+                    statusText = `本地环境 - 本地存储模式 (${environmentInfo.environment})`;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="debug-result success">
+                        <strong>模拟状态更新结果:</strong>
+                        <strong>环境信息:</strong>
+                        ${JSON.stringify(environmentInfo, null, 2)}
+                        
+                        <strong>GitHub Token:</strong> ${hasGitHubToken ? '已配置' : '未配置'}
+                        
+                        <strong>最终状态文本:</strong>
+                        ${statusText}
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="debug-result error">
+                        <strong>模拟状态更新失败:</strong>
+                        ${error.message}
+                        ${error.stack}
+                    </div>
+                `;
+            }
+        }
+        
+        // 实时日志捕获
+        function toggleLogCapture() {
+            const btn = document.getElementById('logToggleBtn');
+            
+            if (!logCapturing) {
+                // 开始捕获
+                logCapturing = true;
+                btn.textContent = '停止捕获日志';
+                
+                // 重写console方法
+                console.log = function(...args) {
+                    logToBuffer('LOG', args);
+                    originalConsoleLog.apply(console, args);
+                };
+                
+                console.warn = function(...args) {
+                    logToBuffer('WARN', args);
+                    originalConsoleWarn.apply(console, args);
+                };
+                
+                console.error = function(...args) {
+                    logToBuffer('ERROR', args);
+                    originalConsoleError.apply(console, args);
+                };
+                
+            } else {
+                // 停止捕获
+                logCapturing = false;
+                btn.textContent = '开始捕获日志';
+                
+                // 恢复console方法
+                console.log = originalConsoleLog;
+                console.warn = originalConsoleWarn;
+                console.error = originalConsoleError;
+            }
+        }
+        
+        function logToBuffer(level, args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            logBuffer.push(`[${timestamp}] ${level}: ${message}`);
+            
+            // 限制日志缓冲区大小
+            if (logBuffer.length > 100) {
+                logBuffer = logBuffer.slice(-100);
+            }
+            
+            updateRealTimeLog();
+        }
+        
+        function updateRealTimeLog() {
+            const logDiv = document.getElementById('realTimeLog');
+            logDiv.textContent = logBuffer.join('\n');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearRealTimeLog() {
+            logBuffer = [];
+            updateRealTimeLog();
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            displayCurrentInfo();
+            
+            // 延迟执行检查，确保所有脚本都已加载
+            setTimeout(() => {
+                checkScriptLoading();
+                checkEnvironmentManager();
+                checkDataManager();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

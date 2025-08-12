@@ -1006,6 +1006,11 @@
   <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
   <script src="js/ios-compatibility.js"></script>
 
+  <!-- 核心环境和存储管理脚本 - 必须在其他脚本之前加载 -->
+  <script src="js/storage-optimizer.js"></script>
+  <script src="js/github-storage.js"></script>
+  <script src="js/data-manager.js"></script>
+
   <!-- 应用脚本 -->
   <script src="js/script.js"></script>
   <script src="js/auth.js"></script>
@@ -1331,19 +1336,76 @@
       const indicatorElement = document.getElementById('statusIndicator');
       const textElement = document.getElementById('statusText');
 
-      if (!statusElement || !indicatorElement || !textElement) return;
+      if (!statusElement || !indicatorElement || !textElement) {
+        console.warn('⚠️ 系统状态元素未找到，跳过状态更新');
+        return;
+      }
+
+      // 调试信息：检查关键对象的可用性
+      console.log('🔍 系统状态检查 - 对象可用性:', {
+        dataManager: !!window.dataManager,
+        environmentManager: !!window.environmentManager,
+        githubStorage: !!window.githubStorage,
+        dataManagerGetEnvInfo: !!(window.dataManager && window.dataManager.getEnvironmentInfo),
+        currentURL: window.location.href,
+        hostname: window.location.hostname,
+        pathname: window.location.pathname
+      });
 
       // 获取环境信息
-      let environmentInfo = { environment: 'unknown', strategy: 'local_storage', isOnline: false };
-      if (window.dataManager && window.dataManager.getEnvironmentInfo) {
-        environmentInfo = window.dataManager.getEnvironmentInfo();
-      } else if (window.environmentManager) {
-        environmentInfo = {
-          environment: window.environmentManager.getEnvironment(),
-          strategy: window.environmentManager.getStorageStrategy(),
-          isOnline: window.environmentManager.isOnlineEnvironment(),
-          shouldUseGitHub: window.environmentManager.shouldUseGitHubStorage()
-        };
+      let environmentInfo = {
+        environment: 'unknown',
+        strategy: 'local_storage',
+        isOnline: false,
+        shouldUseGitHub: false
+      };
+
+      // 优先使用dataManager的环境信息
+      if (window.dataManager && typeof window.dataManager.getEnvironmentInfo === 'function') {
+        try {
+          environmentInfo = window.dataManager.getEnvironmentInfo();
+          console.log('✅ 从dataManager获取环境信息:', environmentInfo);
+        } catch (error) {
+          console.error('❌ dataManager.getEnvironmentInfo()调用失败:', error);
+        }
+      }
+      // 回退到environmentManager
+      else if (window.environmentManager) {
+        try {
+          environmentInfo = {
+            environment: window.environmentManager.getEnvironment(),
+            strategy: window.environmentManager.getStorageStrategy(),
+            isOnline: window.environmentManager.isOnlineEnvironment(),
+            shouldUseGitHub: window.environmentManager.shouldUseGitHubStorage()
+          };
+          console.log('✅ 从environmentManager获取环境信息:', environmentInfo);
+        } catch (error) {
+          console.error('❌ environmentManager调用失败:', error);
+        }
+      }
+      // 最后的回退：手动检测
+      else {
+        console.warn('⚠️ 环境管理器不可用，使用手动检测');
+        const hostname = window.location.hostname;
+        const pathname = window.location.pathname;
+
+        if (hostname === 'hysteriasy.github.io' && pathname.startsWith('/Serial_story')) {
+          environmentInfo = {
+            environment: 'github_pages',
+            strategy: 'github_storage',
+            isOnline: true,
+            shouldUseGitHub: true
+          };
+          console.log('🔧 手动检测为GitHub Pages环境:', environmentInfo);
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          environmentInfo = {
+            environment: 'local_server',
+            strategy: 'local_storage',
+            isOnline: false,
+            shouldUseGitHub: false
+          };
+          console.log('🔧 手动检测为本地服务器环境:', environmentInfo);
+        }
       }
 
       // 检查GitHub Token状态
@@ -1386,12 +1448,14 @@
       textElement.textContent = statusText;
 
       // 在控制台输出详细信息
-      console.log('🔧 系统状态更新:', {
+      console.log('🔧 系统状态更新完成:', {
         environment: environmentInfo.environment,
         strategy: environmentInfo.strategy,
         isOnline: environmentInfo.isOnline,
+        shouldUseGitHub: environmentInfo.shouldUseGitHub,
         hasGitHubToken,
-        firebaseAvailable: window.firebaseAvailable
+        firebaseAvailable: window.firebaseAvailable,
+        finalStatus: statusText
       });
     }
 
@@ -1873,8 +1937,11 @@
           showStorageWarning();
         }
 
-        // 初始化系统状态显示
-        updateSystemStatus();
+        // 延迟初始化系统状态显示，确保环境管理器已加载
+        setTimeout(() => {
+          console.log('🔧 开始初始化系统状态显示');
+          updateSystemStatus();
+        }, 500);
 
         // 等待FileUploader初始化完成
         waitForSystemInitialization(() => {
