@@ -1,0 +1,24 @@
+{
+  "id": "work_1755044707498_kqsm8jf8b",
+  "mainCategory": "literature",
+  "subcategory": "essay",
+  "categoryName": "文学作品",
+  "subcategoryName": "生活随笔",
+  "title": "123",
+  "content": "1234567890",
+  "uploadedBy": "hysteria",
+  "userRole": "admin",
+  "uploadTime": "2025-08-13T00:25:07.498Z",
+  "permissions": {
+    "visibility": "public",
+    "isPublic": true,
+    "allowedUsers": [],
+    "blockedUsers": [],
+    "allowedRoles": [],
+    "setBy": "hysteria",
+    "setAt": "2025-08-13T00:25:07.498Z",
+    "lastModified": "2025-08-13T00:25:07.498Z",
+    "modifiedBy": "hysteria"
+  },
+  "storage_type": "local"
+}
