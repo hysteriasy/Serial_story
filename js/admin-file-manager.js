@@ -909,6 +909,14 @@ class AdminFileManager {
 
       // 绑定文件选择事件
       this.bindFileSelectionEvents();
+
+      // 调试按钮渲染（仅在开发环境）
+      if (window.location.hostname === 'localhost' || window.location.hostname.includes('github.io')) {
+        setTimeout(() => {
+          console.log('🔍 自动检查按钮渲染状态...');
+          this.debugButtonRendering();
+        }, 100);
+      }
     }
 
     // 更新分页控件
@@ -963,16 +971,16 @@ class AdminFileManager {
         </div>
         <div class="file-time">${uploadTime}</div>
         <div class="file-actions">
-          <button class="btn btn-sm btn-info" onclick="window.adminFileManager.viewFile('${safeFileId}', '${safeOwner}')" title="查看文件详情">
+          <button class="btn btn-info" onclick="window.adminFileManager.viewFile('${safeFileId}', '${safeOwner}')" title="查看文件详情">
             👁️ 查看
           </button>
-          <button class="btn btn-sm btn-secondary" onclick="window.adminFileManager.editPermissions('${safeFileId}', '${safeOwner}')" title="编辑文件权限">
+          <button class="btn btn-secondary" onclick="window.adminFileManager.editPermissions('${safeFileId}', '${safeOwner}')" title="编辑文件权限">
             🔐 权限
           </button>
-          <button class="btn btn-sm btn-warning" onclick="window.adminFileManager.editFile('${safeFileId}', '${safeOwner}')" title="编辑文件内容">
+          <button class="btn btn-warning" onclick="window.adminFileManager.editFile('${safeFileId}', '${safeOwner}')" title="编辑文件内容">
             ✏️ 编辑
           </button>
-          <button class="btn btn-sm btn-danger" onclick="window.adminFileManager.deleteFile('${safeFileId}', '${safeOwner}')" title="删除文件">
+          <button class="btn btn-danger" onclick="window.adminFileManager.deleteFile('${safeFileId}', '${safeOwner}')" title="删除文件">
             🗑️ 删除
           </button>
         </div>
@@ -2207,6 +2215,39 @@ class AdminFileManager {
       console.error('调试过程出错:', error);
       this.showNotification(`调试失败: ${error.message}`, 'error');
     }
+  }
+
+  // 调试按钮渲染
+  debugButtonRendering() {
+    console.log('🔍 开始调试按钮渲染...');
+
+    const fileRows = document.querySelectorAll('.file-row');
+    console.log(`找到 ${fileRows.length} 个文件行`);
+
+    fileRows.forEach((row, index) => {
+      const actions = row.querySelector('.file-actions');
+      const buttons = actions ? actions.querySelectorAll('.btn') : [];
+
+      console.log(`文件行 ${index + 1}:`);
+      console.log(`  - 操作容器存在: ${!!actions}`);
+      console.log(`  - 按钮数量: ${buttons.length}`);
+
+      if (actions) {
+        const computedStyle = window.getComputedStyle(actions);
+        console.log(`  - 容器显示: ${computedStyle.display}`);
+        console.log(`  - 容器宽度: ${computedStyle.width}`);
+        console.log(`  - 容器可见性: ${computedStyle.visibility}`);
+      }
+
+      buttons.forEach((btn, btnIndex) => {
+        const btnStyle = window.getComputedStyle(btn);
+        console.log(`  - 按钮 ${btnIndex + 1}: ${btn.textContent.trim()}`);
+        console.log(`    背景色: ${btnStyle.backgroundColor}`);
+        console.log(`    文字色: ${btnStyle.color}`);
+        console.log(`    显示: ${btnStyle.display}`);
+        console.log(`    可见性: ${btnStyle.visibility}`);
+      });
+    });
   }
 }
 

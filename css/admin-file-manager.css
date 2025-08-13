@@ -4,6 +4,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 /* 工具栏样式 */
@@ -243,12 +244,66 @@
   display: flex;
   gap: 5px;
   justify-content: flex-end;
+  align-items: center;
+  min-width: 200px;
+  flex-shrink: 0;
 }
 
 .file-actions .btn {
   padding: 4px 8px;
   font-size: 12px;
   min-width: auto;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* 按钮颜色样式 */
+.file-actions .btn-info {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.file-actions .btn-info:hover {
+  background-color: #138496;
+  transform: translateY(-1px);
+}
+
+.file-actions .btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.file-actions .btn-secondary:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+}
+
+.file-actions .btn-warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.file-actions .btn-warning:hover {
+  background-color: #e0a800;
+  transform: translateY(-1px);
+}
+
+.file-actions .btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.file-actions .btn-danger:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
 }
 
 /* 分页样式 */
@@ -477,11 +532,13 @@
   .file-actions {
     flex-direction: column;
     gap: 2px;
+    min-width: 120px;
   }
 
   .file-actions .btn {
     font-size: 10px;
-    padding: 2px 6px;
+    padding: 3px 6px;
+    min-width: 50px;
   }
 
   .file-pagination {
@@ -562,6 +619,9 @@
   color: #333;
   margin-bottom: 4px;
   line-height: 1.3;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .file-meta {
