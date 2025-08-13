@@ -503,3 +503,55 @@
     margin-bottom: 0;
   }
 }
+
+/* 调试信息样式 */
+.no-files-debug {
+  padding: 20px;
+  text-align: left;
+}
+
+.no-files-debug h4 {
+  color: #333;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.debug-info {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.debug-info h5 {
+  color: #495057;
+  margin-top: 15px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.debug-info h5:first-child {
+  margin-top: 0;
+}
+
+.debug-info ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.debug-info li {
+  margin-bottom: 5px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.debug-actions {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.debug-actions .btn {
+  margin: 0 5px;
+}

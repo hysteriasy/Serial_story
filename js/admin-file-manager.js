@@ -207,31 +207,60 @@ class AdminFileManager {
   async loadFileList() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     const fileListContent = document.getElementById('fileListContent');
-    
+
     try {
       loadingIndicator.style.display = 'flex';
       fileListContent.innerHTML = '';
 
       console.log('📁 开始加载文件列表...');
-      
+
       // 获取所有文件
       this.currentFiles = await this.getAllFiles();
-      
+
+      // 调试信息
+      console.log('🔍 文件列表详情:', {
+        totalFiles: this.currentFiles.length,
+        filesBySource: this.currentFiles.reduce((acc, file) => {
+          acc[file.source] = (acc[file.source] || 0) + 1;
+          return acc;
+        }, {}),
+        filesByOwner: this.currentFiles.reduce((acc, file) => {
+          acc[file.owner] = (acc[file.owner] || 0) + 1;
+          return acc;
+        }, {}),
+        sampleFiles: this.currentFiles.slice(0, 3).map(f => ({
+          title: f.title,
+          owner: f.owner,
+          source: f.source,
+          permissions: f.permissions?.level
+        }))
+      });
+
       // 更新用户过滤器选项
       this.updateOwnerFilter();
-      
+
       // 应用过滤和排序
       this.applyFilters();
-      
+
       console.log(`✅ 文件列表加载完成，共 ${this.currentFiles.length} 个文件`);
-      
+
+      // 如果没有文件，显示详细的调试信息
+      if (this.currentFiles.length === 0) {
+        this.showNoFilesDebugInfo();
+      }
+
     } catch (error) {
       console.error('❌ 加载文件列表失败:', error);
       fileListContent.innerHTML = `
         <div class="error-message">
           <h4>❌ 加载失败</h4>
           <p>无法加载文件列表: ${error.message}</p>
-          <button class="btn btn-primary" onclick="adminFileManager.loadFileList()">重试</button>
+          <details>
+            <summary>错误详情</summary>
+            <pre>${error.stack || error.toString()}</pre>
+          </details>
+          <button class="btn btn-primary" onclick="window.adminFileManager.loadFileList()">重试</button>
+          <button class="btn btn-secondary" onclick="window.adminFileManager.debugFileRetrieval()">调试</button>
         </div>
       `;
     } finally {
@@ -295,127 +324,80 @@ class AdminFileManager {
   // 从 GitHub 获取文件
   async getGitHubFiles() {
     try {
-      if (!window.fileHierarchyManager) {
-        console.warn('文件层级管理器未初始化');
+      // 检查GitHub存储是否可用
+      if (!window.githubStorage || !window.githubStorage.token) {
+        console.log('ℹ️ GitHub存储不可用，跳过GitHub文件获取');
         return [];
       }
 
-      // 使用跟踪保护处理器的安全操作包装器
-      const githubOperation = async () => {
-        console.log('🌐 开始从 GitHub 获取文件...');
-        const files = await window.fileHierarchyManager.getAllGitHubFiles();
-        console.log(`🌐 GitHub 返回 ${files.length} 个文件`);
-        return files;
-      };
+      console.log('🌐 开始从 GitHub 获取文件...');
 
-      const githubFallback = async () => {
-        console.log('🔄 GitHub 文件获取失败，返回空列表');
-        return [];
-      };
-
-      let githubFiles = [];
-      try {
-        if (window.trackingProtectionHandler) {
-          githubFiles = await window.trackingProtectionHandler.safeStorageOperation(
-            githubOperation,
-            githubFallback,
-            1 // 只重试1次，减少API调用
-          ) || [];
-        } else {
-          githubFiles = await githubOperation();
-        }
-      } catch (error) {
-        console.warn('GitHub 文件获取出错:', error.message);
-        githubFiles = [];
-      }
+      // 直接从GitHub API获取文件，而不依赖fileHierarchyManager
+      const githubFiles = await this.fetchGitHubFilesDirectly();
+      console.log(`🌐 GitHub 返回 ${githubFiles.length} 个文件`);
 
       const processedFiles = [];
 
       for (const file of githubFiles) {
         try {
-          // 尝试获取文件的详细信息
           let fileData = null;
 
           if (file.type === 'work') {
-            // 从 data/works 目录获取
+            // 处理 data/works 目录的文件
             try {
-              const dataOperation = async () => {
-                return await window.dataManager.loadData(file.key, {
-                  category: 'works',
-                  fallbackToLocal: false
-                });
-              };
+              const workData = await window.githubStorage.getFile(file.path);
+              if (workData && workData.content) {
+                const rawData = JSON.parse(atob(workData.content));
 
-              const dataFallback = async () => {
-                // 创建基本的文件信息
-                return {
-                  title: file.name.replace('.json', ''),
-                  originalName: file.name,
-                  mainCategory: 'literature',
-                  uploadedBy: 'unknown',
-                  uploadTime: new Date().toISOString()
+                // data/works 文件可能只包含权限信息，需要补充基本信息
+                fileData = {
+                  title: rawData.title || file.name.replace('.json', ''),
+                  originalName: rawData.originalName || file.name,
+                  mainCategory: rawData.mainCategory || 'literature',
+                  subCategory: rawData.subCategory || rawData.subcategory || 'essay',
+                  uploadedBy: rawData.uploadedBy || rawData.owner || file.owner,
+                  uploadTime: rawData.uploadTime || rawData.createdAt || new Date().toISOString(),
+                  content: rawData.content || '内容已迁移',
+                  permissions: rawData.permissions || {},
+                  id: rawData.id,
+                  // 保留原始数据
+                  ...rawData
                 };
-              };
-
-              if (window.trackingProtectionHandler) {
-                fileData = await window.trackingProtectionHandler.safeStorageOperation(
-                  dataOperation,
-                  dataFallback,
-                  1 // 只重试1次
-                );
-              } else {
-                fileData = await dataOperation();
               }
-            } catch (dataError) {
-              console.warn(`加载文件数据失败: ${file.key}`, dataError);
-              // 创建基本信息
+            } catch (error) {
+              console.warn(`加载work文件失败: ${file.path}`, error);
+            }
+
+            // 如果没有获取到数据，创建基本信息
+            if (!fileData) {
               fileData = {
                 title: file.name.replace('.json', ''),
                 originalName: file.name,
                 mainCategory: 'literature',
-                uploadedBy: 'unknown',
-                uploadTime: new Date().toISOString()
+                subCategory: 'essay',
+                uploadedBy: file.owner,
+                uploadTime: new Date().toISOString(),
+                content: '内容未找到'
               };
             }
           } else {
-            // 从 user-uploads 目录获取元数据
-            const metadataPath = file.path.replace(/\.[^.]+$/, '_metadata.json');
+            // 处理 user-uploads 目录的文件
             try {
-              const metadataOperation = async () => {
-                const metadataFile = await window.githubStorage.getFile(metadataPath);
-                if (metadataFile && metadataFile.content) {
-                  return JSON.parse(atob(metadataFile.content));
-                }
-                return null;
-              };
-
-              const metadataFallback = async () => {
-                return {
-                  title: file.name,
-                  originalName: file.name,
-                  mainCategory: file.category,
-                  subCategory: file.subcategory,
-                  uploadedBy: file.owner,
-                  uploadTime: new Date().toISOString()
-                };
-              };
-
-              if (window.trackingProtectionHandler) {
-                fileData = await window.trackingProtectionHandler.safeStorageOperation(
-                  metadataOperation,
-                  metadataFallback,
-                  1
-                );
-              } else {
-                fileData = await metadataOperation() || await metadataFallback();
+              const uploadData = await window.githubStorage.getFile(file.path);
+              if (uploadData && uploadData.content) {
+                fileData = JSON.parse(atob(uploadData.content));
               }
-            } catch (metaError) {
-              // 如果没有元数据文件，创建基本信息
+            } catch (error) {
+              console.warn(`加载upload文件失败: ${file.path}`, error);
+            }
+
+            // 如果没有获取到数据，创建基本信息
+            if (!fileData) {
               fileData = {
-                title: file.name,
+                title: file.name.replace('.json', ''),
                 originalName: file.name,
-                mainCategory: file.category,
-                subCategory: file.subcategory,
+                mainCategory: file.category || 'literature',
+                subCategory: file.subcategory || 'essay',
                 uploadedBy: file.owner,
                 uploadTime: new Date().toISOString()
               };
@@ -423,30 +405,70 @@ class AdminFileManager {
           }
 
           if (fileData) {
+            // 生成文件ID
+            const fileId = fileData.id ||
+                          file.name.replace('.json', '') ||
+                          `${file.owner}_${Date.now()}`;
+
+            // 确保权限设置存在并标准化
+            if (!fileData.permissions) {
+              fileData.permissions = {
+                level: fileData.visibility || 'friend',
+                isPublic: fileData.isPublic || false,
+                visibility: fileData.visibility || 'friend'
+              };
+            } else {
+              // 标准化权限级别
+              if (!fileData.permissions.level) {
+                fileData.permissions.level = fileData.permissions.visibility ||
+                                           fileData.permissions.requiredRole ||
+                                           'friend';
+              }
+
+              // 确保isPublic字段存在
+              if (fileData.permissions.isPublic === undefined) {
+                fileData.permissions.isPublic = fileData.permissions.level === 'public' ||
+                                               fileData.permissions.visibility === 'public';
+              }
+            }
+
             processedFiles.push({
               ...fileData,
-              fileId: file.key || file.name.replace(/\.[^.]+$/, ''),
-              owner: file.owner || fileData.uploadedBy || fileData.author,
+              fileId: fileId,
+              owner: file.owner || fileData.uploadedBy || fileData.author || 'unknown',
               githubPath: file.path,
               githubSha: file.sha,
               fileSize: file.size,
               downloadUrl: file.downloadUrl,
               htmlUrl: file.htmlUrl,
-              source: 'github'
+              source: 'github',
+              mainCategory: fileData.mainCategory || file.category || 'literature',
+              subCategory: fileData.subCategory || fileData.subcategory || file.subcategory || 'essay'
             });
+
+            console.log(`✅ 处理GitHub文件: ${fileData.title} (${file.owner})`);
           }
         } catch (error) {
           console.warn(`处理 GitHub 文件失败: ${file.path}`, error);
-          // 即使处理失败，也尝试创建基本条目
+
+          // 创建基本的回退条目
           try {
+            const fallbackId = file.name?.replace(/\.[^.]+$/, '') || `fallback_${Date.now()}`;
             processedFiles.push({
               title: file.name || 'Unknown File',
-              fileId: file.key || file.name?.replace(/\.[^.]+$/, '') || 'unknown',
+              fileId: fallbackId,
               owner: file.owner || 'unknown',
               githubPath: file.path,
               githubSha: file.sha,
               fileSize: file.size,
               source: 'github',
+              mainCategory: file.category || 'literature',
+              subCategory: file.subcategory || 'essay',
+              uploadTime: new Date().toISOString(),
+              permissions: {
+                level: 'friend',
+                isPublic: false
+              },
               error: error.message
             });
           } catch (fallbackError) {
@@ -471,6 +493,150 @@ class AdminFileManager {
 
       return [];
     }
+  }
+
+  // 直接从GitHub API获取文件
+  async fetchGitHubFilesDirectly() {
+    const allFiles = [];
+
+    try {
+      // 1. 获取 data/works 目录下的文件
+      console.log('📁 获取 data/works 目录...');
+      const worksFiles = await this.getGitHubWorksFiles();
+      allFiles.push(...worksFiles);
+
+      // 2. 获取 user-uploads 目录下的文件
+      console.log('📁 获取 user-uploads 目录...');
+      const uploadFiles = await this.getGitHubUserUploadsFiles();
+      allFiles.push(...uploadFiles);
+
+      console.log(`✅ 从GitHub获取到 ${allFiles.length} 个文件`);
+      return allFiles;
+    } catch (error) {
+      console.error('直接获取GitHub文件失败:', error);
+      return [];
+    }
+  }
+
+  // 获取GitHub works文件
+  async getGitHubWorksFiles() {
+    try {
+      const files = await window.githubStorage.listFiles('data/works');
+      return files.map(file => ({
+        ...file,
+        type: 'work',
+        category: 'works',
+        owner: this.extractOwnerFromWorkFile(file.name),
+        source: 'github'
+      }));
+    } catch (error) {
+      if (error.status !== 404) {
+        console.warn('获取GitHub works文件失败:', error);
+      }
+      return [];
+    }
+  }
+
+  // 获取GitHub用户上传文件
+  async getGitHubUserUploadsFiles() {
+    const allFiles = [];
+    const categories = ['literature', 'art', 'music', 'video'];
+
+    for (const category of categories) {
+      try {
+        const categoryPath = `user-uploads/${category}`;
+        const categoryFiles = await this.getGitHubCategoryFiles(categoryPath, category);
+        allFiles.push(...categoryFiles);
+      } catch (error) {
+        if (error.status !== 404) {
+          console.warn(`获取${category}分类文件失败:`, error);
+        }
+      }
+    }
+
+    return allFiles;
+  }
+
+  // 获取特定分类的GitHub文件
+  async getGitHubCategoryFiles(categoryPath, category) {
+    try {
+      const files = await window.githubStorage.listFiles(categoryPath);
+      const processedFiles = [];
+
+      for (const file of files) {
+        if (file.type === 'file' && file.name.endsWith('.json')) {
+          // 从文件路径提取用户名和子分类
+          // 路径格式: user-uploads/literature/essay/hysteria/2025-08-13_essay_1755045468642.json
+          const pathParts = file.path.split('/');
+
+          let subcategory = 'default';
+          let owner = 'unknown';
+
+          if (pathParts.length >= 4) {
+            subcategory = pathParts[2]; // essay, poetry, novel等
+            owner = pathParts[3]; // 用户名
+          } else if (pathParts.length === 3) {
+            // 如果路径较短，尝试从文件名提取信息
+            owner = pathParts[2];
+          }
+
+          // 如果owner仍然是文件名，尝试从文件名中提取
+          if (owner.endsWith('.json')) {
+            // 尝试从文件名中提取用户信息
+            const nameMatch = file.name.match(/(\w+)_\d+\.json$/);
+            if (nameMatch) {
+              owner = nameMatch[1];
+            } else {
+              owner = 'unknown';
+            }
+          }
+
+          processedFiles.push({
+            ...file,
+            type: 'upload',
+            category: category,
+            subcategory: subcategory,
+            owner: owner,
+            source: 'github'
+          });
+
+          console.log(`📁 发现文件: ${file.path} -> 用户: ${owner}, 子分类: ${subcategory}`);
+        }
+      }
+
+      return processedFiles;
+    } catch (error) {
+      console.warn(`获取分类文件失败 ${categoryPath}:`, error);
+      return [];
+    }
+  }
+
+  // 从work文件名提取所有者
+  extractOwnerFromWorkFile(filename) {
+    // work文件名格式: 2025-08-12_work_essay_legacy______1754921280127.json
+    // 或者其他格式，尝试多种模式
+
+    // 模式1: 包含用户名的格式
+    let match = filename.match(/work_.*?_([^_]+)_/);
+    if (match && match[1] !== 'legacy' && match[1] !== 'essay' && match[1] !== 'poetry' && match[1] !== 'novel') {
+      return match[1];
+    }
+
+    // 模式2: legacy格式，尝试从时间戳推断
+    match = filename.match(/legacy.*?(\d{13})/);
+    if (match) {
+      // 对于legacy文件，可能需要从文件内容中获取用户信息
+      return 'legacy_user';
+    }
+
+    // 模式3: 简单的work_用户名格式
+    match = filename.match(/work_([^_]+)/);
+    if (match && match[1] !== 'essay' && match[1] !== 'poetry' && match[1] !== 'novel') {
+      return match[1];
+    }
+
+    // 默认返回unknown
+    return 'unknown';
   }
 
   // 从本地存储获取文件
@@ -695,15 +861,19 @@ class AdminFileManager {
     const permission = this.getPermissionText(file.permissions?.level);
     const source = file.source || 'unknown';
 
+    // 安全地转义参数，防止JavaScript注入
+    const safeFileId = this.escapeForJs(fileId);
+    const safeOwner = this.escapeForJs(owner);
+
     return `
-      <div class="file-row" data-file-id="${fileId}" data-owner="${owner}">
+      <div class="file-row" data-file-id="${this.escapeHtml(fileId)}" data-owner="${this.escapeHtml(owner)}">
         <div class="file-checkbox">
-          <input type="checkbox" class="file-select" value="${owner}/${fileId}">
+          <input type="checkbox" class="file-select" value="${this.escapeHtml(owner)}/${this.escapeHtml(fileId)}">
         </div>
         <div class="file-name">
           <div class="file-title">${this.escapeHtml(title)}</div>
           <div class="file-meta">
-            <span class="file-id">ID: ${fileId}</span>
+            <span class="file-id">ID: ${this.escapeHtml(fileId)}</span>
             <span class="file-source source-${source}">${source === 'github' ? 'GitHub' : '本地'}</span>
           </div>
         </div>
@@ -720,16 +890,16 @@ class AdminFileManager {
         </div>
         <div class="file-time">${uploadTime}</div>
         <div class="file-actions">
-          <button class="btn btn-sm btn-info" onclick="adminFileManager.viewFile('${fileId}', '${owner}')">
+          <button class="btn btn-sm btn-info" onclick="window.adminFileManager.viewFile('${safeFileId}', '${safeOwner}')" title="查看文件详情">
             👁️ 查看
           </button>
-          <button class="btn btn-sm btn-secondary" onclick="adminFileManager.editPermissions('${fileId}', '${owner}')">
+          <button class="btn btn-sm btn-secondary" onclick="window.adminFileManager.editPermissions('${safeFileId}', '${safeOwner}')" title="编辑文件权限">
             🔐 权限
           </button>
-          <button class="btn btn-sm btn-warning" onclick="adminFileManager.editFile('${fileId}', '${owner}')">
+          <button class="btn btn-sm btn-warning" onclick="window.adminFileManager.editFile('${safeFileId}', '${safeOwner}')" title="编辑文件内容">
             ✏️ 编辑
           </button>
-          <button class="btn btn-sm btn-danger" onclick="adminFileManager.deleteFile('${fileId}', '${owner}')">
+          <button class="btn btn-sm btn-danger" onclick="window.adminFileManager.deleteFile('${safeFileId}', '${safeOwner}')" title="删除文件">
             🗑️ 删除
           </button>
         </div>
@@ -897,6 +1067,61 @@ class AdminFileManager {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // 转义JavaScript字符串，防止注入攻击
+  escapeForJs(text) {
+    if (!text) return '';
+    return text.toString()
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
+  }
+
+  // 显示通知消息
+  showNotification(message, type = 'info') {
+    // 如果页面有全局的showNotification函数，使用它
+    if (typeof window.showNotification === 'function') {
+      window.showNotification(message, type);
+      return;
+    }
+
+    // 否则创建简单的通知
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      z-index: 10000;
+      max-width: 300px;
+      word-wrap: break-word;
+    `;
+
+    // 根据类型设置背景色
+    const colors = {
+      success: '#28a745',
+      error: '#dc3545',
+      warning: '#ffc107',
+      info: '#17a2b8'
+    };
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    // 3秒后自动移除
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
   }
 
   // 文件操作方法
@@ -1837,6 +2062,78 @@ class AdminFileManager {
     }
 
     return status;
+  }
+
+  // 显示无文件时的调试信息
+  showNoFilesDebugInfo() {
+    const fileListContent = document.getElementById('fileListContent');
+    if (!fileListContent) return;
+
+    const debugInfo = {
+      environment: window.location.hostname,
+      dataManager: !!window.dataManager,
+      githubStorage: !!window.githubStorage,
+      githubToken: !!localStorage.getItem('github_token'),
+      localStorageKeys: Object.keys(localStorage).filter(k => k.startsWith('work_')).length
+    };
+
+    fileListContent.innerHTML = `
+      <div class="no-files-debug">
+        <h4>📂 没有找到文件</h4>
+        <p>系统未能找到任何文件。以下是调试信息：</p>
+        <div class="debug-info">
+          <h5>环境信息:</h5>
+          <ul>
+            <li>主机名: ${debugInfo.environment}</li>
+            <li>数据管理器: ${debugInfo.dataManager ? '✅ 已加载' : '❌ 未加载'}</li>
+            <li>GitHub存储: ${debugInfo.githubStorage ? '✅ 已加载' : '❌ 未加载'}</li>
+            <li>GitHub Token: ${debugInfo.githubToken ? '✅ 已配置' : '❌ 未配置'}</li>
+            <li>本地文件数量: ${debugInfo.localStorageKeys}</li>
+          </ul>
+          <h5>可能的原因:</h5>
+          <ul>
+            <li>GitHub Pages环境下需要配置GitHub Token</li>
+            <li>本地存储中没有文件数据</li>
+            <li>网络连接问题导致无法访问GitHub API</li>
+            <li>文件路径配置不正确</li>
+          </ul>
+          <h5>建议操作:</h5>
+          <ul>
+            <li>检查系统设置中的GitHub Token配置</li>
+            <li>尝试上传一个测试文件</li>
+            <li>查看浏览器控制台的错误信息</li>
+          </ul>
+        </div>
+        <div class="debug-actions">
+          <button class="btn btn-primary" onclick="window.adminFileManager.debugFileRetrieval()">详细调试</button>
+          <button class="btn btn-secondary" onclick="window.adminFileManager.loadFileList()">重新加载</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // 调试文件获取过程
+  async debugFileRetrieval() {
+    console.log('🔍 开始调试文件获取过程...');
+
+    try {
+      // 测试GitHub文件获取
+      console.log('📁 测试GitHub文件获取...');
+      const githubFiles = await this.getGitHubFiles();
+      console.log(`GitHub文件: ${githubFiles.length} 个`, githubFiles);
+
+      // 测试本地文件获取
+      console.log('📱 测试本地文件获取...');
+      const localFiles = await this.getLocalFiles();
+      console.log(`本地文件: ${localFiles.length} 个`, localFiles);
+
+      // 显示调试结果
+      this.showNotification(`调试完成: GitHub ${githubFiles.length} 个, 本地 ${localFiles.length} 个文件`, 'info');
+
+    } catch (error) {
+      console.error('调试过程出错:', error);
+      this.showNotification(`调试失败: ${error.message}`, 'error');
+    }
   }
 }
 
