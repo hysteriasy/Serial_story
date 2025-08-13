@@ -406,7 +406,10 @@ class FileHierarchyManager {
           name: file.name,
           key: file.name.replace('.json', ''),
           path: file.path,
-          sha: file.sha
+          sha: file.sha,
+          size: file.size,
+          downloadUrl: file.download_url,
+          htmlUrl: file.html_url
         }));
 
     } catch (error) {
@@ -416,6 +419,194 @@ class FileHierarchyManager {
       }
       return [];
     }
+  }
+
+  // 获取所有 GitHub 文件的详细信息（包括 user-uploads 目录）
+  async getAllGitHubFiles() {
+    try {
+      if (!window.githubStorage || !window.githubStorage.token) {
+        return [];
+      }
+
+      const allFiles = [];
+
+      // 1. 获取 data/works 目录下的文件
+      const workFiles = await this.listGitHubWorkFiles();
+      allFiles.push(...workFiles.map(file => ({
+        ...file,
+        category: 'works',
+        type: 'work'
+      })));
+
+      // 2. 获取 user-uploads 目录下的文件
+      const uploadFiles = await this.listGitHubUserUploads();
+      allFiles.push(...uploadFiles);
+
+      return allFiles;
+    } catch (error) {
+      console.error('获取所有 GitHub 文件失败:', error);
+      return [];
+    }
+  }
+
+  // 列出 user-uploads 目录下的所有文件
+  async listGitHubUserUploads() {
+    try {
+      if (!window.githubStorage || !window.githubStorage.token) {
+        return [];
+      }
+
+      const allFiles = [];
+      const categories = ['literature', 'art', 'music', 'video'];
+
+      for (const category of categories) {
+        try {
+          const categoryFiles = await this.listGitHubCategoryFiles(category);
+          allFiles.push(...categoryFiles);
+        } catch (error) {
+          // 忽略404错误（目录不存在）
+          if (error.status !== 404) {
+            console.warn(`获取 ${category} 分类文件失败:`, error.message);
+          }
+        }
+      }
+
+      return allFiles;
+    } catch (error) {
+      console.error('列出用户上传文件失败:', error);
+      return [];
+    }
+  }
+
+  // 列出特定分类下的文件
+  async listGitHubCategoryFiles(category) {
+    const response = await fetch(
+      `https://api.github.com/repos/hysteriasy/Serial_story/contents/user-uploads/${category}`,
+      {
+        headers: {
+          'Authorization': `token ${window.githubStorage.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return [];
+      }
+      throw new Error(`GitHub API 错误: ${response.status}`);
+    }
+
+    const items = await response.json();
+    const files = [];
+
+    // 递归遍历子目录
+    for (const item of items) {
+      if (item.type === 'dir') {
+        // 这是子分类目录
+        const subFiles = await this.listGitHubSubcategoryFiles(category, item.name);
+        files.push(...subFiles);
+      } else if (item.type === 'file') {
+        // 直接在分类目录下的文件
+        files.push({
+          name: item.name,
+          path: item.path,
+          sha: item.sha,
+          size: item.size,
+          downloadUrl: item.download_url,
+          htmlUrl: item.html_url,
+          category: category,
+          subcategory: 'default',
+          type: 'upload'
+        });
+      }
+    }
+
+    return files;
+  }
+
+  // 列出子分类下的文件
+  async listGitHubSubcategoryFiles(category, subcategory) {
+    const response = await fetch(
+      `https://api.github.com/repos/hysteriasy/Serial_story/contents/user-uploads/${category}/${subcategory}`,
+      {
+        headers: {
+          'Authorization': `token ${window.githubStorage.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return [];
+      }
+      throw new Error(`GitHub API 错误: ${response.status}`);
+    }
+
+    const items = await response.json();
+    const files = [];
+
+    // 遍历用户目录
+    for (const item of items) {
+      if (item.type === 'dir') {
+        // 这是用户目录
+        const userFiles = await this.listGitHubUserFiles(category, subcategory, item.name);
+        files.push(...userFiles);
+      } else if (item.type === 'file') {
+        // 直接在子分类目录下的文件
+        files.push({
+          name: item.name,
+          path: item.path,
+          sha: item.sha,
+          size: item.size,
+          downloadUrl: item.download_url,
+          htmlUrl: item.html_url,
+          category: category,
+          subcategory: subcategory,
+          owner: 'unknown',
+          type: 'upload'
+        });
+      }
+    }
+
+    return files;
+  }
+
+  // 列出特定用户目录下的文件
+  async listGitHubUserFiles(category, subcategory, username) {
+    const response = await fetch(
+      `https://api.github.com/repos/hysteriasy/Serial_story/contents/user-uploads/${category}/${subcategory}/${username}`,
+      {
+        headers: {
+          'Authorization': `token ${window.githubStorage.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return [];
+      }
+      throw new Error(`GitHub API 错误: ${response.status}`);
+    }
+
+    const items = await response.json();
+    return items
+      .filter(item => item.type === 'file')
+      .map(item => ({
+        name: item.name,
+        path: item.path,
+        sha: item.sha,
+        size: item.size,
+        downloadUrl: item.download_url,
+        htmlUrl: item.html_url,
+        category: category,
+        subcategory: subcategory,
+        owner: username,
+        type: 'upload'
+      }));
   }
 
   // 从本地存储获取用户文件

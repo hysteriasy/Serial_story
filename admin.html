@@ -10,6 +10,9 @@
   <meta name="description" content="桑梓个人创作平台 - 管理员控制面板">
   <link rel="stylesheet" href="css/style.css?v=20240807">
   <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
+  <link rel="stylesheet" href="css/admin-file-manager.css?v=20240812">
+  <link rel="stylesheet" href="css/enhanced-permissions.css?v=20240812">
+  <link rel="stylesheet" href="css/whitelist-blacklist.css?v=20240812">
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <style>
     /* 管理员页面专用样式 - 与主页风格保持一致 */
@@ -974,8 +977,27 @@
 
       <!-- 文件权限标签页 -->
       <div id="adminFiles" class="admin-content active">
-        <div id="fileHierarchyContainer">
+        <!-- 文件管理器容器 -->
+        <div id="adminFileManagerContainer">
+          <!-- 管理员文件管理器将在这里动态生成 -->
+        </div>
+
+        <!-- 原有的文件层级结构（作为备用） -->
+        <div id="fileHierarchyContainer" style="display: none;">
           <!-- 文件层级结构将在这里动态生成 -->
+        </div>
+
+        <!-- 管理工具按钮 -->
+        <div class="admin-tools-container" style="margin-top: 20px; text-align: center;">
+          <button id="toggleFileView" class="btn btn-secondary">
+            🔄 切换到层级视图
+          </button>
+          <button id="manageWhitelistBlacklist" class="btn btn-info" onclick="showWhitelistBlacklistManager()">
+            📋 白名单黑名单管理
+          </button>
+          <button id="bulkPermissionsManager" class="btn btn-warning" onclick="showBulkPermissionsManager()">
+            🔧 批量权限管理
+          </button>
         </div>
       </div>
 
@@ -1215,6 +1237,9 @@
   <script src="js/login-records-manager.js"></script>
   <script src="js/upload.js"></script>
   <script src="js/github-token-manager.js"></script>
+  <script src="js/admin-file-manager.js"></script>
+  <script src="js/enhanced-permissions-manager.js"></script>
+  <script src="js/whitelist-blacklist-manager.js"></script>
 
   <script>
     // 页面专用JavaScript
@@ -1864,6 +1889,22 @@
           throw new Error('浏览器存储不可用');
         }
 
+        // 优先使用新的管理员文件管理器
+        if (window.adminFileManager) {
+          console.log('🔧 使用管理员文件管理器...');
+          await window.adminFileManager.initialize('adminFileManagerContainer');
+
+          // 设置视图切换功能
+          setupViewToggle();
+
+          filePermissionsLoaded = true;
+          console.log('✅ 管理员文件管理器加载完成');
+          return;
+        }
+
+        // 回退到原有的文件层级管理器
+        console.log('📁 回退到文件层级管理器...');
+
         // 检查文件层级管理器
         if (!window.fileHierarchyManager) {
           console.warn('⚠️ 文件层级管理器未初始化，显示提示信息');
@@ -1880,6 +1921,10 @@
           }
           return;
         }
+
+        // 显示层级视图，隐藏管理器视图
+        document.getElementById('adminFileManagerContainer').style.display = 'none';
+        document.getElementById('fileHierarchyContainer').style.display = 'block';
 
         // 初始化文件层级结构
         await window.fileHierarchyManager.initializeHierarchy('fileHierarchyContainer');
@@ -1903,6 +1948,9 @@
             console.warn('⚠️ 导入导出功能初始化失败:', error);
           }
         }
+
+        // 设置视图切换功能
+        setupViewToggle();
 
         filePermissionsLoaded = true;
         console.log('✅ 文件权限列表加载完成');
@@ -1995,6 +2043,91 @@
         showNotification('系统未初始化', 'error');
       }
     };
+
+    // 视图切换功能
+    let currentView = 'manager'; // 'manager' 或 'hierarchy'
+
+    function setupViewToggle() {
+      const toggleButton = document.getElementById('toggleFileView');
+      if (toggleButton) {
+        toggleButton.addEventListener('click', toggleFileView);
+        updateToggleButton();
+      }
+    }
+
+    function toggleFileView() {
+      const managerContainer = document.getElementById('adminFileManagerContainer');
+      const hierarchyContainer = document.getElementById('fileHierarchyContainer');
+      const toggleButton = document.getElementById('toggleFileView');
+
+      if (currentView === 'manager') {
+        // 切换到层级视图
+        managerContainer.style.display = 'none';
+        hierarchyContainer.style.display = 'block';
+        currentView = 'hierarchy';
+
+        // 如果层级管理器还没有初始化，现在初始化它
+        if (window.fileHierarchyManager && !hierarchyContainer.hasChildNodes()) {
+          window.fileHierarchyManager.initializeHierarchy('fileHierarchyContainer');
+        }
+      } else {
+        // 切换到管理器视图
+        hierarchyContainer.style.display = 'none';
+        managerContainer.style.display = 'block';
+        currentView = 'manager';
+
+        // 刷新管理器数据
+        if (window.adminFileManager) {
+          window.adminFileManager.loadFileList();
+        }
+      }
+
+      updateToggleButton();
+    }
+
+    function updateToggleButton() {
+      const toggleButton = document.getElementById('toggleFileView');
+      if (toggleButton) {
+        if (currentView === 'manager') {
+          toggleButton.textContent = '🔄 切换到层级视图';
+          toggleButton.title = '切换到传统的文件层级结构视图';
+        } else {
+          toggleButton.textContent = '🔄 切换到管理器视图';
+          toggleButton.title = '切换到增强的文件管理器视图';
+        }
+      }
+    }
+
+    // 显示白名单黑名单管理器
+    async function showWhitelistBlacklistManager() {
+      try {
+        if (!window.whitelistBlacklistManager) {
+          showNotification('白名单黑名单管理器未初始化', 'error');
+          return;
+        }
+
+        // 初始化管理器（如果还没有初始化）
+        if (!window.whitelistBlacklistManager.initialized) {
+          await window.whitelistBlacklistManager.initialize();
+        }
+
+        // 显示管理界面
+        window.whitelistBlacklistManager.showManagementInterface();
+
+      } catch (error) {
+        console.error('显示白名单黑名单管理器失败:', error);
+        showNotification('打开白名单黑名单管理器失败: ' + error.message, 'error');
+      }
+    }
+
+    // 显示批量权限管理器
+    function showBulkPermissionsManager() {
+      if (window.adminFileManager && window.adminFileManager.selectedFiles.size > 0) {
+        window.adminFileManager.showBatchActionsModal();
+      } else {
+        showNotification('请先在文件列表中选择要管理的文件', 'warning');
+      }
+    }
 
     // 模态框点击外部关闭
     window.addEventListener('click', (event) => {

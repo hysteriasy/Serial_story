@@ -1,0 +1,367 @@
+/* 增强权限管理器样式 */
+.enhanced-permissions-modal .modal-content {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.enhanced-permissions-content {
+  width: 100%;
+}
+
+/* 权限设置区域 */
+.permissions-section {
+  margin-bottom: 25px;
+  padding: 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.permissions-section h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+/* 文件信息网格 */
+.file-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.info-item span {
+  color: #666;
+  font-family: monospace;
+}
+
+/* 权限级别选项 */
+.permission-level-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.permission-option {
+  display: flex;
+  align-items: flex-start;
+  padding: 15px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0;
+}
+
+.permission-option:hover {
+  border-color: #007bff;
+  background: #f8f9ff;
+}
+
+.permission-option input[type="radio"] {
+  margin-right: 12px;
+  margin-top: 2px;
+  transform: scale(1.2);
+}
+
+.permission-option input[type="radio"]:checked + .option-content {
+  color: #007bff;
+}
+
+.permission-option:has(input[type="radio"]:checked) {
+  border-color: #007bff;
+  background: #e3f2fd;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.option-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* 自定义权限组 */
+.custom-permission-group {
+  margin-bottom: 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: white;
+}
+
+.group-header {
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 6px 6px 0 0;
+}
+
+.group-header label {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.group-header input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.1);
+}
+
+.group-description {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  font-weight: normal;
+}
+
+.permission-list-content {
+  padding: 15px;
+}
+
+/* 用户选择 */
+.user-selection {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+.user-selection select {
+  flex: 1;
+  min-width: 150px;
+}
+
+.user-selection .btn {
+  white-space: nowrap;
+}
+
+/* 选中的用户列表 */
+.selected-users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px;
+  border: 1px dashed #dee2e6;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.selected-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.selected-user .btn {
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1;
+  min-width: auto;
+}
+
+/* 特殊权限 */
+.special-permissions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.special-permissions label {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-weight: 500;
+  color: #333;
+}
+
+.special-permissions input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.1);
+}
+
+#passwordSection {
+  margin-top: 10px;
+  padding-left: 24px;
+}
+
+/* 权限预览 */
+.permission-preview {
+  padding: 15px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  min-height: 60px;
+}
+
+.preview-item {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.preview-item:last-child {
+  margin-bottom: 0;
+}
+
+.preview-item.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.preview-item.info {
+  background: #cce5ff;
+  color: #004085;
+  border: 1px solid #b3d7ff;
+}
+
+.preview-item.warning {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.preview-item.danger {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .enhanced-permissions-modal .modal-content {
+    max-width: 95%;
+    margin: 10px;
+  }
+
+  .permission-level-options {
+    grid-template-columns: 1fr;
+  }
+
+  .file-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-selection {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selected-users {
+    flex-direction: column;
+  }
+
+  .permissions-section {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .enhanced-permissions-modal .modal-content {
+    max-height: 95vh;
+  }
+
+  .permissions-section {
+    margin-bottom: 15px;
+    padding: 10px;
+  }
+
+  .permission-option {
+    padding: 10px;
+  }
+
+  .option-title {
+    font-size: 14px;
+  }
+
+  .option-description {
+    font-size: 12px;
+  }
+}
+
+/* 动画效果 */
+.enhanced-permissions-modal {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.enhanced-permissions-content {
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 滚动条样式 */
+.enhanced-permissions-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.enhanced-permissions-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.enhanced-permissions-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.enhanced-permissions-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

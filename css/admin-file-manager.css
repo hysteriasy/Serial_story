@@ -1,0 +1,505 @@
+/* 管理员文件管理器样式 */
+.admin-file-manager {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+/* 工具栏样式 */
+.file-manager-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.toolbar-left h4 {
+  margin: 0;
+  color: #333;
+}
+
+.file-count {
+  font-size: 14px;
+  color: #666;
+  margin-left: 10px;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 10px;
+}
+
+/* 过滤器样式 */
+.file-manager-filters {
+  padding: 15px 20px;
+  background: #fff;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.filter-row {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.search-box {
+  flex: 1;
+  max-width: 300px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-controls select {
+  min-width: 120px;
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-controls label {
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.sort-controls select {
+  min-width: 100px;
+}
+
+/* 文件列表样式 */
+.file-list-container {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.file-list-header {
+  display: grid;
+  grid-template-columns: 40px 1fr 120px 120px 80px 100px 140px 220px;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #333;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.file-list-content {
+  min-height: 200px;
+}
+
+.file-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 120px 120px 80px 100px 140px 220px;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.file-row:hover {
+  background-color: #f8f9fa;
+}
+
+.file-row:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.file-row:nth-child(even):hover {
+  background-color: #f0f0f0;
+}
+
+/* 文件行内容样式 */
+.file-checkbox {
+  display: flex;
+  justify-content: center;
+}
+
+.file-name {
+  min-width: 0; /* 允许文本截断 */
+}
+
+.file-title {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.file-id {
+  font-family: monospace;
+}
+
+.file-source {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.source-github {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.source-local {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.file-owner {
+  font-weight: 500;
+  color: #333;
+}
+
+.file-category {
+  text-align: center;
+}
+
+.category-main {
+  font-weight: 600;
+  color: #333;
+}
+
+.category-sub {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.file-size {
+  text-align: right;
+  font-family: monospace;
+  color: #666;
+}
+
+.file-permission {
+  text-align: center;
+}
+
+.permission-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.permission-public {
+  background: #d4edda;
+  color: #155724;
+}
+
+.permission-visitor {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.permission-friend {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.permission-custom {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.permission-unknown {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.file-time {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+.file-actions {
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.file-actions .btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  min-width: auto;
+}
+
+/* 分页样式 */
+.file-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.page-number {
+  padding: 6px 12px;
+  border: 1px solid #dee2e6;
+  background: white;
+  color: #333;
+  text-decoration: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-number:hover {
+  background: #e9ecef;
+}
+
+.page-number.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* 加载状态样式 */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 空状态样式 */
+.no-files-message {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-files-message h4 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.error-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #721c24;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin: 20px;
+}
+
+.error-message h4 {
+  margin-bottom: 10px;
+  color: #721c24;
+}
+
+/* 编辑模态框样式 */
+.delete-file-info {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 4px;
+  margin: 15px 0;
+  line-height: 1.6;
+}
+
+.warning-message {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 15px;
+  color: #856404;
+}
+
+/* 批量操作模态框样式 */
+.batch-action-section {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.batch-action-section h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.batch-action-section.danger-section {
+  border-color: #dc3545;
+  background: #fff5f5;
+}
+
+.batch-action-section.danger-section h4 {
+  color: #dc3545;
+}
+
+.delete-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  padding: 15px;
+  border-radius: 4px;
+  margin: 15px 0;
+}
+
+.delete-warning ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.delete-warning li {
+  margin: 5px 0;
+  color: #856404;
+}
+
+/* 管理工具容器样式 */
+.admin-tools-container {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.admin-tools-container .btn {
+  min-width: 160px;
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.admin-tools-container .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .file-list-header,
+  .file-row {
+    grid-template-columns: 40px 1fr 100px 100px 70px 80px 120px 150px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .file-manager-toolbar {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-controls {
+    flex-wrap: wrap;
+  }
+
+  .file-list-header,
+  .file-row {
+    grid-template-columns: 30px 1fr 80px 120px;
+    font-size: 12px;
+  }
+
+  .file-list-header .header-size,
+  .file-list-header .header-permission,
+  .file-list-header .header-time,
+  .file-row .file-size,
+  .file-row .file-permission,
+  .file-row .file-time {
+    display: none;
+  }
+
+  .file-actions {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .file-actions .btn {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .file-pagination {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .admin-tools-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-tools-container .btn {
+    min-width: auto;
+    margin-bottom: 10px;
+  }
+
+  .admin-tools-container .btn:last-child {
+    margin-bottom: 0;
+  }
+}
