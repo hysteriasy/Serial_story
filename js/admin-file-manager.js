@@ -325,12 +325,43 @@ class AdminFileManager {
   async getGitHubFiles() {
     try {
       // 检查GitHub存储是否可用
-      if (!window.githubStorage || !window.githubStorage.token) {
-        console.log('ℹ️ GitHub存储不可用，跳过GitHub文件获取');
+      if (!window.githubStorage) {
+        console.log('⚠️ githubStorage未初始化，跳过GitHub文件获取');
+        return [];
+      }
+
+      if (!window.githubStorage.token) {
+        console.log('⚠️ GitHub Token未配置，跳过GitHub文件获取');
+        console.log('💡 提示：在系统设置中配置GitHub Token以访问GitHub存储的文件');
         return [];
       }
 
       console.log('🌐 开始从 GitHub 获取文件...');
+      console.log(`🔑 使用Token: ${window.githubStorage.token.substring(0, 8)}...`);
+      console.log(`📂 目标仓库: ${window.githubStorage.owner}/${window.githubStorage.repo}`);
+
+      // 先验证token有效性
+      try {
+        console.log('🔍 验证GitHub Token...');
+        await window.githubStorage.validateToken();
+        console.log('✅ GitHub Token验证成功');
+      } catch (tokenError) {
+        console.error('❌ GitHub Token验证失败:', tokenError);
+        throw new Error(`GitHub Token验证失败: ${tokenError.message}`);
+      }
+
+      // 先测试GitHub连接
+      try {
+        const isConnected = await window.githubStorage.checkConnection();
+        if (!isConnected) {
+          console.log('❌ GitHub连接测试失败，跳过GitHub文件获取');
+          return [];
+        }
+        console.log('✅ GitHub连接测试成功');
+      } catch (connectionError) {
+        console.log('❌ GitHub连接测试失败:', connectionError.message);
+        return [];
+      }
 
       // 直接从GitHub API获取文件，而不依赖fileHierarchyManager
       const githubFiles = await this.fetchGitHubFilesDirectly();
@@ -622,24 +653,29 @@ class AdminFileManager {
   // 递归获取GitHub目录下的所有文件
   async recursivelyGetGitHubFiles(directoryPath, allFiles = []) {
     try {
+      console.log(`🔍 正在扫描目录: ${directoryPath}`);
       const items = await window.githubStorage.listFiles(directoryPath);
+      console.log(`📁 目录 ${directoryPath} 包含 ${items.length} 个项目`);
 
       for (const item of items) {
         if (item.type === 'file') {
+          console.log(`📄 发现文件: ${item.path}`);
           allFiles.push(item);
         } else if (item.type === 'dir') {
+          console.log(`📂 发现子目录: ${item.path}，开始递归扫描`);
           // 递归获取子目录中的文件
           await this.recursivelyGetGitHubFiles(item.path, allFiles);
         }
       }
 
+      console.log(`✅ 目录 ${directoryPath} 扫描完成，累计文件数: ${allFiles.length}`);
       return allFiles;
     } catch (error) {
-      if (error.message.includes('404')) {
+      if (error.message.includes('404') || error.message.includes('列出文件失败: 404')) {
         console.log(`📂 目录 ${directoryPath} 不存在，跳过`);
         return allFiles;
       }
-      console.warn(`递归获取文件失败 ${directoryPath}:`, error);
+      console.warn(`❌ 递归获取文件失败 ${directoryPath}:`, error);
       return allFiles;
     }
   }

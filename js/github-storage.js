@@ -116,8 +116,9 @@ class GitHubStorage {
     try {
       const response = await fetch(`${this.baseUrl}/user`, {
         headers: {
-          'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json'
+          'Authorization': `Bearer ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28'
         }
       });
 
@@ -174,9 +175,10 @@ class GitHubStorage {
         {
           method: 'PUT',
           headers: {
-            'Authorization': `token ${this.token}`,
+            'Authorization': `Bearer ${this.token}`,
             'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28'
           },
           body: JSON.stringify(requestData)
         }
@@ -216,8 +218,9 @@ class GitHubStorage {
         `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`,
         {
           headers: {
-            'Authorization': `token ${this.token}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
           }
         }
       );
@@ -268,9 +271,10 @@ class GitHubStorage {
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `token ${this.token}`,
+            'Authorization': `Bearer ${this.token}`,
             'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28'
           },
           body: JSON.stringify({
             message: commitMessage,
@@ -363,8 +367,9 @@ class GitHubStorage {
         `${this.baseUrl}/repos/${this.owner}/${this.repo}`,
         {
           headers: {
-            'Authorization': `token ${this.token}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
           }
         }
       );
@@ -387,15 +392,21 @@ class GitHubStorage {
     }
 
     try {
+      console.log(`🔍 正在获取目录: ${directoryPath}`);
+      console.log(`🔗 API URL: ${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${directoryPath}`);
+
       const response = await fetch(
         `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${directoryPath}`,
         {
           headers: {
-            'Authorization': `token ${this.token}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': `Bearer ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
           }
         }
       );
+
+      console.log(`📡 API响应状态: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         if (response.status === 404) {
