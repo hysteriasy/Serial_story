@@ -1,0 +1,34 @@
+{
+  "id": "work_1754921280127_5ornqi8fk",
+  "mainCategory": "literature",
+  "subcategory": "essay",
+  "categoryName": "æå­¦ä½å",
+  "subcategoryName": "çæ´»éç¬",
+  "title": "å¾ä¹å¾ä¹",
+  "content": "å·²ç»å¾ä¹æ²¡æä½ çæ¶æ¯",
+  "uploadedBy": "hysteria",
+  "userRole": "admin",
+  "uploadTime": "2025-08-11T14:08:00.127Z",
+  "permissions": {
+    "visibility": "public",
+    "isPublic": true,
+    "allowedUsers": [],
+    "blockedUsers": [],
+    "allowedRoles": [],
+    "setBy": "hysteria",
+    "setAt": "2025-08-11T14:08:00.127Z",
+    "lastModified": "2025-08-11T14:08:00.127Z",
+    "modifiedBy": "hysteria",
+    "level": "public"
+  },
+  "storage_type": "local",
+  "fileId": "work_1754921280127_5ornqi8fk",
+  "owner": "hysteria",
+  "githubPath": "user-uploads/literature/essay/hysteria/2025-08-11_essay_1754921280127.json",
+  "githubSha": "245d6315b63038408c46eeafeb9421233c39c917",
+  "fileSize": 656,
+  "source": "github",
+  "subCategory": "essay",
+  "description": "",
+  "lastModified": "2025-08-13T14:51:41.661Z"
+}
