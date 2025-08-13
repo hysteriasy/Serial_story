@@ -224,7 +224,7 @@ class GitHubStorage {
 
       if (!response.ok) {
         if (response.status === 404) {
-          // 404 错误是正常情况，不需要在控制台显示错误
+          // 404 错误是正常情况，静默处理
           const error = new Error('文件不存在');
           error.status = 404;
           error.isExpected = true; // 标记为预期错误

@@ -1937,6 +1937,11 @@ let workUploader;
 
 // 初始化作品上传系统
 window.addEventListener('DOMContentLoaded', () => {
+  // 检查是否已经初始化过，避免重复初始化
+  if (window.workUploader) {
+    return;
+  }
+
   console.log('🔄 初始化WorkUploader...');
 
   try {
