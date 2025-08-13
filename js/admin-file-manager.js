@@ -386,6 +386,11 @@ class AdminFileManager {
               const uploadData = await window.githubStorage.getFile(file.path);
               if (uploadData && uploadData.content) {
                 fileData = JSON.parse(atob(uploadData.content));
+                console.log(`📄 成功解析文件: ${file.path}`, {
+                  title: fileData.title,
+                  uploadedBy: fileData.uploadedBy,
+                  subcategory: fileData.subcategory
+                });
               }
             } catch (error) {
               console.warn(`加载upload文件失败: ${file.path}`, error);
@@ -401,6 +406,7 @@ class AdminFileManager {
                 uploadedBy: file.owner,
                 uploadTime: new Date().toISOString()
               };
+              console.log(`⚠️ 使用回退数据: ${file.path}`, fileData);
             }
           }
 
@@ -557,13 +563,14 @@ class AdminFileManager {
     return allFiles;
   }
 
-  // 获取特定分类的GitHub文件
+  // 获取特定分类的GitHub文件（递归获取所有嵌套文件）
   async getGitHubCategoryFiles(categoryPath, category) {
     try {
-      const files = await window.githubStorage.listFiles(categoryPath);
+      console.log(`🔍 开始递归获取 ${categoryPath} 目录下的文件...`);
+      const allFiles = await this.recursivelyGetGitHubFiles(categoryPath);
       const processedFiles = [];
 
-      for (const file of files) {
+      for (const file of allFiles) {
         if (file.type === 'file' && file.name.endsWith('.json')) {
           // 从文件路径提取用户名和子分类
           // 路径格式: user-uploads/literature/essay/hysteria/2025-08-13_essay_1755045468642.json
@@ -604,10 +611,36 @@ class AdminFileManager {
         }
       }
 
+      console.log(`✅ ${categoryPath} 目录共找到 ${processedFiles.length} 个JSON文件`);
       return processedFiles;
     } catch (error) {
       console.warn(`获取分类文件失败 ${categoryPath}:`, error);
       return [];
+    }
+  }
+
+  // 递归获取GitHub目录下的所有文件
+  async recursivelyGetGitHubFiles(directoryPath, allFiles = []) {
+    try {
+      const items = await window.githubStorage.listFiles(directoryPath);
+
+      for (const item of items) {
+        if (item.type === 'file') {
+          allFiles.push(item);
+        } else if (item.type === 'dir') {
+          // 递归获取子目录中的文件
+          await this.recursivelyGetGitHubFiles(item.path, allFiles);
+        }
+      }
+
+      return allFiles;
+    } catch (error) {
+      if (error.message.includes('404')) {
+        console.log(`📂 目录 ${directoryPath} 不存在，跳过`);
+        return allFiles;
+      }
+      console.warn(`递归获取文件失败 ${directoryPath}:`, error);
+      return allFiles;
     }
   }
 
@@ -858,8 +891,11 @@ class AdminFileManager {
     const subcategory = this.getSubcategoryText(file.subCategory || file.subcategory);
     const size = this.formatFileSize(file.fileSize);
     const uploadTime = this.formatDate(file.uploadTime);
-    const permission = this.getPermissionText(file.permissions?.level);
+    const permission = this.getPermissionText(file.permissions?.level || file.permissions?.visibility);
     const source = file.source || 'unknown';
+
+    // 创建显示格式："分类-标题-作者"
+    const displayTitle = `${subcategory}-${title}-${owner}`;
 
     // 安全地转义参数，防止JavaScript注入
     const safeFileId = this.escapeForJs(fileId);
@@ -871,10 +907,11 @@ class AdminFileManager {
           <input type="checkbox" class="file-select" value="${this.escapeHtml(owner)}/${this.escapeHtml(fileId)}">
         </div>
         <div class="file-name">
-          <div class="file-title">${this.escapeHtml(title)}</div>
+          <div class="file-title">${this.escapeHtml(displayTitle)}</div>
           <div class="file-meta">
             <span class="file-id">ID: ${this.escapeHtml(fileId)}</span>
             <span class="file-source source-${source}">${source === 'github' ? 'GitHub' : '本地'}</span>
+            <span class="file-original-title">原标题: ${this.escapeHtml(title)}</span>
           </div>
         </div>
         <div class="file-owner">${this.escapeHtml(owner)}</div>
@@ -884,7 +921,7 @@ class AdminFileManager {
         </div>
         <div class="file-size">${size}</div>
         <div class="file-permission">
-          <span class="permission-badge permission-${file.permissions?.level || 'unknown'}">
+          <span class="permission-badge permission-${file.permissions?.level || file.permissions?.visibility || 'unknown'}">
             ${permission}
           </span>
         </div>
