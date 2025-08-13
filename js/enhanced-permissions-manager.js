@@ -425,7 +425,6 @@ class EnhancedPermissionsManager {
     
     return preview.join('');
   }
-}
 
   // 添加到白名单
   addToWhitelist() {

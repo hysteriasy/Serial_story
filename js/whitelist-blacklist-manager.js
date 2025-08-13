@@ -303,7 +303,6 @@ class WhitelistBlacklistManager {
       console.error('更新文件选择器失败:', error);
     }
   }
-}
 
   // 显示全局白名单
   displayGlobalWhitelist() {

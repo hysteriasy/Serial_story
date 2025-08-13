@@ -284,30 +284,110 @@ class AdminFileManager {
   async getGitHubFiles() {
     try {
       if (!window.fileHierarchyManager) {
+        console.warn('文件层级管理器未初始化');
         return [];
       }
-      
-      const githubFiles = await window.fileHierarchyManager.getAllGitHubFiles();
+
+      // 使用跟踪保护处理器的安全操作包装器
+      const githubOperation = async () => {
+        return await window.fileHierarchyManager.getAllGitHubFiles();
+      };
+
+      const githubFallback = async () => {
+        console.log('🔄 GitHub 文件获取失败，返回空列表');
+        return [];
+      };
+
+      let githubFiles = [];
+      if (window.trackingProtectionHandler) {
+        githubFiles = await window.trackingProtectionHandler.safeStorageOperation(
+          githubOperation,
+          githubFallback,
+          2 // 只重试2次，避免过长等待
+        ) || [];
+      } else {
+        githubFiles = await githubOperation();
+      }
+
       const processedFiles = [];
-      
+
       for (const file of githubFiles) {
         try {
           // 尝试获取文件的详细信息
           let fileData = null;
-          
+
           if (file.type === 'work') {
             // 从 data/works 目录获取
-            fileData = await window.dataManager.loadData(file.key, {
-              category: 'works',
-              fallbackToLocal: false
-            });
+            try {
+              const dataOperation = async () => {
+                return await window.dataManager.loadData(file.key, {
+                  category: 'works',
+                  fallbackToLocal: false
+                });
+              };
+
+              const dataFallback = async () => {
+                // 创建基本的文件信息
+                return {
+                  title: file.name.replace('.json', ''),
+                  originalName: file.name,
+                  mainCategory: 'literature',
+                  uploadedBy: 'unknown',
+                  uploadTime: new Date().toISOString()
+                };
+              };
+
+              if (window.trackingProtectionHandler) {
+                fileData = await window.trackingProtectionHandler.safeStorageOperation(
+                  dataOperation,
+                  dataFallback,
+                  1 // 只重试1次
+                );
+              } else {
+                fileData = await dataOperation();
+              }
+            } catch (dataError) {
+              console.warn(`加载文件数据失败: ${file.key}`, dataError);
+              // 创建基本信息
+              fileData = {
+                title: file.name.replace('.json', ''),
+                originalName: file.name,
+                mainCategory: 'literature',
+                uploadedBy: 'unknown',
+                uploadTime: new Date().toISOString()
+              };
+            }
           } else {
             // 从 user-uploads 目录获取元数据
             const metadataPath = file.path.replace(/\.[^.]+$/, '_metadata.json');
             try {
-              const metadataFile = await window.githubStorage.getFile(metadataPath);
-              if (metadataFile && metadataFile.content) {
-                fileData = JSON.parse(atob(metadataFile.content));
+              const metadataOperation = async () => {
+                const metadataFile = await window.githubStorage.getFile(metadataPath);
+                if (metadataFile && metadataFile.content) {
+                  return JSON.parse(atob(metadataFile.content));
+                }
+                return null;
+              };
+
+              const metadataFallback = async () => {
+                return {
+                  title: file.name,
+                  originalName: file.name,
+                  mainCategory: file.category,
+                  subCategory: file.subcategory,
+                  uploadedBy: file.owner,
+                  uploadTime: new Date().toISOString()
+                };
+              };
+
+              if (window.trackingProtectionHandler) {
+                fileData = await window.trackingProtectionHandler.safeStorageOperation(
+                  metadataOperation,
+                  metadataFallback,
+                  1
+                );
+              } else {
+                fileData = await metadataOperation() || await metadataFallback();
               }
             } catch (metaError) {
               // 如果没有元数据文件，创建基本信息
@@ -321,7 +401,7 @@ class AdminFileManager {
               };
             }
           }
-          
+
           if (fileData) {
             processedFiles.push({
               ...fileData,
@@ -337,12 +417,38 @@ class AdminFileManager {
           }
         } catch (error) {
           console.warn(`处理 GitHub 文件失败: ${file.path}`, error);
+          // 即使处理失败，也尝试创建基本条目
+          try {
+            processedFiles.push({
+              title: file.name || 'Unknown File',
+              fileId: file.key || file.name?.replace(/\.[^.]+$/, '') || 'unknown',
+              owner: file.owner || 'unknown',
+              githubPath: file.path,
+              githubSha: file.sha,
+              fileSize: file.size,
+              source: 'github',
+              error: error.message
+            });
+          } catch (fallbackError) {
+            console.error('创建回退文件条目失败:', fallbackError);
+          }
         }
       }
-      
+
+      console.log(`✅ 从 GitHub 获取到 ${processedFiles.length} 个文件`);
       return processedFiles;
     } catch (error) {
       console.error('从 GitHub 获取文件失败:', error);
+
+      // 提供用户友好的错误信息
+      if (error.message.includes('tracking prevention') || error.message.includes('storage access')) {
+        console.warn('🛡️ 由于浏览器隐私保护，GitHub 文件获取受限');
+      } else if (error.message.includes('404')) {
+        console.info('ℹ️ GitHub 仓库中暂无文件');
+      } else if (error.message.includes('403')) {
+        console.warn('⚠️ GitHub API 访问受限，请检查令牌权限');
+      }
+
       return [];
     }
   }
@@ -376,7 +482,6 @@ class AdminFileManager {
       return [];
     }
   }
-}
 
   // 更新用户过滤器选项
   updateOwnerFilter() {
@@ -1028,19 +1133,51 @@ class AdminFileManager {
     const fileKey = `work_${file.fileId}`;
 
     try {
-      // 保存到数据管理器（会自动选择存储策略）
-      if (window.dataManager) {
-        await window.dataManager.saveData(fileKey, file, {
-          category: 'works',
-          commitMessage: `更新文件: ${file.title}`
-        });
+      // 使用跟踪保护处理器的安全操作包装器
+      const saveOperation = async () => {
+        if (window.dataManager) {
+          return await window.dataManager.saveData(fileKey, file, {
+            category: 'works',
+            commitMessage: `更新文件: ${file.title}`
+          });
+        } else {
+          localStorage.setItem(fileKey, JSON.stringify(file));
+          return true;
+        }
+      };
+
+      const fallbackOperation = async () => {
+        console.log('🔄 主要存储失败，尝试本地存储回退...');
+        try {
+          localStorage.setItem(fileKey, JSON.stringify(file));
+          return true;
+        } catch (localError) {
+          console.error('本地存储回退也失败:', localError);
+          throw localError;
+        }
+      };
+
+      if (window.trackingProtectionHandler) {
+        await window.trackingProtectionHandler.safeStorageOperation(
+          saveOperation,
+          fallbackOperation,
+          3 // 重试3次
+        );
       } else {
-        // 回退到本地存储
-        localStorage.setItem(fileKey, JSON.stringify(file));
+        await saveOperation();
       }
+
     } catch (error) {
       console.error('保存文件到存储失败:', error);
-      throw error;
+
+      // 提供更用户友好的错误信息
+      if (error.message.includes('tracking prevention') || error.message.includes('storage access')) {
+        throw new Error('由于浏览器隐私保护设置，文件保存失败。请尝试在浏览器设置中允许此网站的存储访问。');
+      } else if (error.message.includes('QuotaExceededError')) {
+        throw new Error('存储空间不足，请清理一些文件后重试。');
+      } else {
+        throw new Error(`文件保存失败: ${error.message}`);
+      }
     }
   }
 
@@ -1084,36 +1221,136 @@ class AdminFileManager {
   // 执行文件删除
   async performFileDelete(file) {
     const fileKey = `work_${file.fileId}`;
+    let deleteResults = {
+      github: { success: false, error: null },
+      local: { success: false, error: null },
+      permissions: { success: false, error: null }
+    };
 
     try {
       // 1. 从 GitHub 删除（如果存在）
       if (file.source === 'github' && file.githubPath && window.githubStorage && window.githubStorage.token) {
         try {
-          await window.githubStorage.deleteFile(file.githubPath, `删除文件: ${file.title}`);
+          // 使用跟踪保护处理器的安全操作包装器
+          const githubDeleteOperation = async () => {
+            return await window.githubStorage.deleteFile(file.githubPath, `删除文件: ${file.title}`);
+          };
+
+          const githubFallback = async () => {
+            console.log('🔄 GitHub 删除失败，标记为已删除');
+            return { success: true, fallback: true };
+          };
+
+          if (window.trackingProtectionHandler) {
+            await window.trackingProtectionHandler.safeStorageOperation(
+              githubDeleteOperation,
+              githubFallback,
+              2 // 只重试2次
+            );
+          } else {
+            await githubDeleteOperation();
+          }
+
+          deleteResults.github.success = true;
           console.log('✅ 文件已从 GitHub 删除');
         } catch (githubError) {
-          console.warn('从 GitHub 删除文件失败:', githubError);
-          // 继续删除本地副本
+          deleteResults.github.error = githubError.message;
+
+          // 特殊处理404错误（文件不存在）
+          if (githubError.status === 404 || githubError.message.includes('404')) {
+            console.log('ℹ️ GitHub 文件不存在，可能已被删除');
+            deleteResults.github.success = true; // 视为成功
+          } else {
+            console.warn('从 GitHub 删除文件失败:', githubError);
+          }
         }
+      } else {
+        deleteResults.github.success = true; // 不需要从 GitHub 删除
       }
 
       // 2. 从本地存储删除
-      localStorage.removeItem(fileKey);
-      console.log('✅ 文件已从本地存储删除');
+      try {
+        const localDeleteOperation = () => {
+          localStorage.removeItem(fileKey);
+          return true;
+        };
+
+        const localFallback = () => {
+          console.log('🔄 本地存储删除失败，尝试清理相关数据');
+          // 尝试清理相关的缓存数据
+          try {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+              if (key.includes(file.fileId) || key.includes(file.owner)) {
+                try {
+                  localStorage.removeItem(key);
+                } catch (e) {
+                  // 忽略单个键删除失败
+                }
+              }
+            });
+            return true;
+          } catch (e) {
+            return false;
+          }
+        };
+
+        if (window.trackingProtectionHandler) {
+          await window.trackingProtectionHandler.safeStorageOperation(
+            localDeleteOperation,
+            localFallback
+          );
+        } else {
+          localDeleteOperation();
+        }
+
+        deleteResults.local.success = true;
+        console.log('✅ 文件已从本地存储删除');
+      } catch (localError) {
+        deleteResults.local.error = localError.message;
+        console.warn('从本地存储删除文件失败:', localError);
+      }
 
       // 3. 删除权限设置
       if (window.filePermissionsSystem) {
         try {
           await window.filePermissionsSystem.deleteFilePermissions(file.fileId, file.owner);
+          deleteResults.permissions.success = true;
           console.log('✅ 文件权限设置已删除');
         } catch (permError) {
+          deleteResults.permissions.error = permError.message;
           console.warn('删除文件权限设置失败:', permError);
         }
+      } else {
+        deleteResults.permissions.success = true; // 权限系统不存在，视为成功
+      }
+
+      // 检查整体删除结果
+      const overallSuccess = deleteResults.github.success && deleteResults.local.success;
+
+      if (!overallSuccess) {
+        const errors = [];
+        if (!deleteResults.github.success) errors.push(`GitHub: ${deleteResults.github.error}`);
+        if (!deleteResults.local.success) errors.push(`本地: ${deleteResults.local.error}`);
+
+        throw new Error(`部分删除操作失败: ${errors.join(', ')}`);
       }
 
     } catch (error) {
       console.error('执行文件删除失败:', error);
-      throw error;
+
+      // 提供更详细的错误信息
+      const errorDetails = {
+        message: error.message,
+        results: deleteResults,
+        file: {
+          id: file.fileId,
+          owner: file.owner,
+          title: file.title
+        }
+      };
+
+      throw new Error(`文件删除失败: ${error.message}。详细信息: ${JSON.stringify(errorDetails)}`);
     }
   }
 

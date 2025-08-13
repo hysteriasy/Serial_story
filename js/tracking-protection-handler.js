@@ -165,14 +165,70 @@ class TrackingProtectionHandler {
   // 处理跟踪保护错误
   handleTrackingProtectionError(error, operation, key) {
     console.warn(`🛡️ 跟踪保护阻止了存储访问: ${operation}(${key})`, error.message);
-    
+
     this.storageBlocked = true;
     this.fallbackMode = true;
-    
+
     if (!this.userNotified) {
       this.showTrackingProtectionNotification();
       this.userNotified = true;
     }
+  }
+
+  // 安全的存储操作包装器（带重试机制）
+  async safeStorageOperation(operation, fallback = null, retries = 3) {
+    this.accessStats.attempts++;
+
+    const attemptOperation = async (attempt = 1) => {
+      try {
+        const result = await operation();
+        this.accessStats.successes++;
+        this.errorCount = 0; // 重置错误计数
+        return result;
+      } catch (error) {
+        this.accessStats.failures++;
+        this.accessStats.lastFailure = new Date().toISOString();
+        this.errorCount++;
+
+        // 检查是否是跟踪保护错误
+        if (this.isTrackingProtectionError(error)) {
+          console.warn(`🛡️ 跟踪保护阻止了存储访问 (尝试 ${attempt}/${retries}):`, error.message);
+          this.handleTrackingProtectionError(error, 'storage', 'unknown');
+
+          // 如果还有重试次数，等待一段时间后重试
+          if (attempt < retries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // 指数退避，最大5秒
+            console.log(`⏳ ${delay}ms 后重试存储操作...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return await attemptOperation(attempt + 1);
+          }
+
+          // 所有重试都失败了，尝试回退方案
+          if (fallback && typeof fallback === 'function') {
+            try {
+              console.log('🔄 尝试回退方案...');
+              return await fallback();
+            } catch (fallbackError) {
+              console.error('❌ 回退操作也失败了:', fallbackError);
+              return null;
+            }
+          }
+        } else {
+          console.error(`❌ 存储操作失败 (尝试 ${attempt}/${retries}):`, error);
+
+          // 对于非跟踪保护错误，也进行有限重试
+          if (attempt < retries && !error.message.includes('QuotaExceededError')) {
+            const delay = 500 * attempt;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return await attemptOperation(attempt + 1);
+          }
+        }
+
+        return null;
+      }
+    };
+
+    return await attemptOperation();
   }
 
   // 设置存储事件监听器
