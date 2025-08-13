@@ -457,10 +457,25 @@ class FileHierarchyManager {
       }
 
       const allFiles = [];
+
+      // 首先检查 user-uploads 根目录是否存在
+      const userUploadsExists = await this.checkDirectoryExists('user-uploads');
+      if (!userUploadsExists) {
+        console.log('ℹ️ user-uploads 目录不存在，跳过用户上传文件检查');
+        return [];
+      }
+
       const categories = ['literature', 'art', 'music', 'video'];
 
       for (const category of categories) {
         try {
+          // 检查分类目录是否存在
+          const categoryExists = await this.checkDirectoryExists(`user-uploads/${category}`);
+          if (!categoryExists) {
+            console.log(`ℹ️ ${category} 分类目录不存在，跳过`);
+            continue;
+          }
+
           const categoryFiles = await this.listGitHubCategoryFiles(category);
           allFiles.push(...categoryFiles);
         } catch (error) {
@@ -475,6 +490,59 @@ class FileHierarchyManager {
     } catch (error) {
       console.error('列出用户上传文件失败:', error);
       return [];
+    }
+  }
+
+  // 检查目录是否存在（带缓存）
+  async checkDirectoryExists(path) {
+    // 初始化缓存
+    if (!this.directoryCache) {
+      this.directoryCache = new Map();
+    }
+
+    // 检查缓存
+    if (this.directoryCache.has(path)) {
+      const cached = this.directoryCache.get(path);
+      // 缓存5分钟
+      if (Date.now() - cached.timestamp < 5 * 60 * 1000) {
+        console.log(`📋 使用缓存结果: ${path} -> ${cached.exists}`);
+        return cached.exists;
+      }
+    }
+
+    try {
+      console.log(`🔍 检查目录是否存在: ${path}`);
+      const response = await fetch(
+        `https://api.github.com/repos/hysteriasy/Serial_story/contents/${path}`,
+        {
+          method: 'HEAD', // 只检查头部，不下载内容
+          headers: {
+            'Authorization': `token ${window.githubStorage.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+
+      const exists = response.ok;
+
+      // 缓存结果
+      this.directoryCache.set(path, {
+        exists: exists,
+        timestamp: Date.now()
+      });
+
+      console.log(`📋 目录检查结果: ${path} -> ${exists ? '存在' : '不存在'}`);
+      return exists;
+    } catch (error) {
+      console.warn(`目录检查失败: ${path}`, error.message);
+
+      // 缓存失败结果（假设不存在）
+      this.directoryCache.set(path, {
+        exists: false,
+        timestamp: Date.now()
+      });
+
+      return false;
     }
   }
 

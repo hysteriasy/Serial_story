@@ -257,22 +257,34 @@ class AdminFileManager {
       
       // 去重合并
       const fileMap = new Map();
-      
+
       // 先添加 GitHub 文件
       allFiles.forEach(file => {
         const key = `${file.owner}_${file.fileId || file.name}`;
         fileMap.set(key, { ...file, source: 'github' });
+        console.log(`📁 添加 GitHub 文件: ${file.title || file.name} (${file.owner})`);
       });
-      
+
       // 再添加本地文件（如果不存在）
       localFiles.forEach(file => {
         const key = `${file.owner}_${file.fileId}`;
         if (!fileMap.has(key)) {
           fileMap.set(key, { ...file, source: 'local' });
+          console.log(`📱 添加本地文件: ${file.title} (${file.owner})`);
+        } else {
+          console.log(`🔄 跳过重复文件: ${file.title} (${file.owner}) - GitHub版本已存在`);
         }
       });
 
-      return Array.from(fileMap.values());
+      const finalFiles = Array.from(fileMap.values());
+      console.log(`📊 文件合并完成: 总共 ${finalFiles.length} 个文件`);
+
+      // 打印文件详情用于调试
+      finalFiles.forEach((file, index) => {
+        console.log(`📄 文件 ${index + 1}: ${file.title} | 作者: ${file.owner} | 分类: ${file.mainCategory} | 来源: ${file.source}`);
+      });
+
+      return finalFiles;
       
     } catch (error) {
       console.error('获取文件列表失败:', error);
@@ -290,7 +302,10 @@ class AdminFileManager {
 
       // 使用跟踪保护处理器的安全操作包装器
       const githubOperation = async () => {
-        return await window.fileHierarchyManager.getAllGitHubFiles();
+        console.log('🌐 开始从 GitHub 获取文件...');
+        const files = await window.fileHierarchyManager.getAllGitHubFiles();
+        console.log(`🌐 GitHub 返回 ${files.length} 个文件`);
+        return files;
       };
 
       const githubFallback = async () => {
@@ -299,14 +314,19 @@ class AdminFileManager {
       };
 
       let githubFiles = [];
-      if (window.trackingProtectionHandler) {
-        githubFiles = await window.trackingProtectionHandler.safeStorageOperation(
-          githubOperation,
-          githubFallback,
-          2 // 只重试2次，避免过长等待
-        ) || [];
-      } else {
-        githubFiles = await githubOperation();
+      try {
+        if (window.trackingProtectionHandler) {
+          githubFiles = await window.trackingProtectionHandler.safeStorageOperation(
+            githubOperation,
+            githubFallback,
+            1 // 只重试1次，减少API调用
+          ) || [];
+        } else {
+          githubFiles = await githubOperation();
+        }
+      } catch (error) {
+        console.warn('GitHub 文件获取出错:', error.message);
+        githubFiles = [];
       }
 
       const processedFiles = [];
@@ -456,7 +476,7 @@ class AdminFileManager {
   // 从本地存储获取文件
   async getLocalFiles() {
     const files = [];
-    
+
     try {
       // 遍历 localStorage 查找 work_ 开头的文件
       for (let i = 0; i < localStorage.length; i++) {
@@ -464,18 +484,39 @@ class AdminFileManager {
         if (key && key.startsWith('work_')) {
           try {
             const workData = JSON.parse(localStorage.getItem(key));
-            files.push({
+
+            // 确保文件有必要的字段
+            const processedFile = {
               ...workData,
               fileId: key.replace('work_', ''),
-              owner: workData.uploadedBy || workData.author,
+              owner: workData.uploadedBy || workData.author || workData.owner || 'unknown',
+              title: workData.title || workData.originalName || '未命名文件',
+              originalName: workData.originalName || workData.title || '未命名文件',
+              mainCategory: workData.mainCategory || workData.category || 'literature',
+              subCategory: workData.subCategory || workData.subcategory || 'essay',
+              uploadTime: workData.uploadTime || workData.createdAt || new Date().toISOString(),
               source: 'local'
-            });
+            };
+
+            // 确保权限设置存在
+            if (!processedFile.permissions) {
+              processedFile.permissions = {
+                level: 'friend',
+                isPublic: false,
+                requiredRole: 'friend',
+                minRoleLevel: 3
+              };
+            }
+
+            files.push(processedFile);
+            console.log(`📱 找到本地文件: ${processedFile.title} (${processedFile.owner})`);
           } catch (error) {
             console.warn(`解析本地文件失败: ${key}`, error);
           }
         }
       }
-      
+
+      console.log(`📱 从本地存储获取到 ${files.length} 个文件`);
       return files;
     } catch (error) {
       console.error('从本地存储获取文件失败:', error);
@@ -515,7 +556,15 @@ class AdminFileManager {
 
   // 应用过滤器
   applyFilters() {
+    console.log(`🔍 开始过滤 ${this.currentFiles.length} 个文件...`);
+
     this.filteredFiles = this.currentFiles.filter(file => {
+      // 基本字段检查
+      if (!file || !file.fileId) {
+        console.warn('跳过无效文件:', file);
+        return false;
+      }
+
       // 搜索过滤
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
@@ -537,7 +586,7 @@ class AdminFileManager {
 
       // 权限过滤
       if (this.permissionFilter && this.permissionFilter !== 'all') {
-        const permissionLevel = file.permissions?.level || 'unknown';
+        const permissionLevel = file.permissions?.level || 'friend'; // 默认为friend级别
         if (permissionLevel !== this.permissionFilter) {
           return false;
         }
@@ -545,6 +594,8 @@ class AdminFileManager {
 
       return true;
     });
+
+    console.log(`✅ 过滤完成，显示 ${this.filteredFiles.length} 个文件`);
 
     // 应用排序
     this.applySorting();
@@ -1745,7 +1796,59 @@ class AdminFileManager {
       alert(message);
     }
   }
+
+  // 调试工具：显示文件管理器状态
+  debugStatus() {
+    const status = {
+      initialized: this.initialized || false,
+      currentFiles: this.currentFiles.length,
+      filteredFiles: this.filteredFiles.length,
+      selectedFiles: this.selectedFiles.size,
+      filters: {
+        searchQuery: this.searchQuery,
+        filterBy: this.filterBy,
+        ownerFilter: this.ownerFilter,
+        permissionFilter: this.permissionFilter
+      },
+      sorting: {
+        sortBy: this.sortBy,
+        sortOrder: this.sortOrder
+      },
+      pagination: {
+        currentPage: this.currentPage,
+        itemsPerPage: this.itemsPerPage
+      }
+    };
+
+    console.log('🔧 文件管理器状态:', status);
+
+    if (this.currentFiles.length > 0) {
+      console.log('📄 当前文件列表:');
+      this.currentFiles.forEach((file, index) => {
+        console.log(`  ${index + 1}. ${file.title} (${file.owner}) - ${file.source}`);
+      });
+    }
+
+    if (this.filteredFiles.length !== this.currentFiles.length) {
+      console.log('🔍 过滤后文件列表:');
+      this.filteredFiles.forEach((file, index) => {
+        console.log(`  ${index + 1}. ${file.title} (${file.owner}) - ${file.source}`);
+      });
+    }
+
+    return status;
+  }
 }
 
 // 创建全局实例
 window.adminFileManager = new AdminFileManager();
+
+// 添加全局调试函数
+window.debugFileManager = () => {
+  if (window.adminFileManager) {
+    return window.adminFileManager.debugStatus();
+  } else {
+    console.error('文件管理器未初始化');
+    return null;
+  }
+};
