@@ -422,7 +422,23 @@ class FilePermissionsSystem {
         }
       }
 
-      // 3. 尝试从Firebase获取（如果可用）
+      // 3. 尝试从当前文件列表中获取（管理员页面特有）
+      if (window.adminFileManager && window.adminFileManager.currentFiles) {
+        if (window.location.search.includes('debug=true')) {
+          console.log(`📋 尝试从当前文件列表获取权限数据: ${fileId}`);
+        }
+        const fileFromList = window.adminFileManager.currentFiles.find(f =>
+          f.fileId === fileId && f.owner === owner
+        );
+        if (fileFromList && fileFromList.permissions) {
+          if (window.location.search.includes('debug=true')) {
+            console.log(`✅ 从文件列表获取到权限数据: ${fileId}`);
+          }
+          return fileFromList.permissions;
+        }
+      }
+
+      // 4. 尝试从Firebase获取（如果可用）
       if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
         console.log(`🔥 尝试从 Firebase 获取权限数据: userFiles/${owner}/${fileId}/permissions`);
         try {
@@ -439,7 +455,7 @@ class FilePermissionsSystem {
         }
       }
 
-      // 4. 如果都没有找到，返回默认权限
+      // 5. 如果都没有找到，返回默认权限
       console.log(`ℹ️ 未找到权限数据，返回 null: ${fileId}`);
       return null;
     } catch (error) {

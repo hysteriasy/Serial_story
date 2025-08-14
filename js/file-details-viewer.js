@@ -278,7 +278,30 @@ class FileDetailsViewer {
         console.log(`ℹ️ 本地存储中未找到文件信息: ${fileId}`);
       }
 
-      // 3. 尝试从Firebase获取
+      // 3. 尝试从当前文件列表中获取（管理员页面特有）
+      if (window.adminFileManager && window.adminFileManager.currentFiles) {
+        console.log(`📋 尝试从当前文件列表获取信息: ${fileId}`);
+        const fileFromList = window.adminFileManager.currentFiles.find(f =>
+          f.fileId === fileId && f.owner === owner
+        );
+        if (fileFromList) {
+          console.log(`✅ 从文件列表获取到文件信息: ${fileId}`);
+          return {
+            title: fileFromList.title || fileFromList.originalName || '未命名文件',
+            originalName: fileFromList.originalName,
+            mainCategory: fileFromList.mainCategory || 'literature',
+            subCategory: fileFromList.subCategory || fileFromList.subcategory || 'essay',
+            uploadedBy: fileFromList.owner,
+            uploadTime: fileFromList.uploadTime,
+            content: fileFromList.content || '内容未加载',
+            size: fileFromList.size,
+            permissions: fileFromList.permissions,
+            storage_type: 'admin_list'
+          };
+        }
+      }
+
+      // 4. 尝试从Firebase获取
       if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
         console.log(`🔥 尝试从 Firebase 获取文件信息: userFiles/${owner}/${fileId}`);
         try {
@@ -295,7 +318,7 @@ class FileDetailsViewer {
         }
       }
 
-      // 4. 如果是旧格式随笔，从essays中查找
+      // 5. 如果是旧格式随笔，从essays中查找
       if (fileId.startsWith('essay_legacy_')) {
         console.log(`📚 尝试从旧格式随笔中查找: ${fileId}`);
         const essaysData = localStorage.getItem('essays');
@@ -314,6 +337,43 @@ class FileDetailsViewer {
               storage_type: 'legacy_essay'
             };
           }
+        }
+      }
+
+      // 6. 最后尝试从 GitHub 的 user-uploads 目录直接获取
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        console.log(`📁 尝试从 user-uploads 目录获取文件: ${fileId}`);
+        try {
+          // 构建可能的文件路径
+          const possiblePaths = [
+            `user-uploads/literature/essay/${owner}/${fileId}.json`,
+            `user-uploads/literature/novel/${owner}/${fileId}.json`,
+            `user-uploads/literature/poetry/${owner}/${fileId}.json`,
+            `user-uploads/art/painting/${owner}/${fileId}.json`,
+            `user-uploads/music/song/${owner}/${fileId}.json`,
+            `user-uploads/video/movie/${owner}/${fileId}.json`
+          ];
+
+          for (const path of possiblePaths) {
+            try {
+              const fileData = await window.githubStorage.getFile(path);
+              if (fileData && fileData.content) {
+                const content = atob(fileData.content);
+                const parsedData = JSON.parse(content);
+                console.log(`✅ 从 user-uploads 获取到文件信息: ${path}`);
+                return {
+                  ...parsedData,
+                  storage_type: 'user_uploads',
+                  storage_path: path
+                };
+              }
+            } catch (error) {
+              // 继续尝试下一个路径
+              continue;
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ 从 user-uploads 获取文件失败: ${error.message}`);
         }
       }
 
@@ -431,6 +491,8 @@ class FileDetailsViewer {
 
   getStorageType(fileInfo) {
     if (fileInfo.storage_type === 'legacy_essay') return '旧格式随笔';
+    if (fileInfo.storage_type === 'admin_list') return '管理员列表';
+    if (fileInfo.storage_type === 'user_uploads') return '用户上传目录';
     if (this.currentFileId.startsWith('work_')) return '新格式作品';
     return '本地存储';
   }
