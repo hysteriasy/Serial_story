@@ -1,0 +1,53 @@
+{
+  "id": "work_1754921280127_5ornqi8fk",
+  "owner": "hysteria",
+  "title": "作品_work_1754921280127_5ornqi8fk",
+  "createdAt": "2025-08-14T11:51:39.341Z",
+  "updatedAt": "2025-08-14T11:51:39.341Z",
+  "permissions": {
+    "level": "friend",
+    "isPublic": false,
+    "requiredRole": "friend",
+    "minRoleLevel": 3,
+    "customAccess": {
+      "whitelist": {
+        "enabled": false,
+        "users": [],
+        "roles": [],
+        "description": ""
+      },
+      "blacklist": {
+        "enabled": false,
+        "users": [],
+        "roles": [],
+        "description": ""
+      },
+      "specialPermissions": {
+        "allowAnonymous": false,
+        "allowComments": true,
+        "allowDownload": true,
+        "allowShare": true,
+        "expiryDate": null,
+        "maxViews": null,
+        "currentViews": 0
+      }
+    },
+    "metadata": {
+      "createdBy": "hysteria",
+      "createdAt": "2025-08-14T11:51:38.663Z",
+      "lastModifiedBy": "hysteria",
+      "lastModifiedAt": "2025-08-14T11:51:39.010Z",
+      "version": "1.0.1",
+      "changeHistory": [
+        {
+          "action": "updated",
+          "by": "hysteria",
+          "at": "2025-08-14T11:51:39.010Z",
+          "from": "public",
+          "to": "friend",
+          "reason": "Permission update"
+        }
+      ]
+    }
+  }
+}
