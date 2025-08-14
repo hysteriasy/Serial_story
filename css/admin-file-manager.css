@@ -241,68 +241,99 @@
 }
 
 .file-actions {
-  display: flex;
+  display: flex !important;
   gap: 5px;
   justify-content: flex-end;
   align-items: center;
   min-width: 200px;
   flex-shrink: 0;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* 确保管理员文件管理器中的按钮始终可见 */
+.admin-file-manager .file-actions {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.admin-file-manager .file-row:hover .file-actions {
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .file-actions .btn {
-  padding: 4px 8px;
-  font-size: 12px;
-  min-width: auto;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  min-width: auto !important;
+  border-radius: 3px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
 }
 
-/* 按钮颜色样式 */
+/* 按钮颜色样式 - 使用 !important 确保优先级 */
 .file-actions .btn-info {
-  background-color: #17a2b8;
-  color: white;
+  background-color: #17a2b8 !important;
+  color: white !important;
+  border: 1px solid #17a2b8 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .file-actions .btn-info:hover {
-  background-color: #138496;
+  background-color: #138496 !important;
+  border-color: #138496 !important;
   transform: translateY(-1px);
 }
 
 .file-actions .btn-secondary {
-  background-color: #6c757d;
-  color: white;
+  background-color: #6c757d !important;
+  color: white !important;
+  border: 1px solid #6c757d !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .file-actions .btn-secondary:hover {
-  background-color: #5a6268;
+  background-color: #5a6268 !important;
+  border-color: #5a6268 !important;
   transform: translateY(-1px);
 }
 
 .file-actions .btn-warning {
-  background-color: #ffc107;
-  color: #212529;
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+  border: 1px solid #ffc107 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .file-actions .btn-warning:hover {
-  background-color: #e0a800;
+  background-color: #e0a800 !important;
+  border-color: #e0a800 !important;
   transform: translateY(-1px);
 }
 
 .file-actions .btn-danger {
-  background-color: #dc3545;
-  color: white;
+  background-color: #dc3545 !important;
+  color: white !important;
+  border: 1px solid #dc3545 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .file-actions .btn-danger:hover {
-  background-color: #c82333;
+  background-color: #c82333 !important;
+  border-color: #c82333 !important;
   transform: translateY(-1px);
 }
 

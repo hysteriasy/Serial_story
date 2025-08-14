@@ -10,6 +10,9 @@ class AdminFileManager {
     this.currentPage = 1;
     this.itemsPerPage = 20;
     this.selectedFiles = new Set();
+    // 初始化过滤器状态
+    this.ownerFilter = 'all';
+    this.permissionFilter = 'all';
   }
 
   // 初始化文件管理器
@@ -236,6 +239,9 @@ class AdminFileManager {
         }))
       });
 
+      // 重置过滤器确保管理员看到所有文件
+      this.resetFilters();
+
       // 更新用户过滤器选项
       this.updateOwnerFilter();
 
@@ -378,7 +384,8 @@ class AdminFileManager {
             try {
               const workData = await window.githubStorage.getFile(file.path);
               if (workData && workData.content) {
-                const rawData = JSON.parse(atob(workData.content));
+                const decodedContent = this.safeBase64Decode(workData.content);
+                const rawData = JSON.parse(decodedContent);
 
                 // data/works 文件可能只包含权限信息，需要补充基本信息
                 fileData = {
@@ -416,7 +423,8 @@ class AdminFileManager {
             try {
               const uploadData = await window.githubStorage.getFile(file.path);
               if (uploadData && uploadData.content) {
-                fileData = JSON.parse(atob(uploadData.content));
+                const decodedContent = this.safeBase64Decode(uploadData.content);
+                fileData = JSON.parse(decodedContent);
                 console.log(`📄 成功解析文件: ${file.path}`, {
                   title: fileData.title,
                   uploadedBy: fileData.uploadedBy,
@@ -783,15 +791,41 @@ class AdminFileManager {
       ownerFilter.appendChild(option);
     });
 
-    // 恢复选择
+    // 恢复选择，但如果是管理员且没有明确选择，则保持显示所有用户
     if (currentValue && Array.from(owners).includes(currentValue)) {
       ownerFilter.value = currentValue;
+      this.ownerFilter = currentValue;
+    } else {
+      // 确保管理员默认看到所有用户的文件
+      ownerFilter.value = 'all';
+      this.ownerFilter = 'all';
     }
+  }
+
+  // 重置过滤器到默认状态（管理员应该看到所有文件）
+  resetFilters() {
+    console.log('🔄 重置过滤器到默认状态');
+    this.ownerFilter = 'all';
+    this.permissionFilter = 'all';
+    this.filterBy = 'all';
+    this.searchQuery = '';
+
+    // 更新UI控件
+    const ownerFilterEl = document.getElementById('ownerFilter');
+    const permissionFilterEl = document.getElementById('permissionFilter');
+    const categoryFilterEl = document.getElementById('categoryFilter');
+    const searchEl = document.getElementById('fileSearch');
+
+    if (ownerFilterEl) ownerFilterEl.value = 'all';
+    if (permissionFilterEl) permissionFilterEl.value = 'all';
+    if (categoryFilterEl) categoryFilterEl.value = 'all';
+    if (searchEl) searchEl.value = '';
   }
 
   // 应用过滤器
   applyFilters() {
     console.log(`🔍 开始过滤 ${this.currentFiles.length} 个文件...`);
+    console.log(`🔧 当前过滤器状态: 用户=${this.ownerFilter}, 权限=${this.permissionFilter}, 分类=${this.filterBy}, 搜索="${this.searchQuery}"`);
 
     this.filteredFiles = this.currentFiles.filter(file => {
       // 基本字段检查
@@ -814,7 +848,7 @@ class AdminFileManager {
         return false;
       }
 
-      // 用户过滤
+      // 用户过滤 - 管理员默认应该看到所有用户的文件
       if (this.ownerFilter && this.ownerFilter !== 'all' && file.owner !== this.ownerFilter) {
         return false;
       }
@@ -831,6 +865,10 @@ class AdminFileManager {
     });
 
     console.log(`✅ 过滤完成，显示 ${this.filteredFiles.length} 个文件`);
+    console.log(`📊 过滤结果按用户分布:`, this.filteredFiles.reduce((acc, file) => {
+      acc[file.owner] = (acc[file.owner] || 0) + 1;
+      return acc;
+    }, {}));
 
     // 应用排序
     this.applySorting();
@@ -915,6 +953,7 @@ class AdminFileManager {
         setTimeout(() => {
           console.log('🔍 自动检查按钮渲染状态...');
           this.debugButtonRendering();
+          this.ensureButtonsVisible();
         }, 100);
       }
     }
@@ -1160,6 +1199,29 @@ class AdminFileManager {
       .replace(/\n/g, '\\n')
       .replace(/\r/g, '\\r')
       .replace(/\t/g, '\\t');
+  }
+
+  // 安全的 UTF-8 base64 解码，处理中文字符
+  safeBase64Decode(base64String) {
+    try {
+      // 使用 TextDecoder 确保正确的 UTF-8 解码
+      const binaryString = atob(base64String);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(bytes);
+    } catch (error) {
+      console.warn('UTF-8 解码失败，尝试直接解码:', error);
+      try {
+        // 回退到直接 atob 解码
+        return decodeURIComponent(escape(atob(base64String)));
+      } catch (fallbackError) {
+        console.error('所有解码方法都失败:', fallbackError);
+        return atob(base64String); // 最后的回退
+      }
+    }
   }
 
   // 显示通知消息
@@ -2215,6 +2277,46 @@ class AdminFileManager {
       console.error('调试过程出错:', error);
       this.showNotification(`调试失败: ${error.message}`, 'error');
     }
+  }
+
+  // 确保按钮可见
+  ensureButtonsVisible() {
+    const fileActions = document.querySelectorAll('.admin-file-manager .file-actions');
+    console.log(`🔧 强制确保 ${fileActions.length} 个操作区域的按钮可见`);
+
+    fileActions.forEach((actionContainer, index) => {
+      // 强制设置容器样式
+      actionContainer.style.opacity = '1';
+      actionContainer.style.visibility = 'visible';
+      actionContainer.style.display = 'flex';
+
+      const buttons = actionContainer.querySelectorAll('.btn');
+      buttons.forEach((btn, btnIndex) => {
+        // 强制设置按钮样式
+        btn.style.opacity = '1';
+        btn.style.visibility = 'visible';
+        btn.style.display = 'inline-flex';
+
+        // 根据按钮类型设置颜色
+        if (btn.classList.contains('btn-info')) {
+          btn.style.backgroundColor = '#17a2b8';
+          btn.style.color = 'white';
+          btn.style.border = '1px solid #17a2b8';
+        } else if (btn.classList.contains('btn-secondary')) {
+          btn.style.backgroundColor = '#6c757d';
+          btn.style.color = 'white';
+          btn.style.border = '1px solid #6c757d';
+        } else if (btn.classList.contains('btn-warning')) {
+          btn.style.backgroundColor = '#ffc107';
+          btn.style.color = '#212529';
+          btn.style.border = '1px solid #ffc107';
+        } else if (btn.classList.contains('btn-danger')) {
+          btn.style.backgroundColor = '#dc3545';
+          btn.style.color = 'white';
+          btn.style.border = '1px solid #dc3545';
+        }
+      });
+    });
   }
 
   // 调试按钮渲染

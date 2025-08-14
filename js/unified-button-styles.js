@@ -192,6 +192,12 @@ function addUnifiedButtonStyles() {
       opacity: 1;
     }
 
+    /* 管理员文件管理器中的按钮始终可见 */
+    .admin-file-manager .file-actions {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
     .file-actions .btn {
       padding: 0.25rem 0.5rem;
       font-size: 0.75rem;

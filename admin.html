@@ -1241,6 +1241,15 @@
   <script src="js/admin-file-manager.js"></script>
   <script src="js/enhanced-permissions-manager.js"></script>
   <script src="js/whitelist-blacklist-manager.js"></script>
+  <!-- 开发环境下加载验证脚本 -->
+  <script>
+    if (window.location.hostname === 'localhost' || window.location.hostname.includes('github.io')) {
+      const verifyScript = document.createElement('script');
+      verifyScript.src = 'verify-admin-fixes.js';
+      verifyScript.onload = () => console.log('✅ 管理员修复验证脚本已加载');
+      document.head.appendChild(verifyScript);
+    }
+  </script>
 
   <script>
     // 页面专用JavaScript
@@ -1891,6 +1900,11 @@
         }
 
         // 优先使用新的管理员文件管理器
+        if (!window.adminFileManager && window.AdminFileManager) {
+          console.log('🔧 创建管理员文件管理器实例...');
+          window.adminFileManager = new window.AdminFileManager();
+        }
+
         if (window.adminFileManager) {
           console.log('🔧 使用管理员文件管理器...');
           await window.adminFileManager.initialize('adminFileManagerContainer');
