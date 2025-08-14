@@ -6,8 +6,29 @@ class SmartFileLoader {
     this.environment = this.detectEnvironment();
     this.cache = new Map();
     this.loadingPromises = new Map(); // 防止重复加载
-    
+
+    // 监听页面刷新需求
+    this.setupRefreshListener();
+
     console.log(`📁 智能文件加载器初始化 - 环境: ${this.environment}`);
+  }
+
+  // 设置刷新监听器
+  setupRefreshListener() {
+    window.addEventListener('pageRefreshNeeded', (e) => {
+      const { type, data } = e.detail;
+      console.log(`📡 收到页面刷新请求: ${type}`, data);
+
+      // 清除相关缓存
+      this.clearCache();
+
+      // 如果当前页面有文件列表，触发重新加载
+      if (typeof loadEssaysList === 'function') {
+        setTimeout(() => {
+          loadEssaysList();
+        }, 100);
+      }
+    });
   }
 
   // 检测运行环境

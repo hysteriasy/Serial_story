@@ -539,21 +539,41 @@ class EnhancedPermissionsManager {
       const level = selectedLevel.value;
       const reason = document.getElementById('permissionChangeReason').value.trim();
 
+      // 获取当前权限（用于比较）
+      const oldPermissions = this.currentPermissions;
+
       // 构建权限对象
       const permissions = this.buildPermissionsObject(level);
 
       // 保存权限
-      await this.saveFilePermissions(this.currentFileId, this.currentOwner, permissions, reason);
+      const result = await this.saveFilePermissions(this.currentFileId, this.currentOwner, permissions, reason);
 
-      // 关闭模态框
-      this.closeModal();
+      if (result && result.success) {
+        // 关闭模态框
+        this.closeModal();
 
-      // 显示成功消息
-      this.showNotification('权限设置保存成功', 'success');
+        // 显示成功消息
+        this.showNotification('权限设置保存成功', 'success');
 
-      // 刷新文件列表（如果存在）
-      if (window.adminFileManager) {
-        await window.adminFileManager.loadFileList();
+        // 触发数据同步
+        if (window.dataSyncManager) {
+          window.dataSyncManager.syncPermissionChange(
+            this.currentFileId,
+            this.currentOwner,
+            oldPermissions,
+            permissions,
+            reason
+          );
+        } else {
+          // 如果没有数据同步管理器，直接刷新文件列表
+          if (window.adminFileManager) {
+            setTimeout(() => {
+              window.adminFileManager.loadFileList();
+            }, 100);
+          }
+        }
+      } else {
+        this.showNotification('权限设置保存失败: ' + (result?.message || '未知错误'), 'error');
       }
 
     } catch (error) {

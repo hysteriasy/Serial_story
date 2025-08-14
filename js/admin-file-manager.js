@@ -290,14 +290,23 @@ class AdminFileManager {
       console.log('📱 从本地存储获取文件...');
       const localFiles = await this.getLocalFiles();
       
-      // 去重合并
+      // 去重合并 - 使用更严格的去重逻辑
       const fileMap = new Map();
 
       // 先添加 GitHub 文件
       allFiles.forEach(file => {
-        const key = `${file.owner}_${file.fileId || file.name}`;
-        fileMap.set(key, { ...file, source: 'github' });
-        console.log(`📁 添加 GitHub 文件: ${file.title || file.name} (${file.owner})`);
+        const fileId = file.fileId || this.extractFileIdFromName(file.name);
+        const key = `${file.owner}_${fileId}`;
+
+        // 确保文件ID一致性
+        const normalizedFile = {
+          ...file,
+          fileId: fileId,
+          source: 'github'
+        };
+
+        fileMap.set(key, normalizedFile);
+        console.log(`📁 添加 GitHub 文件: ${file.title || file.name} (${file.owner}) - ID: ${fileId}`);
       });
 
       // 再添加本地文件（如果不存在）
@@ -305,9 +314,18 @@ class AdminFileManager {
         const key = `${file.owner}_${file.fileId}`;
         if (!fileMap.has(key)) {
           fileMap.set(key, { ...file, source: 'local' });
-          console.log(`📱 添加本地文件: ${file.title} (${file.owner})`);
+          console.log(`📱 添加本地文件: ${file.title} (${file.owner}) - ID: ${file.fileId}`);
         } else {
-          console.log(`🔄 跳过重复文件: ${file.title} (${file.owner}) - GitHub版本已存在`);
+          // 合并权限信息（本地可能有更新的权限）
+          const existingFile = fileMap.get(key);
+          if (file.permissions && (!existingFile.permissions ||
+              new Date(file.permissions.metadata?.lastModifiedAt || 0) >
+              new Date(existingFile.permissions.metadata?.lastModifiedAt || 0))) {
+            existingFile.permissions = file.permissions;
+            console.log(`🔄 更新文件权限: ${file.title} (${file.owner})`);
+          } else {
+            console.log(`🔄 跳过重复文件: ${file.title} (${file.owner}) - GitHub版本已存在`);
+          }
         }
       });
 
@@ -714,6 +732,32 @@ class AdminFileManager {
 
     // 默认返回unknown
     return 'unknown';
+  }
+
+  // 从文件名提取文件ID
+  extractFileIdFromName(filename) {
+    // 移除扩展名
+    const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
+
+    // 模式1: 标准格式 2025-08-12_work_1234567890123_abcdef.json
+    let match = nameWithoutExt.match(/work_(.+)$/);
+    if (match) {
+      return match[1];
+    }
+
+    // 模式2: 简单格式 work_1234567890123_abcdef
+    match = nameWithoutExt.match(/^work_(.+)$/);
+    if (match) {
+      return match[1];
+    }
+
+    // 模式3: 直接使用文件名（去除前缀）
+    if (nameWithoutExt.startsWith('work_')) {
+      return nameWithoutExt.substring(5);
+    }
+
+    // 默认返回文件名
+    return nameWithoutExt;
   }
 
   // 从本地存储获取文件
@@ -1355,8 +1399,13 @@ class AdminFileManager {
       // 执行删除
       await this.performFileDelete(file);
 
-      // 刷新列表
-      await this.loadFileList();
+      // 触发数据同步
+      if (window.dataSyncManager) {
+        window.dataSyncManager.syncFileDelete(file.fileId, file.owner);
+      } else {
+        // 如果没有数据同步管理器，手动刷新列表
+        await this.loadFileList();
+      }
 
       this.showNotification('文件删除成功', 'success');
 
