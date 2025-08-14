@@ -977,8 +977,8 @@ class AdminFileManager {
     const permission = this.getPermissionText(file.permissions?.level || file.permissions?.visibility);
     const source = file.source || 'unknown';
 
-    // 创建显示格式："分类-标题-作者"
-    const displayTitle = `${subcategory}-${title}-${owner}`;
+    // 创建显示格式：只显示分类和标题，不包含作者（因为已有独立的作者列）
+    const displayTitle = `${subcategory}-${title}`;
 
     // 安全地转义参数，防止JavaScript注入
     const safeFileId = this.escapeForJs(fileId);
@@ -1011,16 +1011,16 @@ class AdminFileManager {
         <div class="file-time">${uploadTime}</div>
         <div class="file-actions">
           <button class="btn btn-info" onclick="window.adminFileManager.viewFile('${safeFileId}', '${safeOwner}')" title="查看文件详情">
-            👁️ 查看
+            👁️
           </button>
           <button class="btn btn-secondary" onclick="window.adminFileManager.editPermissions('${safeFileId}', '${safeOwner}')" title="编辑文件权限">
-            🔐 权限
+            🔐
           </button>
           <button class="btn btn-warning" onclick="window.adminFileManager.editFile('${safeFileId}', '${safeOwner}')" title="编辑文件内容">
-            ✏️ 编辑
+            ✏️
           </button>
           <button class="btn btn-danger" onclick="window.adminFileManager.deleteFile('${safeFileId}', '${safeOwner}')" title="删除文件">
-            🗑️ 删除
+            🗑️
           </button>
         </div>
       </div>
