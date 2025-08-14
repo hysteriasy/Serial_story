@@ -102,47 +102,7 @@
         </div>
     </div>
 
-    <!-- 导航栏 -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                        <h2>桑梓</h2>
-                    </div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="#home" class="nav-link">首页</a>
-                </li>
-                <li class="nav-item">
-                    <a href="#about" class="nav-link">关于我</a>
-                </li>
-                <li class="nav-item nav-dropdown">
-                    <a href="#" class="nav-link dropdown-trigger">作品展示 ▼</a>
-                    <div class="nav-dropdown-menu">
-                        <a href="essays.html" class="nav-dropdown-link">生活随笔</a>
-                        <a href="poetry.html" class="nav-dropdown-link">诗歌创作</a>
-                        <a href="novels.html" class="nav-dropdown-link">小说连载</a>
-                        <a href="artworks.html" class="nav-dropdown-link">绘画作品</a>
-                        <a href="music.html" class="nav-dropdown-link">音乐作品</a>
-                        <a href="videos.html" class="nav-dropdown-link">视频作品</a>
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a href="upload.html" class="nav-link" id="uploadBtn">作品上传</a>
-                </li>
-                <li class="nav-item">
-                    <a href="#contact" class="nav-link">联系我</a>
-                </li>
-                <li class="nav-item" id="authNavItem">
-                    <a href="#" class="nav-link" id="authNavLink" onclick="showLoginModal()">登录</a>
-                </li>
-            </ul>
-            <div class="nav-toggle" id="mobile-menu">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
-        </div>
-    </nav>
+    <!-- 页眉将通过组件动态插入 -->
 
     <!-- 主要内容 -->
     <main>
@@ -397,72 +357,9 @@
         </section>
     </main>
 
-    <!-- 页脚 -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
-                <div class="footer-links">
-                    <a href="#home">首页</a>
-                    <a href="#about">关于作者</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- 页脚将通过组件动态插入 -->
 
-    <!-- 返回顶部按钮 -->
-    <button id="backToTop" class="back-to-top" onclick="scrollToTop()">
-        ↑
-    </button>
-
-    <!-- 登录模态框 -->
-    <div id="loginModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeLoginModal()">&times;</span>
-            <h3>用户登录</h3>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="loginUsername">用户名</label>
-                    <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">密码</label>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">登录</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeLoginModal()">取消</button>
-                </div>
-            </form>
-            <div class="login-help">
-                <p><small>需要账户？请联系管理员获取登录凭据</small></p>
-                <p><small>忘记密码？请联系系统管理员重置</small></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 用户信息显示区域 -->
-    <div id="userInfoDisplay" style="display: none; position: fixed; top: 80px; right: 20px; background: rgba(255,255,255,0.98); padding: 20px; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); z-index: 1000; min-width: 200px;">
-        <div id="userInfoContent"></div>
-        <button id="logoutButton" onclick="logout()" style="
-            width: 100%;
-            margin-top: 15px;
-            padding: 10px 16px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            position: relative;
-            overflow: hidden;
-        ">
-            <span style="position: relative; z-index: 1;">退出登录</span>
-        </button>
-    </div>
+    <!-- 登录模态框和用户信息显示区域将通过组件动态插入 -->
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -474,6 +371,10 @@
     <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
     <script src="js/ios-compatibility.js"></script>
 
+    <!-- 页眉页脚组件 - 在其他脚本之前加载 -->
+    <script src="js/header.js"></script>
+    <script src="js/footer.js"></script>
+
     <!-- JavaScript文件 -->
     <script src="js/storage-optimizer.js"></script>
     <script src="js/github-storage.js"></script>
@@ -483,6 +384,82 @@
     <script src="js/user-status.js"></script>
     <script src="js/system-stats.js"></script>
     <script src="js/homepage-integration.js"></script>
+
+    <!-- 初始化页眉页脚组件 -->
+    <script>
+        // 页面加载完成后初始化组件
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 开始初始化首页组件...');
+
+            // 检查URL参数，如果有skipWelcome=true则跳过欢迎界面
+            const urlParams = new URLSearchParams(window.location.search);
+            const skipWelcome = urlParams.get('skipWelcome') === 'true';
+            const hasAboutHash = window.location.hash === '#about';
+            const hasContactHash = window.location.hash === '#contact';
+
+            if (skipWelcome) {
+                console.log('🔄 检测到跳过欢迎界面参数，自动隐藏欢迎界面...');
+
+                // 立即隐藏欢迎界面
+                setTimeout(() => {
+                    if (typeof hideWelcomeScreen === 'function') {
+                        hideWelcomeScreen();
+                        console.log('✅ 欢迎界面已隐藏');
+
+                        // 如果有#about哈希，滚动到关于我区域
+                        if (hasAboutHash) {
+                            setTimeout(() => {
+                                const aboutSection = document.getElementById('about');
+                                if (aboutSection) {
+                                    aboutSection.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'start'
+                                    });
+                                    console.log('✅ 已滚动到关于我区域');
+                                }
+                            }, 500);
+                        }
+
+                        // 如果有#contact哈希，滚动到联系我区域
+                        if (hasContactHash) {
+                            setTimeout(() => {
+                                const contactSection = document.getElementById('contact');
+                                if (contactSection) {
+                                    contactSection.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'start'
+                                    });
+                                    console.log('✅ 已滚动到联系我区域');
+                                }
+                            }, 500);
+                        }
+
+                        // 清理URL参数
+                        const newUrl = window.location.pathname + window.location.hash;
+                        window.history.replaceState({}, document.title, newUrl);
+                    }
+                }, 100);
+            }
+
+            // 初始化页眉组件
+            if (typeof initHeader === 'function') {
+                window.headerComponent = initHeader();
+                console.log('✅ 页眉组件初始化完成');
+            } else {
+                console.error('❌ initHeader 函数未找到');
+            }
+
+            // 初始化页脚组件
+            if (typeof initFooter === 'function') {
+                window.footerComponent = initFooter();
+                console.log('✅ 页脚组件初始化完成');
+            } else {
+                console.error('❌ initFooter 函数未找到');
+            }
+
+            console.log('🎉 首页组件初始化完成');
+        });
+    </script>
 
     <style>
         /* 现代化退出登录按钮样式 */
@@ -903,134 +880,31 @@
     </style>
 
     <script>
-        // 首页登录功能
-        function showLoginModal() {
-            const modal = document.getElementById('loginModal');
-            modal.style.display = 'flex';
-            modal.classList.add('show');
-            // 防止背景滚动
-            document.body.style.overflow = 'hidden';
-        }
+        // 首页特定功能（登录相关函数现在由组件提供）
 
-        function closeLoginModal() {
-            const modal = document.getElementById('loginModal');
-            modal.style.display = 'none';
-            modal.classList.remove('show');
-            document.getElementById('loginForm').reset();
-            // 恢复背景滚动
-            document.body.style.overflow = 'auto';
-        }
-
+        // updateAuthNavigation 函数现在由页眉组件提供
         function updateAuthNavigation() {
-            console.log('🔄 updateAuthNavigation 函数开始执行...');
+            console.log('🔄 首页 updateAuthNavigation 被调用，委托给页眉组件...');
 
-            // 检查auth对象是否已初始化
-            if (typeof auth === 'undefined') {
-                console.log('⚠️ Auth对象尚未初始化，稍后重试...');
-                setTimeout(updateAuthNavigation, 500);
-                return;
-            }
+            // 委托给页眉组件处理
+            if (window.headerComponent && window.headerComponent.updateAuthNavigation) {
+                window.headerComponent.updateAuthNavigation();
 
-            console.log('✅ Auth对象已初始化');
-            console.log('👤 当前用户状态:', auth.currentUser);
-
-            const authNavLink = document.getElementById('authNavLink');
-            const userInfoDisplay = document.getElementById('userInfoDisplay');
-            const userInfoContent = document.getElementById('userInfoContent');
-
-            console.log('🔍 DOM元素检查:');
-            console.log('  - authNavLink:', authNavLink ? '✅ 存在' : '❌ 不存在');
-            console.log('  - userInfoDisplay:', userInfoDisplay ? '✅ 存在' : '❌ 不存在');
-            console.log('  - userInfoContent:', userInfoContent ? '✅ 存在' : '❌ 不存在');
-
-            if (!authNavLink) {
-                console.error('❌ 关键DOM元素 authNavLink 不存在！');
-                return;
-            }
-
-            if (auth.currentUser) {
-                console.log('🔄 更新UI为已登录状态:', auth.currentUser.username);
-                console.log('👤 用户角色:', auth.currentUser.role);
-                console.log('🔑 用户权限:', auth.currentUser.privilege);
-
-                // 已登录状态 - 更新导航链接（移除头像图标）
-                console.log('🔄 更新导航链接文本和样式...');
-                authNavLink.textContent = auth.currentUser.username;
-                authNavLink.style.color = '#28a745'; // 绿色表示已登录
-                authNavLink.style.fontWeight = 'bold';
-                console.log('✅ 导航链接基础样式已设置');
-
-                authNavLink.onclick = () => {
-                    console.log('🔄 用户点击了导航链接');
-                    const display = userInfoDisplay.style.display;
-                    userInfoDisplay.style.display = display === 'none' ? 'block' : 'none';
-                };
-
-                // 更新用户信息显示
-                if (userInfoContent) {
-                    console.log('🔄 更新用户信息内容...');
-                    userInfoContent.innerHTML = `
-                        <div style="text-align: center;">
-                            <strong style="color: #28a745;">${auth.currentUser.username}</strong><br>
-                            <small style="color: #6c757d;">角色: ${getRoleName(auth.currentUser.role)}</small><br>
-                            <small style="color: #007bff;">状态: 已登录</small>
-                        </div>
-                    `;
-                    console.log('✅ 用户信息内容已更新');
-                } else {
-                    console.warn('⚠️ userInfoContent 元素不存在');
-                }
-
-                // 显示基于权限的内容
-                console.log('🔄 显示认证用户内容...');
-                try {
+                // 首页特有的认证内容处理
+                if (typeof auth !== 'undefined' && auth.currentUser) {
                     showAuthenticatedContent();
-                    console.log('✅ 认证用户内容已显示');
-                } catch (error) {
-                    console.error('❌ 显示认证用户内容失败:', error);
-                }
-
-                // 如果是管理员，添加特殊标识（移除皇冠图标）
-                console.log('🔍 检查是否为管理员...');
-                if (auth.isAdmin()) {
-                    console.log('👑 用户是管理员，应用管理员样式...');
-                    authNavLink.textContent = auth.currentUser.username;
-                    authNavLink.style.color = '#dc3545'; // 红色表示管理员
-                    console.log('✅ 管理员样式已应用');
-
-                    // 显示管理员控制面板
-                    updateAdminSection(true);
+                    if (auth.isAdmin()) {
+                        updateAdminSection(true);
+                    } else {
+                        updateAdminSection(false);
+                    }
                 } else {
-                    console.log('👤 用户不是管理员');
-                    // 隐藏管理员控制面板
+                    hideAuthenticatedContent();
                     updateAdminSection(false);
                 }
-
-                // 强制触发页面重新渲染
-                console.log('🔄 强制页面重新渲染...');
-                document.body.style.display = 'none';
-                document.body.offsetHeight; // 触发重排
-                document.body.style.display = '';
-                console.log('✅ 页面重新渲染完成');
-
             } else {
-                console.log('🔄 更新UI为未登录状态');
-
-                // 未登录状态
-                authNavLink.textContent = '登录';
-                authNavLink.style.color = ''; // 恢复默认颜色
-                authNavLink.style.fontWeight = '';
-                authNavLink.onclick = showLoginModal;
-
-                if (userInfoDisplay) {
-                    userInfoDisplay.style.display = 'none';
-                }
-
-                // 隐藏需要认证的内容
-                hideAuthenticatedContent();
-
-                // 隐藏管理员控制面板
-                updateAdminSection(false);
+                console.warn('⚠️ 页眉组件未初始化，稍后重试...');
+                setTimeout(updateAuthNavigation, 500);
             }
         }
 
@@ -1080,15 +954,7 @@
             updateAdminSection(false);
         }
 
-        function logout() {
-            if (typeof auth !== 'undefined') {
-                auth.logout();
-                updateAuthNavigation();
-                showSuccessMessage('已退出登录');
-            } else {
-                alert('系统尚未初始化');
-            }
-        }
+        // logout 函数现在由页眉组件提供
 
         // 显示成功消息
         function showSuccessMessage(message) {

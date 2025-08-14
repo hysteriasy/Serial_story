@@ -13,48 +13,7 @@
     <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
-        /* 用户状态显示样式 */
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            font-size: 0.9rem;
-        }
-
-        .user-role {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .admin-role {
-            background: #dc3545;
-            color: white;
-        }
-
-        .editor-role {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .user-role.user-role {
-            background: #6c757d;
-            color: white;
-        }
-
-        .user-name {
-            color: #333;
-            font-weight: 500;
-        }
-
-        .navbar .nav-menu .nav-item .user-info {
-            color: #333;
-        }
+        /* 页面特定样式 - 移除了与页眉组件冲突的用户状态样式 */
 
 
 
@@ -420,45 +379,7 @@
     </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <a href="index.html">桑梓</a>
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="index.html" class="nav-link">首页</a>
-                </li>
-                <li class="nav-item">
-                    <a href="essays.html" class="nav-link active">生活随笔</a>
-                </li>
-                <li class="nav-item">
-                    <a href="poetry.html" class="nav-link">诗歌创作</a>
-                </li>
-                <li class="nav-item">
-                    <a href="novels.html" class="nav-link">小说连载</a>
-                </li>
-                <li class="nav-item">
-                    <a href="artworks.html" class="nav-link">绘画作品</a>
-                </li>
-                <li class="nav-item">
-                    <a href="music.html" class="nav-link">音乐作品</a>
-                </li>
-                <li class="nav-item">
-                    <a href="videos.html" class="nav-link">视频作品</a>
-                </li>
-                <li class="nav-item">
-                    <a href="upload.html" class="nav-link">作品上传</a>
-                </li>
-            </ul>
-            <div class="hamburger" id="navToggle">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
-        </div>
-    </nav>
+    <!-- 页眉将通过组件动态插入 -->
 
     <!-- 主要内容 -->
     <main>
@@ -496,32 +417,14 @@
         </section>
     </main>
 
-    <!-- 页脚 -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
-                <div class="footer-links">
-                    <a href="index.html" class="home-button">首页</a>
-                    <div class="works-dropdown">
-                        <span class="dropdown-trigger">作品展示 ▼</span>
-                        <div class="dropdown-menu">
-                            <a href="essays.html" class="current-page">生活随笔</a>
-                            <a href="poetry.html">诗歌创作</a>
-                            <a href="novels.html">小说连载</a>
-                            <a href="artworks.html">绘画作品</a>
-                            <a href="music.html">音乐作品</a>
-                            <a href="videos.html">视频作品</a>
-                        </div>
-                    </div>
-                    <a href="upload.html">上传作品</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- 页脚将通过组件动态插入 -->
 
     <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
     <script src="js/ios-compatibility.js"></script>
+
+    <!-- 页眉页脚组件 - 在其他脚本之前加载 -->
+    <script src="js/header.js"></script>
+    <script src="js/footer.js"></script>
 
     <!-- 核心环境和存储管理脚本 -->
     <script src="js/github-storage.js"></script>
@@ -531,8 +434,34 @@
 
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/user-status.js"></script>
+    <!-- <script src="js/user-status.js"></script> 已移除，页眉组件已包含用户状态管理 -->
     <script src="js/comments.js"></script>
     <script src="js/essays.js"></script>
+
+    <!-- 初始化页眉页脚组件 -->
+    <script>
+        // 页面加载完成后初始化组件
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 开始初始化essays页面组件...');
+
+            // 初始化页眉组件
+            if (typeof initHeader === 'function') {
+                window.headerComponent = initHeader();
+                console.log('✅ 页眉组件初始化完成');
+            } else {
+                console.error('❌ initHeader 函数未找到');
+            }
+
+            // 初始化页脚组件
+            if (typeof initFooter === 'function') {
+                window.footerComponent = initFooter();
+                console.log('✅ 页脚组件初始化完成');
+            } else {
+                console.error('❌ initFooter 函数未找到');
+            }
+
+            console.log('🎉 essays页面组件初始化完成');
+        });
+    </script>
 </body>
 </html>

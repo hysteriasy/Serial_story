@@ -924,6 +924,14 @@ const auth = {
 
       console.log('🎉 预设管理员登录成功');
 
+      // 更新页眉组件的认证状态显示
+      if (window.headerComponent && typeof window.headerComponent.updateAuthNavigation === 'function') {
+        setTimeout(() => {
+          window.headerComponent.updateAuthNavigation();
+          console.log('✅ 页眉认证状态已更新（预设管理员）');
+        }, 100);
+      }
+
       return true;
     }
 
@@ -984,6 +992,14 @@ const auth = {
 
     console.log('🎉 用户登录成功:', this.currentUser.username);
 
+    // 更新页眉组件的认证状态显示
+    if (window.headerComponent && typeof window.headerComponent.updateAuthNavigation === 'function') {
+      setTimeout(() => {
+        window.headerComponent.updateAuthNavigation();
+        console.log('✅ 页眉认证状态已更新');
+      }, 100);
+    }
+
     return true;
   },
 
@@ -1016,6 +1032,14 @@ const auth = {
     this.currentUser = null;
     sessionStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
+
+    // 更新页眉组件的认证状态显示
+    if (window.headerComponent && typeof window.headerComponent.updateAuthNavigation === 'function') {
+      setTimeout(() => {
+        window.headerComponent.updateAuthNavigation();
+        console.log('✅ 页眉认证状态已更新（退出登录）');
+      }, 100);
+    }
   },
 
   // 检查登录状态
@@ -1415,9 +1439,16 @@ window.login = async (username, password) => {
 
 window.logout = () => {
   auth.logout();
-  alert('已退出登录');
-  // 刷新页面或重定向到登录页面
-  window.location.reload();
+
+  // 显示成功消息
+  if (typeof showSuccessMessage === 'function') {
+    showSuccessMessage('已退出登录');
+  } else {
+    alert('已退出登录');
+  }
+
+  // 不刷新页面，让页眉组件处理状态更新
+  console.log('✅ 退出登录完成，页眉状态将自动更新');
 };
 
 // 页面加载时检查登录状态和初始化

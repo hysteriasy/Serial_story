@@ -21,8 +21,7 @@ function initEssaysPage() {
         console.error('初始化随笔列表失败:', error);
     });
 
-    // 初始化移动端菜单
-    initMobileMenu();
+    // 移动端菜单功能已由页眉组件提供
 }
 
 
@@ -209,18 +208,7 @@ function showEssayNotification(message, type = 'info') {
   }, 3000);
 }
 
-// 初始化移动端菜单
-function initMobileMenu() {
-  const mobileMenuBtn = document.getElementById('mobile-menu');
-  const navMenu = document.querySelector('.nav-menu');
-
-  if (mobileMenuBtn && navMenu) {
-    mobileMenuBtn.addEventListener('click', () => {
-      navMenu.classList.toggle('active');
-      mobileMenuBtn.classList.toggle('active');
-    });
-  }
-}
+// 移动端菜单功能已由页眉组件提供，移除重复代码
 
 // 从多个数据源智能加载随笔
 async function loadEssaysFromFiles() {
@@ -569,27 +557,7 @@ function convertMarkdownToHtml(markdown) {
     return markdown;
 }
 
-// 移动端菜单功能（复制自script.js，确保功能一致）
-function initMobileMenu() {
-    const mobileMenu = document.getElementById('mobile-menu');
-    const navMenu = document.querySelector('.nav-menu');
-    
-    if (mobileMenu && navMenu) {
-        mobileMenu.addEventListener('click', function() {
-            mobileMenu.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
-
-        // 点击菜单项时关闭移动端菜单
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                mobileMenu.classList.remove('active');
-                navMenu.classList.remove('active');
-            });
-        });
-    }
-}
+// 移动端菜单功能已由页眉组件提供，移除重复代码
 
 // 通知函数（如果script.js中已经定义，这里可以省略，但为了保险起见，保留一份）
 function showNotification(message, type = 'info') {

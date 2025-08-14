@@ -1,8 +1,8 @@
 /**
- * 页眉页脚统一组件模块
- * 基于首页的完整功能重新设计，确保所有特性都能正常工作
+ * 页眉组件模块
+ * 独立的页眉组件，包含完整的HTML结构、CSS样式和JavaScript功能
  */
-class HeaderFooterManager {
+class HeaderComponent {
     constructor() {
         this.currentPage = this.getCurrentPageName();
         this.isInitialized = false;
@@ -26,10 +26,10 @@ class HeaderFooterManager {
                     </div>
                     <ul class="nav-menu">
                         <li class="nav-item">
-                            <a href="#home" class="nav-link ${this.currentPage === 'index' ? 'active' : ''}">首页</a>
+                            <a href="#home" class="nav-link ${this.currentPage === 'index' ? 'active' : ''}" onclick="navigateToHome(event)">首页</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#about" class="nav-link">关于我</a>
+                            <a href="#about" class="nav-link" onclick="navigateToAbout(event)">关于我</a>
                         </li>
                         <li class="nav-item nav-dropdown">
                             <a href="#" class="nav-link dropdown-trigger">作品展示 ▼</a>
@@ -46,7 +46,7 @@ class HeaderFooterManager {
                             <a href="upload.html" class="nav-link" id="uploadBtn">作品上传</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#contact" class="nav-link">联系我</a>
+                            <a href="#contact" class="nav-link" onclick="navigateToContact(event)">联系我</a>
                         </li>
                         <li class="nav-item" id="authNavItem">
                             <a href="#" class="nav-link" id="authNavLink" onclick="showLoginModal()">登录</a>
@@ -62,47 +62,28 @@ class HeaderFooterManager {
         `;
     }
 
-    // 生成页脚HTML - 基于首页的简洁页脚结构
-    generateFooter() {
-        return `
-            <!-- 页脚 -->
-            <footer class="footer">
-                <div class="container">
-                    <div class="footer-content">
-                        <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
-                        <div class="footer-links">
-                            <a href="#home">首页</a>
-                            <a href="#about">关于作者</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
-        `;
-    }
-
-    // 初始化页眉页脚
+    // 初始化页眉
     init() {
         if (this.isInitialized) {
-            console.log('⚠️ 页眉页脚组件已初始化，跳过重复初始化');
+            console.log('⚠️ 页眉组件已初始化，跳过重复初始化');
             return;
         }
 
-        console.log('🚀 开始初始化页眉页脚组件...');
-
+        console.log('🚀 开始初始化页眉组件...');
+        
         // 注入必要的样式
         this.injectStyles();
-
-        // 插入页眉页脚
+        
+        // 插入页眉
         this.insertHeader();
-        this.insertFooter();
-
+        
         // 初始化各种功能
         this.initializeNavigation();
         this.initializeModals();
         this.initializeUserInfo();
-
+        
         this.isInitialized = true;
-        console.log('✅ 页眉页脚组件初始化完成');
+        console.log('✅ 页眉组件初始化完成');
     }
 
     // 插入页眉
@@ -119,33 +100,19 @@ class HeaderFooterManager {
         }
     }
 
-    // 插入页脚
-    insertFooter() {
-        // 查找现有的页脚或在body末尾插入
-        const existingFooter = document.querySelector('footer.footer');
-        if (existingFooter) {
-            console.log('🔄 替换现有页脚');
-            existingFooter.outerHTML = this.generateFooter();
-        } else {
-            console.log('➕ 插入新页脚');
-            const footerHTML = this.generateFooter();
-            document.body.insertAdjacentHTML('beforeend', footerHTML);
-        }
-    }
-
     // 初始化导航功能
     initializeNavigation() {
         console.log('🧭 初始化导航功能...');
-
+        
         // 初始化移动端菜单
         this.initMobileMenu();
-
+        
         // 初始化平滑滚动
         this.initSmoothScrolling();
-
+        
         // 初始化滚动效果
         this.initScrollEffects();
-
+        
         // 等待auth系统加载
         this.waitForAuth(() => {
             this.updateAuthNavigation();
@@ -155,7 +122,7 @@ class HeaderFooterManager {
     // 等待auth系统加载
     waitForAuth(callback, attempts = 0) {
         const maxAttempts = 20; // 最多等待10秒
-
+        
         if (typeof auth !== 'undefined' && auth.currentUser !== undefined) {
             console.log('✅ Auth系统已加载');
             callback();
@@ -172,10 +139,10 @@ class HeaderFooterManager {
     // 更新认证导航状态
     updateAuthNavigation() {
         console.log('🔄 更新认证导航状态...');
-
+        
         const authNavLink = document.getElementById('authNavLink');
         const userInfoDisplay = document.getElementById('userInfoDisplay');
-
+        
         if (!authNavLink) {
             console.warn('⚠️ 认证导航链接未找到');
             return;
@@ -183,17 +150,34 @@ class HeaderFooterManager {
 
         if (typeof auth !== 'undefined' && auth.currentUser) {
             console.log('👤 用户已登录:', auth.currentUser.username);
-
+            
             // 更新导航链接显示用户名
             authNavLink.textContent = auth.currentUser.username;
             authNavLink.style.color = '#28a745'; // 绿色表示已登录
             authNavLink.style.fontWeight = 'bold';
+            
+            // 更新用户信息内容
+            const userInfoContent = document.getElementById('userInfoContent');
+            if (userInfoContent) {
+                const roleText = auth.isAdmin && auth.isAdmin() ? '管理员' : '用户';
+                const roleColor = auth.isAdmin && auth.isAdmin() ? '#dc3545' : '#28a745';
+
+                userInfoContent.innerHTML = `
+                    <div style="text-align: center;">
+                        <strong style="color: ${roleColor};">${auth.currentUser.username}</strong><br>
+                        <small style="color: #6c757d;">角色: ${roleText}</small><br>
+                        <small style="color: #007bff;">状态: 已登录</small>
+                    </div>
+                `;
+                console.log('✅ 用户信息内容已更新');
+            }
 
             // 更改点击事件为显示用户信息
             authNavLink.onclick = () => {
                 if (userInfoDisplay) {
                     const display = userInfoDisplay.style.display;
                     userInfoDisplay.style.display = display === 'none' ? 'block' : 'none';
+                    console.log('🔄 用户信息显示状态切换:', userInfoDisplay.style.display);
                 }
             };
 
@@ -201,10 +185,10 @@ class HeaderFooterManager {
             if (auth.isAdmin && auth.isAdmin()) {
                 authNavLink.style.color = '#dc3545'; // 红色表示管理员
             }
-
+            
         } else {
             console.log('👤 用户未登录');
-
+            
             // 恢复登录状态
             authNavLink.textContent = '登录';
             authNavLink.style.color = '';
@@ -216,7 +200,7 @@ class HeaderFooterManager {
                     console.warn('⚠️ showLoginModal 函数未找到');
                 }
             };
-
+            
             if (userInfoDisplay) {
                 userInfoDisplay.style.display = 'none';
             }
@@ -226,7 +210,7 @@ class HeaderFooterManager {
     // 初始化移动端菜单
     initMobileMenu() {
         console.log('📱 初始化移动端菜单...');
-
+        
         const mobileMenu = document.getElementById('mobile-menu');
         const navMenu = document.querySelector('.nav-menu');
 
@@ -254,7 +238,7 @@ class HeaderFooterManager {
                 link.addEventListener('click', closeMenu);
                 link.addEventListener('touchend', closeMenu, { passive: true });
             });
-
+            
             console.log('✅ 移动端菜单初始化完成');
         } else {
             console.warn('⚠️ 移动端菜单元素未找到');
@@ -264,12 +248,11 @@ class HeaderFooterManager {
     // 初始化滚动效果
     initScrollEffects() {
         console.log('📜 初始化滚动效果...');
-
+        
         const navbar = document.querySelector('.navbar');
-        const backToTopBtn = document.getElementById('backToTop');
 
-        if (!navbar && !backToTopBtn) {
-            console.log('ℹ️ 没有需要滚动效果的元素');
+        if (!navbar) {
+            console.log('ℹ️ 没有需要滚动效果的导航栏');
             return;
         }
 
@@ -277,25 +260,14 @@ class HeaderFooterManager {
             const scrollTop = window.pageYOffset;
 
             // 导航栏滚动效果
-            if (navbar) {
-                if (scrollTop > 100) {
-                    navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-                    navbar.style.backdropFilter = 'blur(10px)';
-                    navbar.style.webkitBackdropFilter = 'blur(10px)';
-                } else {
-                    navbar.style.backgroundColor = '#fff';
-                    navbar.style.backdropFilter = 'none';
-                    navbar.style.webkitBackdropFilter = 'none';
-                }
-            }
-
-            // 返回顶部按钮
-            if (backToTopBtn) {
-                if (scrollTop > 300) {
-                    backToTopBtn.style.display = 'block';
-                } else {
-                    backToTopBtn.style.display = 'none';
-                }
+            if (scrollTop > 100) {
+                navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                navbar.style.backdropFilter = 'blur(10px)';
+                navbar.style.webkitBackdropFilter = 'blur(10px)';
+            } else {
+                navbar.style.backgroundColor = '#fff';
+                navbar.style.backdropFilter = 'none';
+                navbar.style.webkitBackdropFilter = 'none';
             }
         };
 
@@ -305,22 +277,22 @@ class HeaderFooterManager {
         if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
             document.addEventListener('touchmove', handleScroll, { passive: true });
         }
-
+        
         console.log('✅ 滚动效果初始化完成');
     }
 
     // 初始化平滑滚动
     initSmoothScrolling() {
         console.log('🎯 初始化平滑滚动...');
-
+        
         const navLinks = document.querySelectorAll('.nav-link[href^="#"]');
-
+        
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const targetId = this.getAttribute('href').substring(1);
                 const targetElement = document.getElementById(targetId);
-
+                
                 if (targetElement) {
                     targetElement.scrollIntoView({
                         behavior: 'smooth',
@@ -329,7 +301,7 @@ class HeaderFooterManager {
                 }
             });
         });
-
+        
         console.log('✅ 平滑滚动初始化完成');
     }
 
@@ -423,12 +395,12 @@ class HeaderFooterManager {
     // 注入必要的CSS样式
     injectStyles() {
         // 检查是否已经注入过样式
-        if (document.getElementById('header-footer-styles')) {
+        if (document.getElementById('header-component-styles')) {
             return;
         }
 
         const styleElement = document.createElement('style');
-        styleElement.id = 'header-footer-styles';
+        styleElement.id = 'header-component-styles';
         styleElement.textContent = `
             /* 导航栏下拉菜单样式 */
             .nav-dropdown {
@@ -438,6 +410,13 @@ class HeaderFooterManager {
             .dropdown-trigger {
                 cursor: pointer;
                 transition: color 0.3s ease;
+                color: #333 !important; /* 确保文字颜色可见 */
+                text-decoration: none;
+                font-weight: 500;
+            }
+
+            .dropdown-trigger:hover {
+                color: #007bff !important;
             }
 
             .nav-dropdown-menu {
@@ -531,118 +510,249 @@ class HeaderFooterManager {
                 transform: translateY(0);
                 box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             }
+
+            /* 移动端下拉菜单适配 */
+            @media (max-width: 768px) {
+                .dropdown-trigger {
+                    color: white !important; /* 移动端使用白色文字 */
+                }
+
+                .dropdown-trigger:hover {
+                    color: #ccc !important;
+                }
+
+                .nav-dropdown-menu {
+                    position: static;
+                    opacity: 1;
+                    visibility: visible;
+                    transform: none;
+                    box-shadow: none;
+                    border: none;
+                    background: transparent;
+                    margin-top: 10px;
+                }
+
+                .nav-dropdown-link {
+                    padding: 8px 0;
+                    border-bottom: none;
+                    color: white;
+                }
+
+                .nav-dropdown-link:hover {
+                    background: rgba(255,255,255,0.1);
+                    transform: none;
+                }
+
+                #userInfoDisplay {
+                    right: 10px;
+                    left: 10px;
+                    width: auto;
+                    min-width: auto;
+                }
+            }
         `;
 
         document.head.appendChild(styleElement);
-        console.log('✅ 页眉页脚样式已注入');
-    }
-}
-
-// 全局函数 - 移动端菜单切换
-function toggleMobileMenu() {
-    const navMenu = document.getElementById('nav-menu');
-    const hamburger = document.querySelector('.hamburger');
-    
-    if (navMenu && hamburger) {
-        navMenu.classList.toggle('active');
-        hamburger.classList.toggle('active');
+        console.log('✅ 页眉样式已注入');
     }
 }
 
 // 全局函数 - 显示登录模态框
-function showLoginModal() {
-    const modal = document.getElementById('loginModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.add('show');
-        // 防止背景滚动
-        document.body.style.overflow = 'hidden';
-    } else {
-        console.warn('⚠️ 登录模态框未找到');
+if (typeof showLoginModal === 'undefined') {
+    function showLoginModal() {
+        const modal = document.getElementById('loginModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+            // 防止背景滚动
+            document.body.style.overflow = 'hidden';
+        } else {
+            console.warn('⚠️ 登录模态框未找到');
+        }
     }
 }
 
 // 全局函数 - 关闭登录模态框
-function closeLoginModal() {
-    const modal = document.getElementById('loginModal');
-    if (modal) {
-        modal.style.display = 'none';
-        modal.classList.remove('show');
-        const loginForm = document.getElementById('loginForm');
-        if (loginForm) {
-            loginForm.reset();
+if (typeof closeLoginModal === 'undefined') {
+    function closeLoginModal() {
+        const modal = document.getElementById('loginModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.reset();
+            }
+            // 恢复背景滚动
+            document.body.style.overflow = 'auto';
         }
-        // 恢复背景滚动
-        document.body.style.overflow = 'auto';
     }
 }
 
 // 全局函数 - 退出登录
-function logout() {
-    if (typeof auth !== 'undefined' && auth.logout) {
-        auth.logout();
-        // 更新导航状态
-        if (window.headerFooterManager) {
-            window.headerFooterManager.updateAuthNavigation();
-        }
-        // 显示成功消息
-        if (typeof showSuccessMessage === 'function') {
-            showSuccessMessage('已退出登录');
+if (typeof logout === 'undefined') {
+    function logout() {
+        if (typeof auth !== 'undefined' && auth.logout) {
+            auth.logout();
+            // 更新导航状态
+            if (window.headerComponent) {
+                window.headerComponent.updateAuthNavigation();
+            }
+            // 显示成功消息
+            if (typeof showSuccessMessage === 'function') {
+                showSuccessMessage('已退出登录');
+            } else {
+                alert('已退出登录');
+            }
+            // 跳转到首页
+            if (window.location.pathname !== '/index.html' && !window.location.pathname.endsWith('/')) {
+                window.location.href = 'index.html';
+            }
         } else {
-            alert('已退出登录');
+            alert('系统尚未初始化');
         }
-        // 跳转到首页
-        if (window.location.pathname !== '/index.html' && !window.location.pathname.endsWith('/')) {
-            window.location.href = 'index.html';
-        }
-    } else {
-        alert('系统尚未初始化');
     }
 }
 
-// 全局函数 - 滚动到顶部
-function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
+// 全局函数 - 导航到首页（跳过欢迎界面）
+if (typeof navigateToHome === 'undefined') {
+    function navigateToHome(event) {
+        if (event) {
+            event.preventDefault(); // 阻止默认的锚点跳转
+        }
+
+        // 如果当前就在首页，直接滚动到顶部并隐藏欢迎界面
+        if (window.location.pathname === '/' ||
+            window.location.pathname.endsWith('/index.html') ||
+            window.location.pathname === '/index.html') {
+
+            // 隐藏欢迎界面（如果存在）
+            if (typeof hideWelcomeScreen === 'function') {
+                hideWelcomeScreen();
+            }
+
+            // 滚动到顶部
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        } else {
+            // 跳转到首页，并添加参数跳过欢迎界面
+            window.location.href = 'index.html?skipWelcome=true';
+        }
+    }
+}
+
+// 全局函数 - 导航到关于我区域
+if (typeof navigateToAbout === 'undefined') {
+    function navigateToAbout(event) {
+        if (event) {
+            event.preventDefault(); // 阻止默认的锚点跳转
+        }
+
+        // 如果当前就在首页，直接滚动到关于我区域
+        if (window.location.pathname === '/' ||
+            window.location.pathname.endsWith('/index.html') ||
+            window.location.pathname === '/index.html') {
+
+            // 隐藏欢迎界面（如果存在）
+            if (typeof hideWelcomeScreen === 'function') {
+                hideWelcomeScreen();
+            }
+
+            // 等待欢迎界面隐藏动画完成后滚动
+            setTimeout(() => {
+                const aboutSection = document.getElementById('about');
+                if (aboutSection) {
+                    aboutSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                } else {
+                    console.warn('⚠️ 关于我区域未找到');
+                }
+            }, 300);
+        } else {
+            // 跳转到首页的关于我区域
+            window.location.href = 'index.html?skipWelcome=true#about';
+        }
+    }
+}
+
+// 全局函数 - 导航到联系我区域
+if (typeof navigateToContact === 'undefined') {
+    function navigateToContact(event) {
+        if (event) {
+            event.preventDefault(); // 阻止默认的锚点跳转
+        }
+
+        // 如果当前就在首页，直接滚动到联系我区域
+        if (window.location.pathname === '/' ||
+            window.location.pathname.endsWith('/index.html') ||
+            window.location.pathname === '/index.html') {
+
+            // 隐藏欢迎界面（如果存在）
+            if (typeof hideWelcomeScreen === 'function') {
+                hideWelcomeScreen();
+            }
+
+            // 等待欢迎界面隐藏动画完成后滚动
+            setTimeout(() => {
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                    contactSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    console.log('✅ 已滚动到联系我区域');
+                } else {
+                    console.warn('⚠️ 联系我区域未找到');
+                }
+            }, 300);
+        } else {
+            // 跳转到首页的联系我区域
+            window.location.href = 'index.html?skipWelcome=true#contact';
+        }
+    }
 }
 
 // 全局函数 - 滚动到指定区域
-function scrollToSection(sectionId) {
-    const element = document.getElementById(sectionId);
-    if (element) {
-        element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
+if (typeof scrollToSection === 'undefined') {
+    function scrollToSection(sectionId) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
     }
 }
 
 // 自动初始化（如果页面包含此脚本）
 document.addEventListener('DOMContentLoaded', function() {
-    // 检查是否需要自动初始化页眉页脚
-    const autoInit = document.querySelector('meta[name="auto-header-footer"]');
+    // 检查是否需要自动初始化页眉
+    const autoInit = document.querySelector('meta[name="auto-header"]');
     if (autoInit && autoInit.content === 'true') {
-        window.headerFooterManager = new HeaderFooterManager();
-        window.headerFooterManager.init();
-        console.log('🎯 页眉页脚自动初始化完成');
+        window.headerComponent = new HeaderComponent();
+        window.headerComponent.init();
+        console.log('🎯 页眉自动初始化完成');
     }
 });
 
 // 提供手动初始化函数
-function initHeaderFooter() {
-    if (!window.headerFooterManager) {
-        window.headerFooterManager = new HeaderFooterManager();
+function initHeader() {
+    if (!window.headerComponent) {
+        window.headerComponent = new HeaderComponent();
     }
-    window.headerFooterManager.init();
-    return window.headerFooterManager;
+    window.headerComponent.init();
+    return window.headerComponent;
 }
 
 // 导出类供其他脚本使用
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = HeaderFooterManager;
+    module.exports = HeaderComponent;
 } else {
-    window.HeaderFooterManager = HeaderFooterManager;
-    window.initHeaderFooter = initHeaderFooter;
+    window.HeaderComponent = HeaderComponent;
+    window.initHeader = initHeader;
 }
