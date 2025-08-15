@@ -1906,19 +1906,30 @@
         // 优先使用新的管理员文件管理器
         if (!window.adminFileManager && window.AdminFileManager) {
           console.log('🔧 创建管理员文件管理器实例...');
-          window.adminFileManager = new window.AdminFileManager();
+          try {
+            window.adminFileManager = new window.AdminFileManager();
+          } catch (error) {
+            console.error('❌ 创建管理员文件管理器失败:', error);
+            window.adminFileManager = null;
+          }
         }
 
         if (window.adminFileManager) {
           console.log('🔧 使用管理员文件管理器...');
-          await window.adminFileManager.initialize('adminFileManagerContainer');
+          try {
+            await window.adminFileManager.initialize('adminFileManagerContainer');
 
-          // 设置视图切换功能
-          setupViewToggle();
+            // 设置视图切换功能
+            setupViewToggle();
 
-          filePermissionsLoaded = true;
-          console.log('✅ 管理员文件管理器加载完成');
-          return;
+            filePermissionsLoaded = true;
+            console.log('✅ 管理员文件管理器加载完成');
+            return;
+          } catch (error) {
+            console.error('❌ 管理员文件管理器初始化失败:', error);
+            // 继续尝试使用文件层级管理器
+            window.adminFileManager = null;
+          }
         }
 
         // 回退到原有的文件层级管理器
@@ -1926,17 +1937,36 @@
 
         // 检查文件层级管理器
         if (!window.fileHierarchyManager) {
-          console.warn('⚠️ 文件层级管理器未初始化，显示提示信息');
-          const container = document.getElementById('fileHierarchyContainer');
+          console.warn('⚠️ 文件层级管理器未初始化，尝试创建基础文件列表...');
+
+          // 尝试创建基础的文件列表显示
+          const container = document.getElementById('fileHierarchyContainer') || document.getElementById('adminFileManagerContainer');
           if (container) {
             container.innerHTML = `
               <div style="text-align: center; padding: 40px; color: #666;">
                 <h4>📁 文件权限管理</h4>
-                <p>文件层级管理器正在初始化中...</p>
-                <p>如果长时间未加载，请刷新页面重试。</p>
-                <button class="btn btn-primary" onclick="location.reload()">🔄 刷新页面</button>
+                <p>正在初始化文件管理系统...</p>
+                <div id="basicFileList" style="margin-top: 20px;">
+                  <p>正在加载文件列表...</p>
+                </div>
+                <div style="margin-top: 20px;">
+                  <button class="btn btn-primary" onclick="retryLoadFilePermissions()">🔄 重试</button>
+                  <button class="btn btn-secondary" onclick="location.reload()">🔄 刷新页面</button>
+                </div>
               </div>
             `;
+
+            // 尝试直接从数据管理器获取文件列表
+            if (window.dataManager) {
+              console.log('🔄 尝试直接从数据管理器获取文件列表...');
+              setTimeout(async () => {
+                try {
+                  await loadBasicFileList();
+                } catch (error) {
+                  console.error('❌ 基础文件列表加载失败:', error);
+                }
+              }, 1000);
+            }
           }
           return;
         }
@@ -2002,6 +2032,84 @@
         }
       } finally {
         filePermissionsLoading = false;
+      }
+    };
+
+    // 基础文件列表加载函数（当高级管理器不可用时使用）
+    window.loadBasicFileList = async () => {
+      console.log('📁 加载基础文件列表...');
+
+      const basicListContainer = document.getElementById('basicFileList');
+      if (!basicListContainer) {
+        console.warn('⚠️ 基础文件列表容器未找到');
+        return;
+      }
+
+      try {
+        basicListContainer.innerHTML = '<p>正在加载文件列表...</p>';
+
+        // 检查数据管理器是否可用
+        if (!window.dataManager) {
+          throw new Error('数据管理器不可用');
+        }
+
+        // 尝试获取文件列表
+        let files = [];
+
+        // 从不同来源获取文件
+        if (window.dataManager.shouldUseGitHubStorage && window.dataManager.shouldUseGitHubStorage()) {
+          console.log('🌐 从 GitHub 存储获取文件...');
+          if (window.githubStorage && typeof window.githubStorage.getAllFiles === 'function') {
+            try {
+              files = await window.githubStorage.getAllFiles();
+            } catch (error) {
+              console.warn('⚠️ GitHub 存储获取失败，尝试本地存储:', error);
+            }
+          }
+        }
+
+        // 如果 GitHub 存储失败，尝试本地存储
+        if (files.length === 0) {
+          console.log('📱 从本地存储获取文件...');
+          const localFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+          files = localFiles;
+        }
+
+        // 显示文件列表
+        if (files.length === 0) {
+          basicListContainer.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #666;">
+              <p>📂 暂无文件</p>
+              <p>系统中还没有上传任何文件。</p>
+            </div>
+          `;
+        } else {
+          const fileListHTML = files.map(file => `
+            <div style="padding: 10px; border: 1px solid #ddd; margin: 5px 0; border-radius: 4px;">
+              <strong>${file.title || file.name || '未知文件'}</strong><br>
+              <small>作者: ${file.owner || '未知'} | 类型: ${file.category || '未知'}</small>
+            </div>
+          `).join('');
+
+          basicListContainer.innerHTML = `
+            <div style="text-align: left;">
+              <h5>📁 文件列表 (${files.length} 个文件)</h5>
+              ${fileListHTML}
+            </div>
+          `;
+        }
+
+        console.log(`✅ 基础文件列表加载完成，共 ${files.length} 个文件`);
+
+      } catch (error) {
+        console.error('❌ 基础文件列表加载失败:', error);
+        basicListContainer.innerHTML = `
+          <div style="color: #dc3545; text-align: center;">
+            <p>❌ 加载失败</p>
+            <p>${error.message}</p>
+            <button class="btn btn-sm btn-primary" onclick="loadBasicFileList()">重试</button>
+          </div>
+        `;
       }
     };
 
@@ -3026,34 +3134,56 @@
       const checks = {
         auth: typeof auth !== 'undefined' && auth !== null,
         firebase: typeof firebase !== 'undefined' && firebase.apps.length > 0,
-        fileUploader: typeof window.fileUploader !== 'undefined' && window.fileUploader !== null
+        fileUploader: typeof window.fileUploader !== 'undefined' && window.fileUploader !== null,
+        dataManager: typeof window.dataManager !== 'undefined' && window.dataManager !== null,
+        adminFileManager: typeof window.AdminFileManager !== 'undefined'
       };
 
       console.log('🔍 系统初始化检查:', checks);
 
-      if (checks.fileUploader) {
-        console.log('✅ 所有系统组件已初始化');
+      // 核心组件检查：auth 和 dataManager 是必需的
+      const coreComponentsReady = checks.auth && checks.dataManager;
+
+      if (coreComponentsReady) {
+        console.log('✅ 核心系统组件已初始化');
         return true;
       } else {
-        console.warn('⚠️ FileUploader未初始化，等待中...');
+        console.warn('⚠️ 核心组件未完全初始化，等待中...', {
+          auth: checks.auth,
+          dataManager: checks.dataManager
+        });
         return false;
       }
     }
 
     // 等待系统完全初始化
-    function waitForSystemInitialization(callback, maxAttempts = 10) {
+    function waitForSystemInitialization(callback, maxAttempts = 20) {
       let attempts = 0;
+      const startTime = Date.now();
 
       const checkInterval = setInterval(() => {
         attempts++;
+        const elapsed = Date.now() - startTime;
 
         if (checkSystemInitialization()) {
           clearInterval(checkInterval);
+          console.log(`✅ 系统初始化完成，耗时: ${elapsed}ms，尝试次数: ${attempts}`);
           callback();
         } else if (attempts >= maxAttempts) {
           clearInterval(checkInterval);
-          console.error('❌ 系统初始化超时');
-          showNotification('系统初始化失败，请刷新页面重试', 'error');
+          console.error(`❌ 系统初始化超时，耗时: ${elapsed}ms，尝试次数: ${attempts}`);
+
+          // 尝试降级处理：即使部分组件未初始化也继续执行
+          console.warn('⚠️ 尝试降级处理，继续执行核心功能...');
+          try {
+            callback();
+          } catch (error) {
+            console.error('❌ 降级处理也失败:', error);
+            showNotification('系统初始化失败，请刷新页面重试', 'error');
+          }
+        } else if (attempts % 5 === 0) {
+          // 每5次尝试输出一次进度信息
+          console.log(`⏳ 系统初始化进度: ${attempts}/${maxAttempts} 次尝试，耗时: ${elapsed}ms`);
         }
       }, 500);
     }
@@ -3136,7 +3266,23 @@
           updateSystemStatus();
         }, 500);
 
-        // 等待FileUploader初始化完成
+        // 手动初始化 FileUploader（WorkUploader）
+        console.log('🔄 开始初始化 FileUploader...');
+        if (typeof initWorkUploader === 'function') {
+          try {
+            initWorkUploader();
+            console.log('✅ FileUploader 初始化成功');
+          } catch (error) {
+            console.error('❌ FileUploader 初始化失败:', error);
+            // 设置一个空对象避免系统检查失败
+            window.fileUploader = {};
+          }
+        } else {
+          console.warn('⚠️ initWorkUploader 函数未找到，设置空的 fileUploader 对象');
+          window.fileUploader = {};
+        }
+
+        // 等待系统初始化完成（减少对 FileUploader 的依赖）
         waitForSystemInitialization(() => {
           console.log('🎉 系统初始化完成');
 
