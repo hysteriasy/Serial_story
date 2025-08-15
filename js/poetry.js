@@ -25,17 +25,112 @@ class PoetryDisplay {
     this.poetryData = [];
 
     try {
-      // 从本地存储获取诗歌作品
-      const localPoetry = this.getLocalPoetry();
-      this.poetryData.push(...localPoetry);
+      // 在file://协议下，直接使用传统方法避免CORS问题
+      if (window.location.protocol === 'file:') {
+        console.log('📁 file://协议下直接使用传统方法');
 
-      // 如果Firebase可用，也从Firebase获取
-      if (window.firebaseAvailable && firebase.apps.length) {
-        try {
-          const firebasePoetry = await this.getFirebasePoetry();
-          this.poetryData.push(...firebasePoetry);
-        } catch (error) {
-          console.warn('从Firebase获取诗歌失败:', error);
+        // 从本地存储获取诗歌作品
+        const localPoetry = this.getLocalPoetry();
+        this.poetryData.push(...localPoetry);
+
+        // 如果Firebase可用，也从Firebase获取
+        if (window.firebaseAvailable && firebase.apps.length) {
+          try {
+            const firebasePoetry = await this.getFirebasePoetry();
+            this.poetryData.push(...firebasePoetry);
+          } catch (error) {
+            console.warn('从Firebase获取诗歌失败:', error);
+          }
+        }
+
+        // 去重并按时间排序
+        this.poetryData = this.removeDuplicates(this.poetryData);
+        this.poetryData.sort((a, b) => new Date(b.uploadTime) - new Date(a.uploadTime));
+
+        console.log(`📚 加载了 ${this.poetryData.length} 首诗歌`);
+        return;
+      }
+
+      // 优先使用智能文件加载器
+      if (window.smartFileLoader) {
+        const files = await window.smartFileLoader.loadFileList('poetry');
+
+        if (files && files.length > 0) {
+          console.log(`✅ 智能加载器加载了 ${files.length} 首诗歌`);
+
+          // 处理智能加载器返回的数据
+          const poetry = files.map(file => {
+            // 提取标题
+            let title = file.title || file.name || '无标题';
+
+            // 如果标题包含文件扩展名，去除它
+            if (title.endsWith('.json')) {
+              title = title.replace('.json', '');
+            }
+
+            // 如果标题包含时间戳，尝试提取更友好的标题
+            const timestampMatch = title.match(/^(\d{4}-\d{2}-\d{2})_(.+)_(\d+)$/);
+            if (timestampMatch) {
+              title = timestampMatch[2] || title;
+            }
+
+            // 处理从user-uploads目录加载的数据
+            const processedFile = {
+              id: file.id,
+              title: title,
+              content: file.content || '',
+              poetryType: file.poetryType || 'modern',
+              author: file.author || file.username || file.uploadedBy || '匿名',
+              uploadTime: file.uploadTime || file.date || file.created_at || new Date().toISOString(),
+              permissions: file.permissions || { isPublic: true },
+              source: file.source || 'unknown',
+              filePath: file.filePath // 保存文件路径用于后续操作
+            };
+
+            // 如果是从GitHub uploads加载的，确保数据完整性
+            if (file.source === 'github_uploads') {
+              processedFile.source = 'github_uploads';
+              // 确保有正确的作者信息
+              if (!processedFile.author || processedFile.author === '匿名') {
+                // 尝试从文件路径提取作者信息
+                const pathMatch = file.filePath?.match(/user-uploads\/[^\/]+\/[^\/]+\/([^\/]+)\//);
+                if (pathMatch) {
+                  processedFile.author = pathMatch[1];
+                }
+              }
+            }
+
+            return processedFile;
+          });
+
+          this.poetryData.push(...poetry);
+
+          // 调试信息：显示加载的数据结构
+          console.log('📊 智能加载器返回的诗歌数据:', poetry.map(poem => ({
+            id: poem.id,
+            title: poem.title,
+            author: poem.author,
+            source: poem.source
+          })));
+        }
+      }
+
+      // 回退到传统方法
+      if (this.poetryData.length === 0) {
+        console.log('📁 回退到传统加载方法');
+
+        // 从本地存储获取诗歌作品
+        const localPoetry = this.getLocalPoetry();
+        this.poetryData.push(...localPoetry);
+
+        // 如果Firebase可用，也从Firebase获取
+        if (window.firebaseAvailable && firebase.apps.length) {
+          try {
+            const firebasePoetry = await this.getFirebasePoetry();
+            this.poetryData.push(...firebasePoetry);
+          } catch (error) {
+            console.warn('从Firebase获取诗歌失败:', error);
+          }
         }
       }
 
@@ -198,6 +293,7 @@ class PoetryDisplay {
         <div class="poetry-meta">
           <span class="poetry-type">${typeLabel}</span>
           <span class="poetry-date">${formattedDate}</span>
+          <span class="poetry-source" title="数据源: ${poem.source || 'unknown'}">${getSourceIcon(poem.source)}</span>
         </div>
         <h3 class="poetry-title">${this.escapeHtml(poem.title)}</h3>
         <div class="poetry-content">${this.formatPoetryContent(poem.content)}</div>
@@ -908,6 +1004,18 @@ class PoetryDisplay {
 
 // 全局变量，用于在HTML中调用
 let poetryDisplay;
+
+// 获取数据源图标
+function getSourceIcon(source) {
+    const icons = {
+        'github': '🌐',
+        'github_uploads': '📁', // GitHub用户上传文件
+        'localStorage': '💾',
+        'firebase': '🔥',
+        'unknown': '❓'
+    };
+    return icons[source] || icons.unknown;
+}
 
 // 页面加载完成后初始化
 window.addEventListener('DOMContentLoaded', () => {

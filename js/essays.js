@@ -66,7 +66,6 @@ async function loadEssaysList(forceRefresh = false) {
                           `<span class="essay-modified">修改: ${formatDate(essay.lastModified)}</span>` : ''}
                     </div>
                 </div>
-                <button class="delete-btn" data-index="${index}">删除</button>
             `;
             essaysList.appendChild(li);
 
@@ -74,13 +73,6 @@ async function loadEssaysList(forceRefresh = false) {
             const essayItemContent = li.querySelector('.essay-item-content');
             essayItemContent.addEventListener('click', () => {
                 loadEssayContent(index);
-            });
-
-            // 添加删除事件监听器
-            const deleteBtn = li.querySelector('.delete-btn');
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // 防止触发随笔项的点击事件
-                deleteEssay(index);
             });
         });
     } catch (error) {
@@ -244,6 +236,12 @@ function showEssayNotification(message, type = 'info') {
 // 从多个数据源智能加载随笔
 async function loadEssaysFromFiles() {
   try {
+    // 在file://协议下，直接使用localStorage避免CORS问题
+    if (window.location.protocol === 'file:') {
+      console.log('📁 file://协议下直接使用localStorage');
+      return getEssaysFromStorage();
+    }
+
     // 使用智能文件加载器
     if (window.smartFileLoader) {
       const files = await window.smartFileLoader.loadFileList('essays');
@@ -280,7 +278,8 @@ async function loadEssaysFromFiles() {
             title = file.id ? `作品 ${file.id.substring(0, 8)}` : '无标题';
           }
 
-          return {
+          // 处理从user-uploads目录加载的数据
+          const processedFile = {
             id: file.id,
             title: title,
             content: file.content || '',
@@ -288,9 +287,26 @@ async function loadEssaysFromFiles() {
             date: file.date || file.created_at || file.uploadTime || new Date().toISOString(),
             lastModified: file.lastModified || file.last_modified || file.date,
             source: file.source || 'unknown',
-            type: file.type || 'literature',
-            permissions: file.permissions || { level: 'public' }
+            type: file.type || file.mainCategory || 'literature',
+            subcategory: file.subcategory || 'essay',
+            permissions: file.permissions || { level: 'public' },
+            filePath: file.filePath // 保存文件路径用于后续操作
           };
+
+          // 如果是从GitHub uploads加载的，确保数据完整性
+          if (file.source === 'github_uploads') {
+            processedFile.source = 'github_uploads';
+            // 确保有正确的作者信息
+            if (!processedFile.author || processedFile.author === '匿名') {
+              // 尝试从文件路径提取作者信息
+              const pathMatch = file.filePath?.match(/user-uploads\/[^\/]+\/[^\/]+\/([^\/]+)\//);
+              if (pathMatch) {
+                processedFile.author = pathMatch[1];
+              }
+            }
+          }
+
+          return processedFile;
         });
 
         // 调试信息：显示加载的数据结构
@@ -514,69 +530,7 @@ async function verifyPassword(action, workAuthor = null) {
   return isValid;
 }
 
-// 删除随笔
-async function deleteEssay(index) {
-  try {
-    console.log('deleteEssay function called with index:', index);
-
-    // 从本地存储获取随笔数据
-    let essays = getEssaysFromStorage();
-    console.log('Current essays:', essays);
-
-    if (index < 0 || index >= essays.length) {
-      showNotification('无效的随笔索引', 'error');
-      return;
-    }
-
-    const essay = essays[index];
-    const workAuthor = essay.author || '未知作者';
-
-    // 检查权限：管理员可以删除所有作品，作者可以删除自己的作品
-    if (!canManageWork(workAuthor, '删除')) {
-      // 如果没有直接权限，尝试密码验证
-      const hasPermission = await verifyPassword('删除', workAuthor);
-      if (!hasPermission) {
-        showNotification('您没有权限删除此随笔', 'error');
-        return;
-      }
-    }
-
-    if (!confirm(`确定要删除随笔《${essay.title}》吗？\n作者：${workAuthor}`)) {
-      console.log('Delete cancelled by user');
-      return;
-    }
-
-    // 记录管理员操作日志
-    if (auth.currentUser && auth.isAdmin() && auth.currentUser.username !== workAuthor) {
-      console.log(`🔒 管理员 ${auth.currentUser.username} 删除了用户 ${workAuthor} 的随笔《${essay.title}》`);
-      // 记录操作日志
-      if (typeof adminLogger !== 'undefined') {
-        adminLogger.logWorkManagement('delete', essay, workAuthor);
-      }
-    }
-
-    // 删除指定索引的随笔
-    essays.splice(index, 1);
-    console.log('Essays after deletion:', essays);
-
-    // 保存更新后的随笔数据
-    localStorage.setItem('essays', JSON.stringify(essays));
-    console.log('Essays saved to localStorage');
-
-    // 更新随笔列表
-    loadEssaysList();
-
-    // 重置内容区域
-    document.getElementById('essayTitle').textContent = '请选择一篇随笔开始阅读';
-    document.getElementById('essayBody').innerHTML = '<p>点击左侧目录中的标题来查看随笔内容</p>';
-
-    // 显示成功通知
-    showNotification('随笔删除成功！', 'success');
-  } catch (error) {
-    console.error('删除随笔时发生错误:', error);
-    showNotification('删除失败：' + error.message, 'error');
-  }
-}
+// 删除功能已移除，保持页面简洁性和安全性
 
 
 
@@ -807,23 +761,7 @@ style.textContent = `
         color: #6c757d;
     }
 
-    .delete-btn {
-        background-color: transparent;
-        border: none;
-        color: #dc3545;
-        cursor: pointer;
-        padding: 5px 10px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .essay-item:hover .delete-btn {
-        opacity: 1;
-    }
-
-    .delete-btn:hover {
-        color: #bd2130;
-    }
+    /* 删除按钮样式已移除，保持页面简洁性 */
 
     .essays-content {
         width: 70%;
@@ -949,6 +887,7 @@ document.head.appendChild(style);
 function getSourceIcon(source) {
     const icons = {
         'github': '🌐',
+        'github_uploads': '📁', // GitHub用户上传文件
         'localStorage': '💾',
         'firebase': '🔥',
         'unknown': '❓'

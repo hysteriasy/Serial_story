@@ -1,0 +1,25 @@
+{
+  "id": "work_1754921380127_poetry_1",
+  "mainCategory": "literature",
+  "subcategory": "poetry",
+  "categoryName": "文学作品",
+  "subcategoryName": "诗歌创作",
+  "title": "夜思",
+  "content": "月光如水洒窗台\n思君不见君不来\n一帘幽梦何时醒\n相思如潮涌心怀",
+  "poetryType": "classical",
+  "uploadedBy": "hysteria",
+  "userRole": "admin",
+  "uploadTime": "2025-08-11T14:09:40.127Z",
+  "permissions": {
+    "visibility": "public",
+    "isPublic": true,
+    "allowedUsers": [],
+    "blockedUsers": [],
+    "allowedRoles": [],
+    "setBy": "hysteria",
+    "setAt": "2025-08-11T14:09:40.127Z",
+    "lastModified": "2025-08-11T14:09:40.127Z",
+    "modifiedBy": "hysteria"
+  },
+  "storage_type": "local"
+}
