@@ -1129,6 +1129,11 @@ class FileHierarchyManager {
       if (result.success) {
         this.showNotification(`文件 "${fileName}" 已成功删除 (删除了 ${result.deletedCount} 个数据源)`, 'success');
 
+        // 更新首页统计数据
+        if (typeof window.updateHomepageStats === 'function') {
+          window.updateHomepageStats();
+        }
+
         // 智能刷新：保持位置和展开状态
         await this.smartRefreshAfterDelete(currentState, fileId, owner);
       } else {

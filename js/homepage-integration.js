@@ -39,45 +39,116 @@ class HomepageIntegration {
   // 更新作品统计
   async updateWorksStats() {
     try {
+      console.log('📊 开始更新作品统计数据...');
+
       let totalWorks = 0;
       let literatureCount = 0;
       let mediaCount = 0;
       let lastUpdateTime = null;
 
+      // 使用统一的数据获取方法
+      const allWorks = await this.getAllWorksUnified();
+
       // 统计各类作品数量
-      for (const category of ['literature', 'art', 'music', 'video']) {
-        try {
-          const works = await this.getPublicFilesByCategory(category);
-          totalWorks += works.length;
+      allWorks.forEach(work => {
+        totalWorks++;
 
-          if (category === 'literature') {
-            literatureCount += works.length;
-          } else {
-            mediaCount += works.length;
-          }
-
-          // 找到最新的更新时间
-          works.forEach(work => {
-            const workTime = new Date(work.uploadTime);
-            if (!lastUpdateTime || workTime > lastUpdateTime) {
-              lastUpdateTime = workTime;
-            }
-          });
-        } catch (error) {
-          console.warn(`统计${category}作品失败:`, error);
+        // 按主分类统计
+        if (work.mainCategory === 'literature') {
+          literatureCount++;
+        } else {
+          mediaCount++;
         }
-      }
+
+        // 找到最新的更新时间
+        const workTime = new Date(work.uploadTime);
+        if (!lastUpdateTime || workTime > lastUpdateTime) {
+          lastUpdateTime = workTime;
+        }
+      });
+
+      console.log(`📊 统计结果: 总计${totalWorks}个作品，文学${literatureCount}个，媒体${mediaCount}个`);
 
       // 更新页面显示
       this.updateStatsDisplay(totalWorks, literatureCount, mediaCount, lastUpdateTime);
 
     } catch (error) {
       console.error('更新作品统计失败:', error);
+      // 显示错误状态
+      this.updateStatsDisplay(0, 0, 0, null);
+    }
+  }
+
+  // 统一获取所有作品数据（包含公开和私有作品）
+  async getAllWorksUnified() {
+    const allWorks = [];
+    const processedIds = new Set(); // 防止重复
+
+    try {
+      console.log('🔍 开始从所有数据源获取作品...');
+
+      // 1. 从localStorage获取所有work_*作品
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('work_')) {
+          try {
+            const workData = localStorage.getItem(key);
+            if (workData) {
+              const work = JSON.parse(workData);
+              const workId = work.id || key.replace('work_', '');
+
+              if (!processedIds.has(workId)) {
+                allWorks.push({
+                  ...work,
+                  id: workId,
+                  source: 'localStorage'
+                });
+                processedIds.add(workId);
+              }
+            }
+          } catch (error) {
+            console.warn(`解析作品数据失败: ${key}`, error);
+          }
+        }
+      }
+
+      // 2. 从Firebase获取作品（如果可用）
+      if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
+        try {
+          const usersSnapshot = await this.database.ref('userFiles').once('value');
+          const usersData = usersSnapshot.val() || {};
+
+          Object.entries(usersData).forEach(([username, userFiles]) => {
+            Object.entries(userFiles).forEach(([fileId, fileInfo]) => {
+              if (!processedIds.has(fileId)) {
+                allWorks.push({
+                  ...fileInfo,
+                  id: fileId,
+                  owner: username,
+                  source: 'firebase'
+                });
+                processedIds.add(fileId);
+              }
+            });
+          });
+        } catch (error) {
+          console.warn('从Firebase获取作品失败:', error);
+        }
+      }
+
+      console.log(`✅ 共获取到 ${allWorks.length} 个作品`);
+      return allWorks;
+
+    } catch (error) {
+      console.error('获取作品数据失败:', error);
+      return [];
     }
   }
 
   // 更新统计显示
   updateStatsDisplay(totalWorks, literatureCount, mediaCount, lastUpdateTime) {
+    console.log('📊 更新统计显示:', { totalWorks, literatureCount, mediaCount, lastUpdateTime });
+
     // 更新总作品数
     const totalElement = document.getElementById('totalWorks');
     if (totalElement) {
@@ -682,10 +753,28 @@ class HomepageIntegration {
 // 全局实例
 let homepageIntegration;
 
+// 全局统计更新函数
+window.updateHomepageStats = function() {
+  if (homepageIntegration) {
+    console.log('🔄 手动触发统计数据更新...');
+    homepageIntegration.updateWorksStats();
+  } else {
+    console.warn('⚠️ 首页统计模块尚未初始化');
+  }
+};
+
 // 初始化主页集成
 document.addEventListener('DOMContentLoaded', () => {
-  if (firebase.apps.length > 0) {
-    homepageIntegration = new HomepageIntegration();
-    homepageIntegration.init();
-  }
+  console.log('🏠 开始初始化首页统计模块...');
+
+  // 延迟初始化以确保所有依赖都已加载
+  setTimeout(() => {
+    try {
+      homepageIntegration = new HomepageIntegration();
+      homepageIntegration.init();
+      console.log('✅ 首页统计模块初始化完成');
+    } catch (error) {
+      console.error('❌ 首页统计模块初始化失败:', error);
+    }
+  }, 500); // 延迟500ms确保其他模块已加载
 });

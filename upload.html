@@ -561,73 +561,7 @@
       transition: all 0.3s ease;
     }
 
-    /* 页脚下拉菜单样式 */
-    .works-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-
-    .dropdown-trigger {
-      color: #ffffff;
-      text-decoration: none;
-      cursor: pointer;
-      padding: 5px 10px;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
-    }
-
-    .dropdown-trigger:hover {
-      background-color: rgba(0, 123, 255, 0.1);
-    }
-
-    .dropdown-menu {
-      position: absolute;
-      bottom: 100%;
-      left: 0;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      min-width: 180px;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(10px);
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-
-    .works-dropdown:hover .dropdown-menu {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .dropdown-menu a {
-      display: block;
-      padding: 12px 16px;
-      color: #333;
-      text-decoration: none;
-      border-bottom: 1px solid #f0f0f0;
-      transition: background-color 0.3s ease;
-    }
-
-    .dropdown-menu a:last-child {
-      border-bottom: none;
-    }
-
-    .dropdown-menu a:hover {
-      background-color: #f8f9fa;
-    }
-
-    .dropdown-menu a.current-page {
-      background-color: #007bff;
-      color: white;
-      font-weight: 500;
-    }
-
-    .dropdown-menu a.current-page:hover {
-      background-color: #0056b3;
-    }
+    /* 页脚下拉菜单样式已移至页眉页脚组件 */
 
     /* 文件上传区域样式优化 */
     .file-upload-area input[type="file"] {
@@ -883,32 +817,7 @@
   </style>
 </head>
 <body>
-  <!-- 导航栏 -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <div class="nav-logo">
-        <h2>桑梓</h2>
-      </div>
-      <ul class="nav-menu">
-        <li class="nav-item">
-          <a href="index.html" class="nav-link">首页</a>
-        </li>
-        <li class="nav-item">
-          <a href="index.html#about" class="nav-link">关于我</a>
-        </li>
-
-        <li class="nav-item">
-          <a href="index.html#contact" class="nav-link">联系我</a>
-        </li>
-
-      </ul>
-      <div class="nav-toggle" id="mobile-menu">
-        <span class="bar"></span>
-        <span class="bar"></span>
-        <span class="bar"></span>
-      </div>
-    </div>
-  </nav>
+  <!-- 页眉将通过组件动态插入 -->
 
   <!-- 主标题区域 -->
   <header class="upload-hero">
@@ -1267,32 +1176,7 @@
     </section>
   </main>
 
-  <!-- 页脚 -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
-        <div class="footer-links">
-          <a href="index.html" class="home-button">首页</a>
-          <div class="works-dropdown">
-            <span class="dropdown-trigger">作品展示 ▼</span>
-            <div class="dropdown-menu">
-              <a href="essays.html">生活随笔</a>
-              <a href="poetry.html">诗歌创作</a>
-              <a href="novels.html">小说连载</a>
-              <a href="artworks.html">绘画作品</a>
-              <a href="music.html">音乐作品</a>
-              <a href="videos.html">视频作品</a>
-            </div>
-          </div>
-          <a href="upload.html">上传作品</a>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- 返回顶部按钮 -->
-  <button id="backToTop" class="back-to-top" onclick="scrollToTop()">↑</button>
+  <!-- 页脚将通过组件动态插入 -->
 
 
 
@@ -1304,12 +1188,16 @@
   <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
   <script src="js/ios-compatibility.js"></script>
 
+  <!-- 页眉页脚组件 - 在其他脚本之前加载 -->
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+
   <!-- 应用脚本 -->
   <script src="js/github-storage.js"></script>
   <script src="js/data-manager.js"></script>
   <script src="js/script.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/user-status.js"></script>
+  <!-- <script src="js/user-status.js"></script> 已移除，页眉组件已包含用户状态管理 -->
   <script src="js/unified-button-styles.js"></script>
 
   <script src="js/upload.js"></script>
@@ -1321,20 +1209,7 @@
 
 
 
-    // 返回顶部功能
-    function scrollToTop() {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // 显示返回顶部按钮
-    window.addEventListener('scroll', () => {
-      const backToTop = document.getElementById('backToTop');
-      if (window.pageYOffset > 300) {
-        backToTop.style.display = 'block';
-      } else {
-        backToTop.style.display = 'none';
-      }
-    });
+    // 返回顶部功能现在由页脚组件提供
 
 
 
@@ -1474,29 +1349,64 @@
       }
     }
 
-    // 页面加载完成后初始化权限设置
+    // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 上传页面开始初始化...');
+
+      // 初始化页眉页脚组件
       setTimeout(() => {
-        checkGitHubConfig();
+        // 初始化页眉
+        if (typeof initHeader === 'function') {
+          console.log('🔧 初始化页眉组件...');
+          window.headerComponent = initHeader();
+        }
 
-        // 为所有权限设置添加事件监听
-        ['literature', 'art', 'music', 'video'].forEach(category => {
-          const userList = document.getElementById(`${category}UserList`);
-          const permissionRadios = document.querySelectorAll(`input[name="${category}PermissionType"]`);
+        // 初始化页脚
+        if (typeof initFooter === 'function') {
+          console.log('🔧 初始化页脚组件...');
+          window.footerComponent = initFooter();
+        }
 
-          if (userList) {
-            userList.addEventListener('input', () => updatePermissionPreview(category));
-          }
-
-          permissionRadios.forEach(radio => {
-            radio.addEventListener('change', () => updatePermissionPreview(category));
-          });
-        });
-
-        // 检查GitHub配置状态（所有用户都可以看到配置提示）
-        checkGitHubConfig();
-      }, 1000);
+        // 页面特定功能初始化
+        initUploadPageFeatures();
+      }, 500);
     });
+
+    // 上传页面特定功能初始化
+    function initUploadPageFeatures() {
+      console.log('📤 初始化上传页面功能...');
+
+      checkGitHubConfig();
+
+      // 为所有权限设置添加事件监听
+      ['literature', 'art', 'music', 'video'].forEach(category => {
+        const userList = document.getElementById(`${category}UserList`);
+        const permissionRadios = document.querySelectorAll(`input[name="${category}PermissionType"]`);
+
+        if (userList) {
+          userList.addEventListener('input', () => updatePermissionPreview(category));
+        }
+
+        permissionRadios.forEach(radio => {
+          radio.addEventListener('change', () => updatePermissionPreview(category));
+        });
+      });
+
+      // 检查GitHub配置状态（所有用户都可以看到配置提示）
+      checkGitHubConfig();
+
+      // 延迟初始化WorkUploader，确保页眉组件已完成初始化
+      setTimeout(() => {
+        console.log('🔄 延迟初始化WorkUploader...');
+        if (typeof initWorkUploader === 'function') {
+          initWorkUploader();
+        } else {
+          console.warn('⚠️ initWorkUploader函数未找到');
+        }
+      }, 1000);
+
+      console.log('✅ 上传页面功能初始化完成');
+    }
 
 
 

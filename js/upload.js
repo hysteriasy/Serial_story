@@ -70,20 +70,69 @@ class WorkUploader {
     };
 
     this.initUI();
-    this.checkAuthStatus();
+    // 延迟检查认证状态，确保页眉组件已完成初始化
+    setTimeout(() => {
+      this.checkAuthStatus();
+    }, 100);
   }
 
   // 检查用户认证状态
   checkAuthStatus() {
+    console.log('🔍 WorkUploader检查认证状态:', auth.currentUser ? `已登录: ${auth.currentUser.username}` : '未登录');
+
     if (!auth.currentUser) {
-      this.showAuthRequired();
+      // 优先使用页眉组件的登录功能
+      if (typeof showLoginModal === 'function') {
+        console.log('📝 使用页眉组件登录模态框');
+        this.showAuthRequiredWithModal();
+      } else {
+        console.log('📝 使用内置登录表单');
+        this.showAuthRequired();
+      }
       return false;
     }
     this.showUserInfo();
     return true;
   }
 
-  // 显示需要登录的提示
+  // 显示需要登录的提示（使用页眉组件模态框）
+  showAuthRequiredWithModal() {
+    const uploadSection = document.querySelector('.upload-section');
+    if (uploadSection) {
+      uploadSection.innerHTML = `
+        <div class="auth-required">
+          <h3>请先登录</h3>
+          <p>您需要登录后才能使用文件上传功能</p>
+          <div class="login-prompt">
+            <button type="button" class="btn btn-primary" onclick="showLoginModal()">
+              点击登录
+            </button>
+            <p class="login-hint">登录后页面将自动刷新</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // 监听登录成功事件
+    const checkLoginStatus = () => {
+      if (auth.currentUser) {
+        console.log('✅ 检测到用户已登录，刷新上传界面');
+        this.showUserInfo();
+        // 移除事件监听器
+        clearInterval(loginCheckInterval);
+      }
+    };
+
+    // 每秒检查一次登录状态
+    const loginCheckInterval = setInterval(checkLoginStatus, 1000);
+
+    // 5分钟后停止检查
+    setTimeout(() => {
+      clearInterval(loginCheckInterval);
+    }, 300000);
+  }
+
+  // 显示需要登录的提示（内置表单）
   showAuthRequired() {
     const uploadSection = document.querySelector('.upload-section');
     if (uploadSection) {
@@ -335,6 +384,11 @@ class WorkUploader {
       this.showNotification('文学作品发布成功！', 'success');
       this.resetLiteratureForm();
 
+      // 更新首页统计数据
+      if (typeof window.updateHomepageStats === 'function') {
+        window.updateHomepageStats();
+      }
+
     } catch (error) {
       console.error('提交文学作品失败:', error);
       this.showNotification(`发布失败: ${error.message}`, 'error');
@@ -401,6 +455,11 @@ class WorkUploader {
 
       this.showNotification(`${this.categories[category].name}发布成功！`, 'success');
       this.resetMediaForm(category);
+
+      // 更新首页统计数据
+      if (typeof window.updateHomepageStats === 'function') {
+        window.updateHomepageStats();
+      }
 
     } catch (error) {
       console.error('提交媒体作品失败:', error);
@@ -1138,6 +1197,11 @@ class WorkUploader {
 
     // 显示成功消息
     this.showNotification(`文件 "${result.fileName}" 上传成功！`, 'success');
+
+    // 更新首页统计数据
+    if (typeof window.updateHomepageStats === 'function') {
+      window.updateHomepageStats();
+    }
 
     // 重置进度条
     setTimeout(() => {
@@ -1935,30 +1999,32 @@ class WorkUploader {
 // 全局变量
 let workUploader;
 
-// 初始化作品上传系统
-window.addEventListener('DOMContentLoaded', () => {
+// WorkUploader现在由页面控制初始化时机，不再自动初始化
+// 这样可以确保页眉组件先完成初始化，避免登录状态检查冲突
+
+// 提供手动初始化函数供页面调用
+window.initWorkUploader = function() {
   // 检查是否已经初始化过，避免重复初始化
   if (window.workUploader) {
-    return;
+    console.log('⚠️ WorkUploader已初始化，跳过重复初始化');
+    return window.workUploader;
   }
 
-  console.log('🔄 初始化WorkUploader...');
+  console.log('🔄 手动初始化WorkUploader...');
 
   try {
-    workUploader = new WorkUploader();
+    const workUploader = new WorkUploader();
     // 将实例赋值给window对象，供全局函数使用
     window.fileUploader = workUploader; // 保持向后兼容
     window.workUploader = workUploader;
-    console.log('✅ WorkUploader初始化成功');
+    console.log('✅ WorkUploader手动初始化成功');
 
-    // 如果用户已登录，加载用户作品
-    if (auth.currentUser) {
-      // 可以在这里添加加载用户作品列表的逻辑
-    }
+    return workUploader;
   } catch (error) {
-    console.error('❌ WorkUploader初始化失败:', error);
+    console.error('❌ WorkUploader手动初始化失败:', error);
     // 即使初始化失败，也要设置一个空对象避免undefined错误
     window.fileUploader = null;
     window.workUploader = null;
+    return null;
   }
-});
+};

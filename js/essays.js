@@ -27,12 +27,18 @@ function initEssaysPage() {
 
 
 // 加载随笔列表 - 改为async函数
-async function loadEssaysList() {
+async function loadEssaysList(forceRefresh = false) {
     const essaysList = document.getElementById('essaysList');
     if (!essaysList) return;
 
     // 清空列表
     essaysList.innerHTML = '';
+
+    // 如果强制刷新，清除智能加载器的缓存
+    if (forceRefresh && window.smartFileLoader) {
+        window.smartFileLoader.clearCache();
+        console.log('🔄 强制刷新：已清除缓存');
+    }
 
     try {
         // 从文件系统获取随笔数据
@@ -151,12 +157,37 @@ function getEssaysFromStorage() {
           if (fullWorkData) {
             const workInfo = JSON.parse(fullWorkData);
             if (workInfo.permissions?.isPublic) {
+              // 智能提取标题
+              let title = workInfo.title || workInfo.filename;
+
+              // 如果没有标题，尝试从内容中提取
+              if (!title && workInfo.content) {
+                const lines = workInfo.content.split('\n').filter(line => line.trim());
+                if (lines.length > 0) {
+                  const firstLine = lines[0].trim();
+                  if (firstLine.startsWith('#')) {
+                    title = firstLine.replace(/^#+\s*/, '').trim();
+                  } else if (firstLine.length <= 50) {
+                    title = firstLine;
+                  } else {
+                    title = firstLine.substring(0, 50) + (firstLine.length > 50 ? '...' : '');
+                  }
+                }
+              }
+
+              // 最后的备用方案
+              if (!title) {
+                title = workRef.id ? `作品 ${workRef.id.substring(0, 8)}` : '无标题';
+              }
+
               // 转换为essays格式
               essayWorks.push({
-                title: workInfo.title,
+                id: workRef.id,
+                title: title,
                 content: workInfo.content,
                 date: workInfo.uploadTime,
-                author: workInfo.uploadedBy
+                author: workInfo.uploadedBy || workInfo.author || '匿名',
+                source: 'localStorage'
               });
             }
           }
@@ -222,18 +253,53 @@ async function loadEssaysFromFiles() {
 
         // 转换为随笔格式并确保作者信息完整
         const essays = files.map(file => {
+          // 智能提取标题 - 优先级：title > filename > content前50字符 > ID
+          let title = file.title || file.filename;
+
+          // 如果没有标题，尝试从内容中提取
+          if (!title && file.content) {
+            // 尝试提取第一行作为标题（如果是Markdown格式）
+            const lines = file.content.split('\n').filter(line => line.trim());
+            if (lines.length > 0) {
+              const firstLine = lines[0].trim();
+              // 如果第一行是Markdown标题格式
+              if (firstLine.startsWith('#')) {
+                title = firstLine.replace(/^#+\s*/, '').trim();
+              } else if (firstLine.length <= 50) {
+                // 如果第一行较短，可能是标题
+                title = firstLine;
+              } else {
+                // 否则取前50个字符作为标题
+                title = firstLine.substring(0, 50) + (firstLine.length > 50 ? '...' : '');
+              }
+            }
+          }
+
+          // 最后的备用方案
+          if (!title) {
+            title = file.id ? `作品 ${file.id.substring(0, 8)}` : '无标题';
+          }
+
           return {
             id: file.id,
-            title: file.title || '无标题',
+            title: title,
             content: file.content || '',
-            author: file.author || file.username || '匿名',
-            date: file.date || file.created_at || new Date().toISOString(),
+            author: file.author || file.username || file.uploadedBy || '匿名',
+            date: file.date || file.created_at || file.uploadTime || new Date().toISOString(),
             lastModified: file.lastModified || file.last_modified || file.date,
             source: file.source || 'unknown',
             type: file.type || 'literature',
             permissions: file.permissions || { level: 'public' }
           };
         });
+
+        // 调试信息：显示加载的数据结构
+        console.log('📊 智能加载器返回的随笔数据:', essays.map(essay => ({
+          id: essay.id,
+          title: essay.title,
+          author: essay.author,
+          source: essay.source
+        })));
 
         return essays.sort((a, b) => new Date(b.date) - new Date(a.date));
       }
@@ -248,6 +314,12 @@ async function loadEssaysFromFiles() {
     // 如果有数据，直接返回
     if (essays && essays.length > 0) {
       console.log(`✅ 从本地存储加载了 ${essays.length} 篇随笔`);
+      console.log('📊 本地存储返回的随笔数据:', essays.map(essay => ({
+        id: essay.id,
+        title: essay.title,
+        author: essay.author,
+        source: essay.source
+      })));
       return essays.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 

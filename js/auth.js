@@ -891,8 +891,23 @@ const auth = {
   async login(username, password) {
     console.log('🔐 登录尝试:', username);
 
+    // 清理输入数据（去除前后空格）
+    const cleanUsername = username ? username.trim() : '';
+    const cleanPassword = password ? password.trim() : '';
+
+    console.log('🔍 检查预设管理员:', {
+      inputUsername: cleanUsername,
+      inputUsernameLength: cleanUsername.length,
+      presetUsername: PRESET_ADMIN.username,
+      presetUsernameLength: PRESET_ADMIN.username.length,
+      usernameMatch: cleanUsername === PRESET_ADMIN.username,
+      passwordMatch: cleanPassword === PRESET_ADMIN.password,
+      inputUsernameBytes: Array.from(new TextEncoder().encode(cleanUsername)),
+      presetUsernameBytes: Array.from(new TextEncoder().encode(PRESET_ADMIN.username))
+    });
+
     // 首先检查是否为预设管理员账户
-    if (username === PRESET_ADMIN.username && password === PRESET_ADMIN.password) {
+    if (cleanUsername === PRESET_ADMIN.username && cleanPassword === PRESET_ADMIN.password) {
       console.log('✅ 预设管理员登录验证通过');
 
       // 尝试初始化预设管理员账户到数据库（不阻塞登录）
@@ -935,11 +950,17 @@ const auth = {
       return true;
     }
 
+    // 如果是预设管理员用户名但密码错误
+    if (cleanUsername === PRESET_ADMIN.username && cleanPassword !== PRESET_ADMIN.password) {
+      console.log('❌ 预设管理员密码错误');
+      throw new Error('密码错误');
+    }
+
     // 从Firebase数据库加载用户数据（如果可用）
     let user = null;
     if (window.firebaseAvailable) {
       try {
-        user = await this.getUserByUsername(username);
+        user = await this.getUserByUsername(cleanUsername);
       } catch (error) {
         console.warn('⚠️ Firebase用户查询失败，尝试本地存储:', error.message);
       }
@@ -947,7 +968,7 @@ const auth = {
 
     // 如果Firebase中没有或不可用，尝试从本地存储加载（向后兼容）
     if (!user) {
-      user = this.loadUserFromLocalStorage(username);
+      user = this.loadUserFromLocalStorage(cleanUsername);
     }
 
     if (!user) throw new Error('用户不存在');
@@ -955,7 +976,7 @@ const auth = {
     // 检查是否有加密的密码哈希
     if (user.salt && user.iterations && Array.isArray(user.password_hash)) {
       // 使用PBKDF2验证
-      const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+      const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(cleanPassword), 'PBKDF2', false, ['deriveBits']);
       const storedKey = new Uint8Array(user.password_hash);
       const newKey = await crypto.subtle.deriveBits({
         name: 'PBKDF2',
@@ -969,7 +990,7 @@ const auth = {
       }
     } else {
       // 简单密码验证（用于向后兼容）
-      if (user.password_hash !== password) {
+      if (user.password_hash !== cleanPassword) {
         throw new Error('密码错误');
       }
     }
@@ -1029,16 +1050,28 @@ const auth = {
 
   // 登出功能
   logout() {
+    console.log('🔓 auth.logout() 开始执行...');
     this.currentUser = null;
     sessionStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
+    console.log('✅ 用户状态已清除');
 
     // 更新页眉组件的认证状态显示
     if (window.headerComponent && typeof window.headerComponent.updateAuthNavigation === 'function') {
       setTimeout(() => {
         window.headerComponent.updateAuthNavigation();
         console.log('✅ 页眉认证状态已更新（退出登录）');
+
+        // 通知页面更新认证状态（这是关键的修复）
+        if (typeof window.headerComponent.notifyPageAuthUpdate === 'function') {
+          window.headerComponent.notifyPageAuthUpdate();
+          console.log('✅ 页面认证状态更新通知已发送');
+        } else {
+          console.warn('⚠️ notifyPageAuthUpdate方法不存在');
+        }
       }, 100);
+    } else {
+      console.warn('⚠️ 页眉组件或updateAuthNavigation方法不存在');
     }
   },
 

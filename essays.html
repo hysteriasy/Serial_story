@@ -398,7 +398,22 @@
             <div class="essays-container">
                 <!-- 左侧目录 -->
                 <div class="essays-sidebar">
-                    <h3>随笔目录</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">随笔目录</h3>
+                        <button onclick="refreshEssaysList()" style="
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            padding: 6px 12px;
+                            font-size: 12px;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+                        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            🔄 刷新
+                        </button>
+                    </div>
                     <ul id="essaysList" class="essays-list">
                         <!-- 目录将通过JavaScript动态生成 -->
                     </ul>
@@ -461,7 +476,264 @@
             }
 
             console.log('🎉 essays页面组件初始化完成');
+
+            // 登录表单处理 - 确保登录功能正常工作
+            setTimeout(() => {
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    // 移除可能存在的旧事件监听器
+                    const newForm = loginForm.cloneNode(true);
+                    loginForm.parentNode.replaceChild(newForm, loginForm);
+
+                    newForm.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+
+                        // 检查auth对象是否可用
+                        if (typeof auth === 'undefined') {
+                            alert('系统正在初始化，请稍后再试');
+                            return;
+                        }
+
+                        const username = document.getElementById('loginUsername').value;
+                        const password = document.getElementById('loginPassword').value;
+
+                        try {
+                            console.log('🔐 Essays页面：开始登录流程...');
+                            console.log('📝 输入的用户名:', username);
+
+                            // 显示登录中状态
+                            const submitBtn = e.target.querySelector('button[type="submit"]');
+                            const originalText = submitBtn.textContent;
+                            submitBtn.textContent = '登录中...';
+                            submitBtn.disabled = true;
+
+                            const result = await auth.login(username, password);
+                            console.log('🔍 登录结果:', result);
+
+                            // 恢复按钮状态
+                            submitBtn.textContent = originalText;
+                            submitBtn.disabled = false;
+
+                            if (result) {
+                                console.log('✅ 登录成功，开始更新UI...');
+                                console.log('👤 当前用户:', auth.currentUser);
+
+                                // 步骤1：关闭登录模态框
+                                console.log('🔄 步骤1：关闭登录模态框...');
+                                try {
+                                    closeLoginModal();
+                                    console.log('✅ 登录模态框已关闭');
+                                } catch (error) {
+                                    console.error('❌ 关闭模态框失败:', error);
+                                }
+
+                                // 步骤2：更新页眉导航状态
+                                console.log('🔄 步骤2：更新导航状态...');
+                                setTimeout(() => {
+                                    try {
+                                        if (window.headerComponent && typeof window.headerComponent.updateAuthNavigation === 'function') {
+                                            window.headerComponent.updateAuthNavigation();
+                                            console.log('✅ 页眉导航状态已更新');
+                                        } else if (window.headerFooterManager && typeof window.headerFooterManager.updateAuthNavigation === 'function') {
+                                            window.headerFooterManager.updateAuthNavigation();
+                                            console.log('✅ 页眉导航状态已更新（备用方法）');
+                                        } else {
+                                            console.warn('⚠️ 未找到页眉更新方法');
+                                        }
+                                    } catch (error) {
+                                        console.error('❌ 更新导航状态失败:', error);
+                                    }
+                                }, 100);
+
+                                // 步骤3：显示成功消息
+                                console.log('🔄 步骤3：显示成功消息...');
+                                setTimeout(() => {
+                                    try {
+                                        // 尝试多种成功消息显示方法
+                                        if (typeof showSuccessMessage === 'function') {
+                                            showSuccessMessage('登录成功！欢迎回来，' + auth.currentUser.username);
+                                        } else if (typeof showMessage === 'function') {
+                                            showMessage('登录成功！欢迎回来，' + auth.currentUser.username, 'success');
+                                        } else {
+                                            alert('登录成功！欢迎回来，' + auth.currentUser.username);
+                                        }
+                                        console.log('✅ 成功消息已显示');
+                                    } catch (error) {
+                                        console.error('❌ 显示成功消息失败:', error);
+                                    }
+                                }, 200);
+
+                                // 步骤4：管理员特殊处理
+                                if (auth.isAdmin && auth.isAdmin()) {
+                                    console.log('🔄 步骤4：显示管理员欢迎信息...');
+                                    setTimeout(() => {
+                                        try {
+                                            if (typeof showSuccessMessage === 'function') {
+                                                showSuccessMessage('您拥有管理员权限');
+                                            } else if (typeof showMessage === 'function') {
+                                                showMessage('您拥有管理员权限', 'success');
+                                            } else {
+                                                alert('您拥有管理员权限');
+                                            }
+                                            console.log('✅ 管理员欢迎信息已显示');
+                                        } catch (error) {
+                                            console.error('❌ 显示管理员欢迎信息失败:', error);
+                                        }
+                                    }, 1500);
+                                }
+
+                                console.log('🎉 Essays页面登录流程完成！');
+                            } else {
+                                console.error('❌ 登录返回false');
+                                alert('登录失败：未知错误');
+                            }
+                        } catch (error) {
+                            console.error('❌ 登录异常:', error);
+
+                            // 恢复按钮状态
+                            const submitBtn = e.target.querySelector('button[type="submit"]');
+                            if (submitBtn) {
+                                submitBtn.textContent = '登录';
+                                submitBtn.disabled = false;
+                            }
+
+                            alert(`登录失败: ${error.message}`);
+                        }
+                    });
+
+                    console.log('✅ Essays页面登录表单事件已绑定');
+                } else {
+                    console.warn('⚠️ Essays页面：未找到登录表单');
+                }
+            }, 500); // 延迟500ms确保页眉组件完全加载
+
+            // 初始化认证状态 - 等待auth模块完全加载
+            console.log('🔧 开始初始化认证状态...');
+            let initAttempts = 0;
+            const maxAttempts = 10;
+
+            const initAuth = () => {
+                initAttempts++;
+                console.log(`🔧 认证初始化尝试 ${initAttempts}/${maxAttempts}...`);
+
+                if (typeof auth !== 'undefined') {
+                    console.log('✅ Auth对象可用，开始更新导航...');
+                    // 检查登录状态
+                    auth.checkAuthStatus();
+                    // 更新导航状态
+                    setTimeout(() => {
+                        if (window.headerComponent && typeof window.headerComponent.updateAuthNavigation === 'function') {
+                            window.headerComponent.updateAuthNavigation();
+                        } else if (window.headerFooterManager && typeof window.headerFooterManager.updateAuthNavigation === 'function') {
+                            window.headerFooterManager.updateAuthNavigation();
+                        }
+                    }, 100);
+                } else if (initAttempts < maxAttempts) {
+                    console.log('⚠️ Auth对象尚未可用，500ms后重试...');
+                    setTimeout(initAuth, 500);
+                } else {
+                    console.error('❌ Auth对象初始化超时');
+                }
+            };
+
+            // 延迟启动以确保所有脚本都已加载
+            setTimeout(initAuth, 100);
         });
+
+        // 模态框点击外部关闭
+        window.addEventListener('click', (event) => {
+            const loginModal = document.getElementById('loginModal');
+            if (event.target === loginModal) {
+                closeLoginModal();
+            }
+        });
+
+        // 通用成功消息显示函数
+        window.showSuccessMessage = function(message) {
+            // 创建成功消息元素
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(40, 167, 69, 0.3);
+                z-index: 10000;
+                font-size: 14px;
+                font-weight: 500;
+                max-width: 300px;
+                word-wrap: break-word;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                animation: slideInRight 0.3s ease-out;
+            `;
+            messageDiv.textContent = message;
+
+            // 添加动画样式
+            if (!document.getElementById('message-animations')) {
+                const style = document.createElement('style');
+                style.id = 'message-animations';
+                style.textContent = `
+                    @keyframes slideInRight {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    @keyframes slideOutRight {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(messageDiv);
+
+            // 3秒后自动移除
+            setTimeout(() => {
+                messageDiv.style.animation = 'slideOutRight 0.3s ease-in';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    }
+                }, 300);
+            }, 3000);
+        };
+
+        // 通用消息显示函数（兼容不同的消息类型）
+        window.showMessage = function(message, type = 'info') {
+            if (type === 'success') {
+                showSuccessMessage(message);
+            } else {
+                // 其他类型的消息可以在这里扩展
+                console.log(`${type.toUpperCase()}: ${message}`);
+            }
+        };
+
+        // 刷新随笔列表函数
+        window.refreshEssaysList = function() {
+            console.log('🔄 手动刷新随笔列表...');
+            if (typeof loadEssaysList === 'function') {
+                loadEssaysList(true); // 强制刷新
+                showSuccessMessage('列表已刷新');
+            } else {
+                console.error('❌ loadEssaysList 函数未找到');
+            }
+        };
     </script>
 </body>
 </html>

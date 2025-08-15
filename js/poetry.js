@@ -667,6 +667,11 @@ class PoetryDisplay {
 
       this.showNotification('诗歌删除成功！', 'success');
 
+      // 更新首页统计数据
+      if (typeof window.updateHomepageStats === 'function') {
+        window.updateHomepageStats();
+      }
+
       // 重新加载数据
       await this.loadPoetryData();
       this.renderPoetry();

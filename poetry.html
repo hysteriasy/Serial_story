@@ -2,39 +2,132 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="format-detection" content="telephone=no">
     <title>诗歌创作 - 桑梓</title>
     <meta name="description" content="诗歌创作作品展示，包含现代诗歌和古典诗词">
-    <link rel="stylesheet" href="css/style.css">
+
+    <!-- 立即执行控制台过滤脚本 - 必须在所有其他脚本之前 -->
+    <script>
+        // 在页面加载的最早阶段就设置控制台过滤
+        (function() {
+            console.log('🔧 初始化控制台过滤器...');
+
+            // 保存原始控制台方法
+            const originalWarn = console.warn;
+            const originalError = console.error;
+            const originalLog = console.log;
+
+            // 跟踪过滤统计
+            let filteredWarnings = 0;
+            let filteredErrors = 0;
+
+            // 重写console.warn
+            console.warn = function(...args) {
+                const message = args.join(' ');
+
+                // 过滤跟踪防护相关警告
+                if (message.includes('Tracking Prevention') ||
+                    message.includes('blocked access to storage') ||
+                    message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                    message.includes('-ms-high-contrast') ||
+                    message.includes('deprecated')) {
+                    filteredWarnings++;
+                    return; // 完全阻止显示
+                }
+
+                // 显示其他警告
+                originalWarn.apply(console, args);
+            };
+
+            // 重写console.error
+            console.error = function(...args) {
+                const message = args.join(' ');
+
+                // 过滤广告和第三方相关错误
+                if (message.includes('googleads') ||
+                    message.includes('doubleclick') ||
+                    message.includes('ad_status.js') ||
+                    message.includes('ERR_NAME_NOT_RESOLVED') ||
+                    message.includes('ERR_BLOCKED_BY_CLIENT') ||
+                    message.includes('Failed to load resource')) {
+                    filteredErrors++;
+                    return; // 完全阻止显示
+                }
+
+                // 显示其他错误
+                originalError.apply(console, args);
+            };
+
+            // 定期报告过滤统计（仅在开发模式下）
+            if (window.location.hostname === 'localhost') {
+                setInterval(() => {
+                    if (filteredWarnings > 0 || filteredErrors > 0) {
+                        originalLog(`🔇 控制台过滤统计: ${filteredWarnings} 个警告, ${filteredErrors} 个错误已被过滤`);
+                        filteredWarnings = 0;
+                        filteredErrors = 0;
+                    }
+                }, 15000); // 每15秒报告一次
+            }
+
+            console.log('✅ 控制台过滤器已激活');
+        })();
+    </script>
+
+    <link rel="stylesheet" href="css/style.css?v=20240807">
     <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
+        /* 确保页面布局正确 */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        /* 页面头部样式 - 与首页hero区域保持一致 */
+        .poetry-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0; /* 与首页保持一致 */
+            text-align: center;
+            min-height: 80vh; /* 与首页保持一致 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 添加与首页一致的动画效果 */
+        .poetry-hero .hero-title {
+            animation: fadeInUp 1s ease;
+        }
+
+        .poetry-hero .hero-description {
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .poetry-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
-        }
-
-        .poetry-header {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-        }
-
-        .poetry-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .poetry-header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
         }
 
         .poetry-filters {
@@ -190,20 +283,7 @@
             opacity: 0.5;
         }
 
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #007bff;
-            text-decoration: none;
-            margin-bottom: 2rem;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
 
-        .back-link:hover {
-            color: #0056b3;
-        }
 
         .loading {
             text-align: center;
@@ -250,105 +330,16 @@
             }
         }
 
-        /* 页脚下拉菜单样式 */
-        .works-dropdown {
-            position: relative;
-            display: inline-block;
-        }
 
-        .dropdown-trigger {
-            color: #ffffff;
-            text-decoration: none;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        .dropdown-trigger:hover {
-            background-color: rgba(0, 123, 255, 0.1);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            min-width: 180px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .works-dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .dropdown-menu a {
-            display: block;
-            padding: 12px 16px;
-            color: #333;
-            text-decoration: none;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.3s ease;
-        }
-
-        .dropdown-menu a:last-child {
-            border-bottom: none;
-        }
-
-        .dropdown-menu a:hover {
-            background-color: #f8f9fa;
-        }
-
-        .dropdown-menu a.current-page {
-            background-color: #007bff;
-            color: white;
-            font-weight: 500;
-        }
-
-        .dropdown-menu a.current-page:hover {
-            background-color: #0056b3;
-        }
 
         @media (max-width: 768px) {
-            .footer-links {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
+            /* 保持与首页一致的hero样式 */
+            .hero-title {
+                font-size: 2.5rem;
             }
 
-            .dropdown-menu {
-                position: static;
-                opacity: 1;
-                visibility: visible;
-                transform: none;
-                box-shadow: none;
-                border: none;
-                background: transparent;
-                margin-top: 10px;
-            }
-
-            .dropdown-menu a {
-                padding: 8px 0;
-                border-bottom: none;
-            }
-        }
-
-        @media (max-width: 768px) {
             .poetry-container {
                 padding: 1rem;
-            }
-
-            .poetry-header h1 {
-                font-size: 2rem;
             }
 
             .poetry-grid {
@@ -367,54 +358,17 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <a href="index.html">桑梓</a>
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="index.html" class="nav-link">首页</a>
-                </li>
-                <li class="nav-item">
-                    <a href="essays.html" class="nav-link">生活随笔</a>
-                </li>
-                <li class="nav-item">
-                    <a href="poetry.html" class="nav-link active">诗歌创作</a>
-                </li>
-                <li class="nav-item">
-                    <a href="novels.html" class="nav-link">小说连载</a>
-                </li>
-                <li class="nav-item">
-                    <a href="artworks.html" class="nav-link">绘画作品</a>
-                </li>
-                <li class="nav-item">
-                    <a href="music.html" class="nav-link">音乐作品</a>
-                </li>
-                <li class="nav-item">
-                    <a href="videos.html" class="nav-link">视频作品</a>
-                </li>
-                <li class="nav-item">
-                    <a href="upload.html" class="nav-link">作品上传</a>
-                </li>
-            </ul>
-            <div class="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
+    <!-- 页眉将通过组件动态插入 -->
+
+    <!-- 页面头部区域 - 与首页风格一致 -->
+    <section class="poetry-hero">
+        <div class="hero-container">
+            <h1 class="hero-title">🌸 诗歌创作</h1>
+            <p class="hero-description">用韵律和意象表达内心的声音，让文字在时光中绽放</p>
         </div>
-    </nav>
+    </section>
 
     <main class="poetry-container">
-        <a href="index.html" class="back-link">
-            ← 返回首页
-        </a>
-
-        <div class="poetry-header">
-            <h1>🌸 诗歌创作</h1>
-            <p>用韵律和意象表达内心的声音</p>
-        </div>
 
         <div class="poetry-filters">
             <button class="filter-btn active" data-type="all">全部诗歌</button>
@@ -434,37 +388,60 @@
         <div id="noPoetry" class="no-poetry" style="display: none;">
             <div class="icon">📝</div>
             <h3>暂无诗歌作品</h3>
-            <p>还没有发布任何诗歌作品，<a href="upload.html">点击这里</a>开始创作吧！</p>
+            <p>还没有发布任何诗歌作品，请使用页眉的"作品上传"功能开始创作吧！</p>
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
-                <div class="footer-links">
-                    <a href="index.html" class="home-button">首页</a>
-                    <div class="works-dropdown">
-                        <span class="dropdown-trigger">作品展示 ▼</span>
-                        <div class="dropdown-menu">
-                            <a href="essays.html">生活随笔</a>
-                            <a href="poetry.html" class="current-page">诗歌创作</a>
-                            <a href="novels.html">小说连载</a>
-                            <a href="artworks.html">绘画作品</a>
-                            <a href="music.html">音乐作品</a>
-                            <a href="videos.html">视频作品</a>
-                        </div>
-                    </div>
-                    <a href="upload.html">上传作品</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+    <!-- 页脚将通过组件动态插入 -->
 
+    <!-- 登录模态框和用户信息显示区域将通过组件动态插入 -->
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+    <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
+    <script src="js/ios-compatibility.js"></script>
+
+    <!-- 页眉页脚组件 - 在其他脚本之前加载 -->
+    <script src="js/header.js"></script>
+    <script src="js/footer.js"></script>
+
+    <!-- JavaScript文件 -->
+    <script src="js/storage-optimizer.js"></script>
+    <script src="js/github-storage.js"></script>
+    <script src="js/data-manager.js"></script>
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/user-status.js"></script>
     <script src="js/comments.js"></script>
     <script src="js/poetry.js"></script>
+
+    <!-- 初始化页眉页脚组件 -->
+    <script>
+        // 页面加载完成后初始化组件
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 开始初始化诗歌创作页面组件...');
+
+            // 初始化页眉组件
+            if (typeof initHeader === 'function') {
+                window.headerComponent = initHeader();
+                console.log('✅ 页眉组件初始化完成');
+            } else {
+                console.error('❌ initHeader 函数未找到');
+            }
+
+            // 初始化页脚组件
+            if (typeof initFooter === 'function') {
+                window.footerComponent = initFooter();
+                console.log('✅ 页脚组件初始化完成');
+            } else {
+                console.error('❌ initFooter 函数未找到');
+            }
+
+            console.log('🎉 诗歌创作页面组件初始化完成');
+        });
+    </script>
 </body>
 </html>

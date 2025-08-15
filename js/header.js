@@ -15,6 +15,12 @@ class HeaderComponent {
         return filename.replace('.html', '') || 'index';
     }
 
+    // 判断是否为作品展示页面
+    isWorksPage() {
+        const worksPages = ['essays', 'poetry', 'novels', 'artworks', 'music', 'videos'];
+        return worksPages.includes(this.currentPage);
+    }
+
     // 生成导航栏HTML - 完全基于首页的导航结构
     generateHeader() {
         return `
@@ -32,18 +38,18 @@ class HeaderComponent {
                             <a href="#about" class="nav-link" onclick="navigateToAbout(event)">关于我</a>
                         </li>
                         <li class="nav-item nav-dropdown">
-                            <a href="#" class="nav-link dropdown-trigger">作品展示 ▼</a>
+                            <a href="#" class="nav-link dropdown-trigger ${this.isWorksPage() ? 'active' : ''}">作品展示 ▼</a>
                             <div class="nav-dropdown-menu">
-                                <a href="essays.html" class="nav-dropdown-link">生活随笔</a>
-                                <a href="poetry.html" class="nav-dropdown-link">诗歌创作</a>
-                                <a href="novels.html" class="nav-dropdown-link">小说连载</a>
-                                <a href="artworks.html" class="nav-dropdown-link">绘画作品</a>
-                                <a href="music.html" class="nav-dropdown-link">音乐作品</a>
-                                <a href="videos.html" class="nav-dropdown-link">视频作品</a>
+                                <a href="essays.html" class="nav-dropdown-link ${this.currentPage === 'essays' ? 'current-page' : ''}">生活随笔</a>
+                                <a href="poetry.html" class="nav-dropdown-link ${this.currentPage === 'poetry' ? 'current-page' : ''}">诗歌创作</a>
+                                <a href="novels.html" class="nav-dropdown-link ${this.currentPage === 'novels' ? 'current-page' : ''}">小说连载</a>
+                                <a href="artworks.html" class="nav-dropdown-link ${this.currentPage === 'artworks' ? 'current-page' : ''}">绘画作品</a>
+                                <a href="music.html" class="nav-dropdown-link ${this.currentPage === 'music' ? 'current-page' : ''}">音乐作品</a>
+                                <a href="videos.html" class="nav-dropdown-link ${this.currentPage === 'videos' ? 'current-page' : ''}">视频作品</a>
                             </div>
                         </li>
                         <li class="nav-item">
-                            <a href="upload.html" class="nav-link" id="uploadBtn">作品上传</a>
+                            <a href="upload.html" class="nav-link ${this.currentPage === 'upload' ? 'active' : ''}" id="uploadBtn">作品上传</a>
                         </li>
                         <li class="nav-item">
                             <a href="#contact" class="nav-link" onclick="navigateToContact(event)">联系我</a>
@@ -70,25 +76,75 @@ class HeaderComponent {
         }
 
         console.log('🚀 开始初始化页眉组件...');
-        
+
+        // 首先清理可能存在的重复元素
+        this.cleanupDuplicateElements();
+
         // 注入必要的样式
         this.injectStyles();
-        
+
         // 插入页眉
         this.insertHeader();
-        
+
         // 初始化各种功能
         this.initializeNavigation();
         this.initializeModals();
         this.initializeUserInfo();
-        
+
         this.isInitialized = true;
         console.log('✅ 页眉组件初始化完成');
     }
 
+    // 清理重复元素
+    cleanupDuplicateElements() {
+        console.log('🧹 清理重复的页眉元素...');
+
+        // 清理重复的导航栏
+        const navbars = document.querySelectorAll('nav.navbar');
+        if (navbars.length > 1) {
+            console.log(`发现 ${navbars.length} 个导航栏，清理重复项`);
+            navbars.forEach((nav, index) => {
+                if (index > 0) nav.remove();
+            });
+        }
+
+        // 清理重复的登录模态框
+        const modals = document.querySelectorAll('#loginModal');
+        if (modals.length > 1) {
+            console.log(`发现 ${modals.length} 个登录模态框，清理重复项`);
+            modals.forEach((modal, index) => {
+                if (index > 0) modal.remove();
+            });
+        }
+
+        // 清理重复的用户信息显示区域
+        const userInfos = document.querySelectorAll('#userInfoDisplay');
+        if (userInfos.length > 1) {
+            console.log(`发现 ${userInfos.length} 个用户信息显示区域，清理重复项`);
+            userInfos.forEach((info, index) => {
+                if (index > 0) info.remove();
+            });
+        }
+
+        console.log('✅ 重复元素清理完成');
+    }
+
     // 插入页眉
     insertHeader() {
-        // 查找现有的导航栏或在body开头插入
+        // 查找现有的导航栏
+        const existingNavs = document.querySelectorAll('nav.navbar');
+
+        // 如果有多个导航栏，先清除所有
+        if (existingNavs.length > 1) {
+            console.log('🧹 发现多个导航栏，清除重复项...');
+            existingNavs.forEach((nav, index) => {
+                if (index > 0) { // 保留第一个，删除其他
+                    nav.remove();
+                }
+            });
+        }
+
+        // 查找剩余的导航栏
         const existingNav = document.querySelector('nav.navbar');
         if (existingNav) {
             console.log('🔄 替换现有导航栏');
@@ -122,11 +178,12 @@ class HeaderComponent {
     // 等待auth系统加载
     waitForAuth(callback, attempts = 0) {
         const maxAttempts = 20; // 最多等待10秒
-        
-        if (typeof auth !== 'undefined' && auth.currentUser !== undefined) {
-            console.log('✅ Auth系统已加载');
+
+        if (typeof auth !== 'undefined' && typeof auth.currentUser !== 'undefined') {
+            console.log('✅ Auth系统已加载，当前用户状态:', auth.currentUser ? auth.currentUser.username : '未登录');
             callback();
         } else if (attempts < maxAttempts) {
+            console.log(`⏳ 等待Auth系统加载... (${attempts + 1}/${maxAttempts})`);
             setTimeout(() => {
                 this.waitForAuth(callback, attempts + 1);
             }, 500);
@@ -150,7 +207,13 @@ class HeaderComponent {
 
         if (typeof auth !== 'undefined' && auth.currentUser) {
             console.log('👤 用户已登录:', auth.currentUser.username);
-            
+
+            // 确保用户信息显示区域存在
+            if (!document.getElementById('userInfoDisplay')) {
+                console.log('🔧 用户信息显示区域不存在，重新创建...');
+                this.initializeUserInfo();
+            }
+
             // 更新导航链接显示用户名
             authNavLink.textContent = auth.currentUser.username;
             authNavLink.style.color = '#28a745'; // 绿色表示已登录
@@ -174,10 +237,23 @@ class HeaderComponent {
 
             // 更改点击事件为显示用户信息
             authNavLink.onclick = () => {
+                console.log('🖱️ 用户名被点击');
                 if (userInfoDisplay) {
                     const display = userInfoDisplay.style.display;
                     userInfoDisplay.style.display = display === 'none' ? 'block' : 'none';
                     console.log('🔄 用户信息显示状态切换:', userInfoDisplay.style.display);
+                } else {
+                    console.error('❌ userInfoDisplay元素不存在，尝试重新创建');
+                    // 尝试重新创建用户信息显示区域
+                    this.initializeUserInfo();
+                    // 重新获取元素
+                    const newUserInfoDisplay = document.getElementById('userInfoDisplay');
+                    if (newUserInfoDisplay) {
+                        newUserInfoDisplay.style.display = 'block';
+                        console.log('✅ 重新创建用户信息面板成功');
+                    } else {
+                        console.error('❌ 重新创建用户信息面板失败');
+                    }
                 }
             };
 
@@ -309,10 +385,24 @@ class HeaderComponent {
     initializeModals() {
         console.log('🔲 初始化模态框...');
 
+        // 清除重复的登录模态框
+        const existingModals = document.querySelectorAll('#loginModal');
+        if (existingModals.length > 1) {
+            console.log('🧹 发现多个登录模态框，清除重复项...');
+            existingModals.forEach((modal, index) => {
+                if (index > 0) { // 保留第一个，删除其他
+                    modal.remove();
+                }
+            });
+        }
+
         // 检查是否已存在登录模态框
         if (!document.getElementById('loginModal')) {
             this.createLoginModal();
         }
+
+        // 绑定登录表单事件
+        this.bindLoginFormEvents();
 
         console.log('✅ 模态框初始化完成');
     }
@@ -350,9 +440,160 @@ class HeaderComponent {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
+    // 绑定登录表单事件
+    bindLoginFormEvents() {
+        // 延迟绑定，确保DOM元素已创建
+        setTimeout(() => {
+            const loginForm = document.getElementById('loginForm');
+            if (!loginForm) {
+                console.warn('⚠️ 登录表单未找到，跳过事件绑定');
+                return;
+            }
+
+            // 检查是否已经绑定过事件（避免重复绑定）
+            if (loginForm.dataset.headerBound === 'true') {
+                console.log('ℹ️ 登录表单事件已绑定，跳过重复绑定');
+                return;
+            }
+
+            // 标记表单已被页眉组件处理
+            loginForm.dataset.headerBound = 'true';
+            console.log('🔧 页眉组件：已标记登录表单为页眉组件处理');
+
+            // 绑定提交事件
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log('🔐 页眉组件：登录表单提交');
+
+                // 检查auth对象是否可用
+                if (typeof auth === 'undefined') {
+                    alert('系统正在初始化，请稍后再试');
+                    return;
+                }
+
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+
+                // 防护性检查：确保用户名和密码不为空
+                if (!username || !password) {
+                    console.warn('⚠️ 页眉组件：用户名或密码为空，跳过登录处理');
+                    showErrorMessage('请输入用户名和密码');
+                    return;
+                }
+
+                // 检查是否已经登录成功（避免重复处理）
+                if (auth.currentUser) {
+                    console.log('✅ 页眉组件：用户已登录，跳过重复处理');
+                    closeLoginModal();
+                    return;
+                }
+
+                try {
+                    console.log('🔐 页眉组件：开始登录流程...', username);
+
+                    // 显示登录中状态
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.textContent;
+                    submitBtn.textContent = '登录中...';
+                    submitBtn.disabled = true;
+
+                    const result = await auth.login(username, password);
+                    console.log('🔍 页眉组件：登录结果', result);
+
+                    // 恢复按钮状态
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+
+                    if (result) {
+                        console.log('✅ 页眉组件：登录成功，开始更新UI...');
+
+                        // 关闭登录模态框
+                        closeLoginModal();
+
+                        // 更新认证导航状态
+                        setTimeout(() => {
+                            this.updateAuthNavigation();
+                            console.log('✅ 页眉组件：认证状态已更新');
+
+                            // 通知页面更新用户相关内容
+                            this.notifyPageAuthUpdate();
+                        }, 100);
+
+                        // 显示成功消息
+                        setTimeout(() => {
+                            if (typeof showSuccessMessage === 'function') {
+                                showSuccessMessage('登录成功！欢迎回来，' + auth.currentUser.username);
+                            } else {
+                                alert('登录成功！欢迎回来，' + auth.currentUser.username);
+                            }
+                        }, 200);
+
+                        // 管理员特殊处理
+                        if (auth.isAdmin && auth.isAdmin()) {
+                            setTimeout(() => {
+                                if (typeof showAdminWelcome === 'function') {
+                                    showAdminWelcome();
+                                    console.log('✅ 页眉组件：管理员欢迎信息已显示');
+                                }
+                            }, 1500);
+                        }
+
+                        console.log('🎉 页眉组件：登录流程完成');
+                    } else {
+                        console.error('❌ 页眉组件：登录返回false');
+                        alert('登录失败：未知错误');
+                    }
+                } catch (error) {
+                    console.error('❌ 页眉组件：登录异常', error);
+
+                    // 恢复按钮状态
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.textContent = '登录';
+                        submitBtn.disabled = false;
+                    }
+
+                    // 显示友好的错误消息
+                    let errorMessage = '登录失败';
+                    if (error.message.includes('用户不存在')) {
+                        errorMessage = '用户名不存在，请检查输入';
+                    } else if (error.message.includes('密码错误')) {
+                        errorMessage = '密码错误，请重新输入';
+                    } else if (error.message.includes('Firebase')) {
+                        errorMessage = '网络连接问题，请稍后重试';
+                    } else {
+                        errorMessage = `登录失败: ${error.message}`;
+                    }
+
+                    if (typeof showErrorMessage === 'function') {
+                        showErrorMessage(errorMessage);
+                    } else {
+                        alert(errorMessage);
+                    }
+                }
+            });
+
+            // 标记已绑定
+            loginForm.dataset.headerBound = 'true';
+            console.log('✅ 页眉组件：登录表单事件绑定完成');
+
+        }, 100);
+    }
+
     // 初始化用户信息显示
     initializeUserInfo() {
         console.log('👤 初始化用户信息显示...');
+
+        // 清除重复的用户信息显示区域
+        const existingUserInfos = document.querySelectorAll('#userInfoDisplay');
+        if (existingUserInfos.length > 1) {
+            console.log('🧹 发现多个用户信息显示区域，清除重复项...');
+            existingUserInfos.forEach((info, index) => {
+                if (index > 0) { // 保留第一个，删除其他
+                    info.remove();
+                }
+            });
+        }
 
         // 检查是否已存在用户信息显示区域
         if (!document.getElementById('userInfoDisplay')) {
@@ -360,6 +601,60 @@ class HeaderComponent {
         }
 
         console.log('✅ 用户信息显示初始化完成');
+    }
+
+    // 通知页面更新认证状态
+    notifyPageAuthUpdate() {
+        console.log('📢 页眉组件：通知页面更新认证状态...');
+
+        // 触发全局认证状态更新事件
+        const authUpdateEvent = new CustomEvent('authStateUpdate', {
+            detail: {
+                user: auth.currentUser,
+                isLoggedIn: !!auth.currentUser,
+                isAdmin: auth.isAdmin && auth.isAdmin()
+            }
+        });
+
+        window.dispatchEvent(authUpdateEvent);
+        console.log('✅ 页眉组件：认证状态更新事件已发送');
+
+        // 直接调用页面的updateAuthNavigation函数（如果存在）
+        if (typeof window.updateAuthNavigation === 'function') {
+            console.log('🔄 页眉组件：调用页面的updateAuthNavigation函数');
+            window.updateAuthNavigation();
+        }
+
+        // 特别处理首页的管理员面板更新
+        if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
+            console.log('🏠 页眉组件：检测到首页，更新管理员面板');
+            this.updateHomepageAdminPanel();
+        }
+    }
+
+    // 更新首页管理员面板
+    updateHomepageAdminPanel() {
+        if (typeof window.updateAdminSection === 'function') {
+            const isAdmin = auth.isAdmin && auth.isAdmin();
+            console.log(`👑 页眉组件：更新首页管理员面板，管理员状态: ${isAdmin}`);
+            window.updateAdminSection(isAdmin);
+        } else {
+            console.warn('⚠️ 页眉组件：首页updateAdminSection函数不存在');
+        }
+
+        // 根据用户登录状态决定显示或隐藏认证内容
+        const isLoggedIn = auth.currentUser !== null;
+        if (isLoggedIn) {
+            if (typeof window.showAuthenticatedContent === 'function') {
+                console.log('👤 页眉组件：用户已登录，显示首页认证内容');
+                window.showAuthenticatedContent();
+            }
+        } else {
+            if (typeof window.hideAuthenticatedContent === 'function') {
+                console.log('🔒 页眉组件：用户未登录，隐藏首页认证内容');
+                window.hideAuthenticatedContent();
+            }
+        }
     }
 
     // 创建用户信息显示区域
@@ -468,6 +763,17 @@ class HeaderComponent {
                 transform: translateX(5px);
             }
 
+            .nav-dropdown-link.current-page {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                color: white;
+                font-weight: 600;
+            }
+
+            .nav-dropdown-link.current-page:hover {
+                background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+                transform: translateX(5px);
+            }
+
             /* 用户信息显示区域动画 */
             #userInfoDisplay {
                 animation: slideInFromRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -557,6 +863,80 @@ class HeaderComponent {
     }
 }
 
+// 全局函数 - 显示成功消息
+if (typeof showSuccessMessage === 'undefined') {
+    function showSuccessMessage(message) {
+        showMessage(message, 'success');
+    }
+}
+
+// 全局函数 - 显示错误消息
+if (typeof showErrorMessage === 'undefined') {
+    function showErrorMessage(message) {
+        showMessage(message, 'error');
+    }
+}
+
+// 全局函数 - 通用消息显示
+if (typeof showMessage === 'undefined') {
+    function showMessage(message, type = 'success') {
+        // 创建消息元素
+        const messageDiv = document.createElement('div');
+        const bgColor = type === 'success' ? '#28a745' : '#dc3545';
+        const icon = type === 'success' ? '✅' : '❌';
+
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${bgColor};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease-out;
+            max-width: 300px;
+            word-wrap: break-word;
+        `;
+        messageDiv.innerHTML = `${icon} ${message}`;
+
+        // 添加动画样式
+        if (!document.getElementById('message-animation-style')) {
+            const style = document.createElement('style');
+            style.id = 'message-animation-style';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(messageDiv);
+
+        // 自动移除消息
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.style.animation = 'slideInRight 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.remove();
+                    }
+                }, 300);
+            }
+        }, 3000);
+    }
+}
+
 // 全局函数 - 显示登录模态框
 if (typeof showLoginModal === 'undefined') {
     function showLoginModal() {
@@ -593,17 +973,25 @@ if (typeof closeLoginModal === 'undefined') {
 if (typeof logout === 'undefined') {
     function logout() {
         if (typeof auth !== 'undefined' && auth.logout) {
+            console.log('🔓 开始登出流程...');
             auth.logout();
+
             // 更新导航状态
             if (window.headerComponent) {
                 window.headerComponent.updateAuthNavigation();
+                // 通知页面更新认证状态
+                window.headerComponent.notifyPageAuthUpdate();
             }
+
             // 显示成功消息
             if (typeof showSuccessMessage === 'function') {
                 showSuccessMessage('已退出登录');
             } else {
                 alert('已退出登录');
             }
+
+            console.log('✅ 登出流程完成');
+
             // 跳转到首页
             if (window.location.pathname !== '/index.html' && !window.location.pathname.endsWith('/')) {
                 window.location.href = 'index.html';
@@ -743,9 +1131,20 @@ document.addEventListener('DOMContentLoaded', function() {
 // 提供手动初始化函数
 function initHeader() {
     if (!window.headerComponent) {
+        console.log('🆕 创建新的页眉组件实例');
         window.headerComponent = new HeaderComponent();
+    } else {
+        console.log('♻️ 使用现有的页眉组件实例');
     }
-    window.headerComponent.init();
+
+    // 只有在未初始化时才进行初始化
+    if (!window.headerComponent.isInitialized) {
+        console.log('🔄 执行页眉组件初始化');
+        window.headerComponent.init();
+    } else {
+        console.log('✅ 页眉组件已初始化，跳过重复初始化');
+    }
+
     return window.headerComponent;
 }
 

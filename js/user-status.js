@@ -59,6 +59,15 @@ class UserStatusManager {
       return;
     }
 
+    // 检查是否已经存在页眉组件的登录按钮
+    const existingAuthLink = document.getElementById('authNavLink');
+    if (existingAuthLink) {
+      console.log('🔄 检测到页眉组件已存在，user-status.js 将与其协调工作');
+      // 不创建重复的登录按钮，而是使用现有的页眉组件
+      this.useExistingHeaderComponent();
+      return;
+    }
+
     // 检查是否已经添加了用户状态元素
     if (document.getElementById('userStatusItem') || document.getElementById('loginItem')) {
       return;
@@ -94,6 +103,30 @@ class UserStatusManager {
     this.addUserInfoDisplay();
 
     console.log('✅ 用户认证元素已添加到导航栏（包含登录按钮和用户信息）');
+  }
+
+  // 使用现有的页眉组件而不是创建新的登录按钮
+  useExistingHeaderComponent() {
+    console.log('🔗 使用现有页眉组件的登录功能');
+
+    // 不创建重复的模态框和用户信息显示区域，页眉组件会处理这些
+    // 只在页眉组件没有创建的情况下才创建
+    setTimeout(() => {
+      if (!document.getElementById('loginModal')) {
+        console.log('📦 页眉组件未创建登录模态框，user-status.js 创建备用模态框');
+        this.addLoginModal();
+      }
+
+      if (!document.getElementById('userInfoDisplay')) {
+        console.log('📦 页眉组件未创建用户信息显示区域，user-status.js 创建备用区域');
+        this.addUserInfoDisplay();
+      }
+    }, 200);
+
+    // 标记为使用外部页眉组件
+    this.usingExternalHeader = true;
+
+    console.log('✅ 已配置为使用页眉组件的认证功能');
   }
 
   // 添加登录模态框
@@ -469,6 +502,15 @@ class UserStatusManager {
     const shouldLog = source !== 'timer' && (!this.lastLoggedState || (now - this.lastLogTime > 60000)); // 60秒内最多输出一次日志
 
     try {
+      // 如果使用外部页眉组件，委托给页眉组件处理
+      if (this.usingExternalHeader) {
+        if (window.headerComponent && window.headerComponent.updateAuthNavigation) {
+          window.headerComponent.updateAuthNavigation();
+        }
+        this.isUpdating = false;
+        return;
+      }
+
       const userStatusItem = document.getElementById('userStatusItem');
       const loginItem = document.getElementById('loginItem');
       const currentUserName = document.getElementById('currentUserName');
@@ -479,6 +521,7 @@ class UserStatusManager {
       if (shouldLog) {
         console.log('👤 用户状态元素未找到，跳过更新');
       }
+      this.isUpdating = false;
       return; // 元素还未创建
     }
 
@@ -572,8 +615,12 @@ class UserStatusManager {
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
 
-      // 绑定登录表单事件
-      this.bindLoginForm();
+      // 只有在不使用外部页眉组件时才绑定登录表单事件
+      if (!this.usingExternalHeader) {
+        this.bindLoginForm();
+      } else {
+        console.log('🔗 使用页眉组件的登录表单事件处理');
+      }
     }
   }
 

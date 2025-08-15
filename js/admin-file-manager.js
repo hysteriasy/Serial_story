@@ -1409,6 +1409,11 @@ class AdminFileManager {
 
       this.showNotification('文件删除成功', 'success');
 
+      // 更新首页统计数据
+      if (typeof window.updateHomepageStats === 'function') {
+        window.updateHomepageStats();
+      }
+
     } catch (error) {
       console.error('删除文件失败:', error);
       this.showNotification('删除文件失败: ' + error.message, 'error');

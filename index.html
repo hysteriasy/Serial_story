@@ -245,13 +245,30 @@
 
                     <!-- 用户功能区域 -->
                     <div class="user-functions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                        <a href="upload.html" class="user-function-card" style="text-decoration: none; color: inherit;">
-                            <div style="padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; transition: transform 0.3s ease;">
-                                <div style="font-size: 2rem; margin-bottom: 10px;">📝</div>
-                                <h4 style="margin-bottom: 10px; color: white;">创作发布</h4>
-                                <p style="font-size: 0.9em; opacity: 0.9; margin: 0;">发布您的文学、艺术作品</p>
+                        <!-- 创作发布功能卡片 - 需要上传权限 -->
+                        <div id="upload-function-card" class="upload-permission-required" style="display: none;">
+                            <a href="upload.html" class="user-function-card" style="text-decoration: none; color: inherit;">
+                                <div style="padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; transition: transform 0.3s ease;">
+                                    <div style="font-size: 2rem; margin-bottom: 10px;">📝</div>
+                                    <h4 style="margin-bottom: 10px; color: white;">创作发布</h4>
+                                    <p style="font-size: 0.9em; opacity: 0.9; margin: 0;">发布您的文学、艺术作品</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <!-- 权限不足提示卡片 - 对无上传权限用户显示 -->
+                        <div id="upload-permission-denied" class="upload-permission-denied" style="display: none;">
+                            <div class="user-function-card" style="text-decoration: none; color: inherit; cursor: not-allowed; opacity: 0.6;">
+                                <div style="padding: 25px; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); border-radius: 12px; color: white; position: relative;">
+                                    <div style="font-size: 2rem; margin-bottom: 10px;">🔒</div>
+                                    <h4 style="margin-bottom: 10px; color: white;">创作发布</h4>
+                                    <p style="font-size: 0.9em; opacity: 0.9; margin: 0;">需要好友或管理员权限</p>
+                                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(220, 53, 69, 0.8); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7em;">
+                                        权限不足
+                                    </div>
+                                </div>
                             </div>
-                        </a>
+                        </div>
                         <a href="#" onclick="showMyWorks()" class="user-function-card" style="text-decoration: none; color: inherit;">
                             <div style="padding: 25px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; color: white; transition: transform 0.3s ease;">
                                 <div style="font-size: 2rem; margin-bottom: 10px;">📂</div>
@@ -381,7 +398,7 @@
     <script src="js/data-manager.js"></script>
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/user-status.js"></script>
+    <!-- <script src="js/user-status.js"></script> 已移除，页眉组件已包含用户状态管理 -->
     <script src="js/system-stats.js"></script>
     <script src="js/homepage-integration.js"></script>
 
@@ -882,6 +899,20 @@
     <script>
         // 首页特定功能（登录相关函数现在由组件提供）
 
+        // 监听页眉组件的认证状态更新事件
+        window.addEventListener('authStateUpdate', function(event) {
+            console.log('🔄 首页：收到认证状态更新事件', event.detail);
+            const { user, isLoggedIn, isAdmin } = event.detail;
+
+            if (isLoggedIn) {
+                showAuthenticatedContent();
+                updateAdminSection(isAdmin);
+            } else {
+                hideAuthenticatedContent();
+                updateAdminSection(false);
+            }
+        });
+
         // updateAuthNavigation 函数现在由页眉组件提供
         function updateAuthNavigation() {
             console.log('🔄 首页 updateAuthNavigation 被调用，委托给页眉组件...');
@@ -931,6 +962,12 @@
 
             if (authElements.length > 0) {
                 console.log('✅ 认证用户内容已显示');
+
+                // 更新欢迎区域的标题，使其个性化显示用户名
+                updateWelcomeTitle();
+
+                // 更新基于权限的内容显示
+                updatePermissionBasedContent();
             } else {
                 console.warn('⚠️ 没有找到 .auth-required 元素');
             }
@@ -946,12 +983,155 @@
         }
 
         function hideAuthenticatedContent() {
+            console.log('🔄 hideAuthenticatedContent 函数开始执行...');
+
             // 隐藏需要登录的内容
             const authElements = document.querySelectorAll('.auth-required');
-            authElements.forEach(el => el.style.display = 'none');
+            console.log('🔍 找到 .auth-required 元素数量:', authElements.length);
+
+            authElements.forEach((el, index) => {
+                console.log(`🔄 隐藏 .auth-required 元素 ${index + 1}:`, el);
+                el.style.display = 'none';
+            });
+
+            if (authElements.length > 0) {
+                console.log('✅ 认证用户内容已隐藏');
+
+                // 重置欢迎区域标题为默认状态
+                resetWelcomeTitle();
+
+                // 重置权限相关内容显示
+                resetPermissionBasedContent();
+            } else {
+                console.warn('⚠️ 没有找到 .auth-required 元素');
+            }
 
             // 隐藏管理员控制面板
             updateAdminSection(false);
+        }
+
+        // 更新欢迎区域标题，显示个性化用户名
+        function updateWelcomeTitle() {
+            const welcomeTitle = document.querySelector('#auth-section .section-title');
+            if (welcomeTitle && auth.currentUser) {
+                const username = auth.currentUser.username;
+                welcomeTitle.textContent = `🎉 欢迎${username}回来`;
+                console.log(`✅ 欢迎标题已更新为: 欢迎${username}回来`);
+            } else {
+                console.warn('⚠️ 无法更新欢迎标题：元素不存在或用户未登录');
+            }
+        }
+
+        // 重置欢迎区域标题为默认状态
+        function resetWelcomeTitle() {
+            const welcomeTitle = document.querySelector('#auth-section .section-title');
+            if (welcomeTitle) {
+                welcomeTitle.textContent = '🎉 欢迎登录用户';
+                console.log('✅ 欢迎标题已重置为默认状态');
+            }
+        }
+
+        // 更新基于权限的内容显示
+        function updatePermissionBasedContent() {
+            console.log('🔐 开始更新基于权限的内容显示...');
+
+            if (!auth.currentUser) {
+                console.warn('⚠️ 用户未登录，跳过权限内容更新');
+                return;
+            }
+
+            const userRole = auth.currentUser.role;
+            const hasUploadPermission = auth.hasPermission('upload');
+
+            console.log(`👤 当前用户: ${auth.currentUser.username}, 角色: ${userRole}, 上传权限: ${hasUploadPermission}`);
+
+            // 获取上传功能相关元素
+            const uploadFunctionCard = document.getElementById('upload-function-card');
+            const uploadPermissionDenied = document.getElementById('upload-permission-denied');
+
+            if (!uploadFunctionCard || !uploadPermissionDenied) {
+                console.warn('⚠️ 上传权限相关元素不存在');
+                return;
+            }
+
+            if (hasUploadPermission) {
+                // 用户有上传权限，显示上传功能卡片
+                uploadFunctionCard.style.display = 'block';
+                uploadPermissionDenied.style.display = 'none';
+                console.log('✅ 用户有上传权限，显示创作发布功能');
+            } else {
+                // 用户没有上传权限，显示权限不足提示
+                uploadFunctionCard.style.display = 'none';
+                uploadPermissionDenied.style.display = 'block';
+                console.log('🔒 用户无上传权限，显示权限不足提示');
+            }
+
+            // 更新权限提示信息
+            updatePermissionHints(userRole, hasUploadPermission);
+        }
+
+        // 更新权限提示信息
+        function updatePermissionHints(userRole, hasUploadPermission) {
+            const permissionDeniedCard = document.querySelector('#upload-permission-denied .user-function-card > div');
+
+            if (!permissionDeniedCard || hasUploadPermission) {
+                return;
+            }
+
+            // 根据用户角色提供不同的提示信息
+            let hintMessage = '';
+            let upgradeInfo = '';
+
+            switch (userRole) {
+                case 'visitor':
+                    hintMessage = '需要好友或管理员权限';
+                    upgradeInfo = '联系管理员申请好友权限';
+                    break;
+                case 'guest':
+                default:
+                    hintMessage = '需要登录并获得权限';
+                    upgradeInfo = '请先登录并联系管理员';
+                    break;
+            }
+
+            // 更新提示文本
+            const hintText = permissionDeniedCard.querySelector('p');
+            if (hintText) {
+                hintText.textContent = hintMessage;
+            }
+
+            // 添加升级提示（如果不存在）
+            let upgradeHint = permissionDeniedCard.querySelector('.upgrade-hint');
+            if (!upgradeHint && upgradeInfo) {
+                upgradeHint = document.createElement('div');
+                upgradeHint.className = 'upgrade-hint';
+                upgradeHint.style.cssText = 'font-size: 0.8em; opacity: 0.8; margin-top: 8px; font-style: italic;';
+                upgradeHint.textContent = upgradeInfo;
+                permissionDeniedCard.appendChild(upgradeHint);
+            } else if (upgradeHint && upgradeInfo) {
+                upgradeHint.textContent = upgradeInfo;
+            }
+
+            console.log(`💡 权限提示已更新: ${hintMessage} (${upgradeInfo})`);
+        }
+
+        // 重置权限相关内容显示
+        function resetPermissionBasedContent() {
+            console.log('🔄 重置权限相关内容显示...');
+
+            // 隐藏所有权限相关元素
+            const uploadFunctionCard = document.getElementById('upload-function-card');
+            const uploadPermissionDenied = document.getElementById('upload-permission-denied');
+
+            if (uploadFunctionCard) {
+                uploadFunctionCard.style.display = 'none';
+            }
+
+            if (uploadPermissionDenied) {
+                uploadPermissionDenied.style.display = 'none';
+            }
+
+            console.log('✅ 权限相关内容已重置');
         }
 
         // logout 函数现在由页眉组件提供
@@ -1114,6 +1294,16 @@
             }
         }
 
+        // 将函数添加到window对象，供页眉组件调用
+        window.updateAdminSection = updateAdminSection;
+        window.showAuthenticatedContent = showAuthenticatedContent;
+        window.hideAuthenticatedContent = hideAuthenticatedContent;
+        window.updateAuthNavigation = updateAuthNavigation;
+        window.updateWelcomeTitle = updateWelcomeTitle;
+        window.resetWelcomeTitle = resetWelcomeTitle;
+        window.updatePermissionBasedContent = updatePermissionBasedContent;
+        window.resetPermissionBasedContent = resetPermissionBasedContent;
+
         // 管理员功能函数
         function showAdminDashboard() {
             // 获取系统统计数据
@@ -1255,11 +1445,38 @@
             }
         }
 
-        // 登录表单处理
+        // 登录表单处理已移至页眉组件，避免重复处理冲突
+        // 首页现在使用页眉组件的统一登录系统
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('🏠 首页：开始初始化...');
+
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
+                // 检查页眉组件是否已处理登录表单
+                if (loginForm.dataset.headerBound === 'true') {
+                    console.log('✅ 首页：页眉组件已处理登录表单，跳过重复绑定');
+                } else {
+                    console.log('⚠️ 首页：页眉组件未处理登录表单，等待页眉组件初始化');
+                    // 等待页眉组件处理登录表单
+                    let checkCount = 0;
+                    const checkInterval = setInterval(() => {
+                        checkCount++;
+                        if (loginForm.dataset.headerBound === 'true') {
+                            console.log('✅ 首页：页眉组件登录处理已就绪');
+                            clearInterval(checkInterval);
+                        } else if (checkCount > 50) { // 5秒超时
+                            console.warn('⚠️ 首页：页眉组件登录处理超时，可能存在问题');
+                            clearInterval(checkInterval);
+                        }
+                    }, 100);
+                }
+
+                // 原有的重复登录处理已注释，避免与页眉组件冲突
+                /*
                 loginForm.addEventListener('submit', async (e) => {
+                    // 原有的登录处理逻辑已注释，现在由页眉组件统一处理
+                    // 这避免了双重登录处理的冲突问题
+
                     e.preventDefault();
 
                     // 检查auth对象是否可用
@@ -1365,7 +1582,8 @@
 
                         showErrorMessage(errorMessage);
                     }
-                });
+                    */
+                // 注释的登录处理代码结束
             }
 
             // 初始化认证状态 - 等待auth模块完全加载
