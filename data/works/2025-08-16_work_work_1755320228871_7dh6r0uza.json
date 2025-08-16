@@ -1,0 +1,30 @@
+{
+  "id": "work_1755320228871_7dh6r0uza",
+  "owner": "hysteria",
+  "title": "作品_work_1755320228871_7dh6r0uza",
+  "createdAt": "2025-08-16T22:52:21.317Z",
+  "updatedAt": "2025-08-16T22:52:21.317Z",
+  "permissions": {
+    "level": "friend",
+    "isPublic": false,
+    "requiredRole": "friend",
+    "minRoleLevel": 3,
+    "lastModified": "2025-08-16T22:52:20.512Z",
+    "modifiedBy": "hysteria",
+    "metadata": {
+      "lastModifiedBy": "hysteria",
+      "lastModifiedAt": "2025-08-16T22:52:20.865Z",
+      "version": "1.0.1",
+      "changeHistory": [
+        {
+          "action": "updated",
+          "by": "hysteria",
+          "at": "2025-08-16T22:52:20.865Z",
+          "from": "public",
+          "to": "friend",
+          "reason": "Permission update"
+        }
+      ]
+    }
+  }
+}
