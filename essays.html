@@ -41,6 +41,59 @@
             font-size: 1.2rem;
         }
 
+        /* 权限级别标识样式 */
+        .essay-permission {
+            font-size: 0.9rem;
+            margin-left: 8px;
+            opacity: 0.8;
+            cursor: help;
+        }
+
+        /* 不同权限级别的样式 */
+        .essay-item.access-public {
+            border-left: 4px solid #28a745;
+        }
+
+        .essay-item.access-friend {
+            border-left: 4px solid #007bff;
+        }
+
+        .essay-item.access-visitor {
+            border-left: 4px solid #6c757d;
+        }
+
+        .essay-item.access-admin {
+            border-left: 4px solid #dc3545;
+        }
+
+        .essay-item.access-private {
+            border-left: 4px solid #6f42c1;
+        }
+
+        .essay-item.access-custom {
+            border-left: 4px solid #fd7e14;
+        }
+
+        .essay-item.access-error {
+            border-left: 4px solid #ffc107;
+            opacity: 0.7;
+        }
+
+        /* 权限级别提示 */
+        .essay-permission:hover::after {
+            content: attr(title);
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-top: 20px;
+            margin-left: -50px;
+        }
+
         /* 改进的随笔列表样式 */
         .essay-item {
             border: 1px solid #e9ecef;
@@ -451,6 +504,13 @@
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>
     <!-- <script src="js/user-status.js"></script> 已移除，页眉组件已包含用户状态管理 -->
+
+    <!-- 权限控制系统 -->
+    <script src="js/file-permissions-system.js"></script>
+    <script src="js/content-access-control.js"></script>
+    <script src="js/whitelist-blacklist-manager.js"></script>
+    <script src="js/permissions-manager.js"></script>
+
     <script src="js/comments.js"></script>
     <script src="js/essays.js"></script>
 
@@ -735,6 +795,8 @@
                 console.error('❌ loadEssaysList 函数未找到');
             }
         };
+
+
     </script>
 </body>
 </html>

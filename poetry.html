@@ -361,6 +361,59 @@
                 align-items: center;
             }
         }
+
+        /* 权限级别标识样式 */
+        .poetry-permission {
+            font-size: 0.9rem;
+            margin-left: 8px;
+            opacity: 0.8;
+            cursor: help;
+        }
+
+        /* 不同权限级别的诗歌卡片样式 */
+        .poetry-card[data-access-level="public"] {
+            border-left: 4px solid #28a745;
+        }
+
+        .poetry-card[data-access-level="friend"] {
+            border-left: 4px solid #007bff;
+        }
+
+        .poetry-card[data-access-level="visitor"] {
+            border-left: 4px solid #6c757d;
+        }
+
+        .poetry-card[data-access-level="admin"] {
+            border-left: 4px solid #dc3545;
+        }
+
+        .poetry-card[data-access-level="private"] {
+            border-left: 4px solid #6f42c1;
+        }
+
+        .poetry-card[data-access-level="custom"] {
+            border-left: 4px solid #fd7e14;
+        }
+
+        .poetry-card[data-access-level="error"] {
+            border-left: 4px solid #ffc107;
+            opacity: 0.7;
+        }
+
+        /* 权限级别提示 */
+        .poetry-permission:hover::after {
+            content: attr(title);
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-top: 20px;
+            margin-left: -50px;
+        }
     </style>
 </head>
 <body>
@@ -422,6 +475,13 @@
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/user-status.js"></script>
+
+    <!-- 权限控制系统 -->
+    <script src="js/file-permissions-system.js"></script>
+    <script src="js/content-access-control.js"></script>
+    <script src="js/whitelist-blacklist-manager.js"></script>
+    <script src="js/permissions-manager.js"></script>
+
     <script src="js/comments.js"></script>
     <script src="js/poetry.js"></script>
 

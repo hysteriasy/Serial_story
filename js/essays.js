@@ -6,6 +6,9 @@ let essaysCache = null;
 let essaysCacheTime = 0;
 const CACHE_DURATION = 30000; // 30秒缓存
 
+// 用户状态监听变量
+let lastUserState = null;
+
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
     // 确保auth对象已加载并检查登录状态
@@ -16,20 +19,125 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             console.log('📋 Essays页面：当前未登录');
         }
+
+        // 记录初始用户状态
+        lastUserState = getCurrentUserState();
     }
 
     // 初始化随笔页面
     initEssaysPage();
+
+    // 启动用户状态监听
+    startUserStateMonitoring();
 });
 
 // 初始化随笔页面
-function initEssaysPage() {
-    // 加载随笔列表
-    loadEssaysList().catch(error => {
-        console.error('初始化随笔列表失败:', error);
-    });
+async function initEssaysPage() {
+    try {
+        // 初始化权限控制系统
+        await initializePermissionSystems();
+
+        // 加载随笔列表
+        await loadEssaysList();
+    } catch (error) {
+        console.error('初始化随笔页面失败:', error);
+    }
 
     // 移动端菜单功能已由页眉组件提供
+}
+
+// 初始化权限控制系统
+async function initializePermissionSystems() {
+    try {
+        // 初始化文件权限系统
+        if (typeof FilePermissionsSystem !== 'undefined') {
+            window.filePermissionsSystem = new FilePermissionsSystem();
+            console.log('✅ 文件权限系统初始化完成');
+        } else {
+            console.warn('⚠️ FilePermissionsSystem 未找到');
+        }
+
+        // 初始化内容访问控制系统
+        if (typeof ContentAccessControl !== 'undefined') {
+            window.contentAccessControl = new ContentAccessControl();
+            await window.contentAccessControl.initialize();
+            console.log('✅ 内容访问控制系统初始化完成');
+        } else {
+            console.warn('⚠️ ContentAccessControl 未找到');
+        }
+
+        // 初始化白名单黑名单管理器
+        if (typeof WhitelistBlacklistManager !== 'undefined') {
+            window.whitelistBlacklistManager = new WhitelistBlacklistManager();
+            console.log('✅ 白名单黑名单管理器初始化完成');
+        } else {
+            console.warn('⚠️ WhitelistBlacklistManager 未找到');
+        }
+
+    } catch (error) {
+        console.error('❌ 权限控制系统初始化失败:', error);
+    }
+}
+
+// 获取当前用户状态
+function getCurrentUserState() {
+    if (typeof auth === 'undefined' || !auth.currentUser) {
+        return { username: null, role: null, isLoggedIn: false };
+    }
+
+    return {
+        username: auth.currentUser.username,
+        role: auth.currentUser.role,
+        isLoggedIn: true
+    };
+}
+
+// 比较用户状态是否发生变化
+function hasUserStateChanged(oldState, newState) {
+    if (!oldState && !newState) return false;
+    if (!oldState || !newState) return true;
+
+    return oldState.username !== newState.username ||
+           oldState.role !== newState.role ||
+           oldState.isLoggedIn !== newState.isLoggedIn;
+}
+
+// 启动用户状态监听
+function startUserStateMonitoring() {
+    // 每3秒检查一次用户状态变化
+    setInterval(() => {
+        const currentState = getCurrentUserState();
+
+        if (hasUserStateChanged(lastUserState, currentState)) {
+            console.log('🔄 检测到用户状态变化，刷新随笔列表');
+            console.log('旧状态:', lastUserState);
+            console.log('新状态:', currentState);
+
+            // 更新状态记录
+            lastUserState = currentState;
+
+            // 刷新随笔列表
+            loadEssaysList(true).catch(error => {
+                console.error('用户状态变化后刷新列表失败:', error);
+            });
+        }
+    }, 3000);
+
+    // 监听页面可见性变化，当页面重新可见时检查用户状态
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            setTimeout(() => {
+                const currentState = getCurrentUserState();
+                if (hasUserStateChanged(lastUserState, currentState)) {
+                    console.log('🔄 页面重新可见，检测到用户状态变化');
+                    lastUserState = currentState;
+                    loadEssaysList(true).catch(error => {
+                        console.error('页面可见性变化后刷新列表失败:', error);
+                    });
+                }
+            }, 500);
+        }
+    });
 }
 
 
@@ -50,17 +158,43 @@ async function loadEssaysList(forceRefresh = false) {
 
     try {
         // 从文件系统获取随笔数据
-        const essays = await loadEssaysFromFiles();
+        const allEssays = await loadEssaysFromFiles();
 
-        if (essays.length === 0) {
+        if (allEssays.length === 0) {
             essaysList.innerHTML = '<li class="no-essays">暂无随笔，请上传新随笔</li>';
             return;
         }
+
+        // 应用权限过滤
+        console.log(`🔍 开始应用权限过滤，原始随笔数量: ${allEssays.length}`);
+        const essays = await filterEssaysByPermissions(allEssays);
+
+        if (essays.length === 0) {
+            const currentUser = auth.currentUser;
+            const message = currentUser
+                ? `当前用户 ${currentUser.username} (${currentUser.role}) 暂无可访问的随笔`
+                : '暂无公开随笔，请登录查看更多内容';
+            console.log(`⚠️ 权限过滤后无可访问随笔: ${message}`);
+            essaysList.innerHTML = `<li class="no-essays">${message}</li>`;
+            return;
+        }
+
+        console.log(`📋 权限过滤后显示 ${essays.length}/${allEssays.length} 篇随笔`);
+
+        // 记录过滤后的随笔标题
+        const filteredTitles = essays.map(e => e.title).join(', ');
+        console.log(`📝 可访问的随笔: ${filteredTitles}`);
 
         // 遍历随笔数据并生成列表
         essays.forEach((essay, index) => {
             const li = document.createElement('li');
             li.className = 'essay-item';
+
+            // 添加权限级别标识
+            if (essay._accessLevel) {
+                li.setAttribute('data-access-level', essay._accessLevel);
+                li.classList.add(`access-${essay._accessLevel}`);
+            }
 
             // 创建内容容器
             const contentDiv = document.createElement('div');
@@ -80,8 +214,15 @@ async function loadEssaysList(forceRefresh = false) {
             sourceSpan.className = 'essay-source';
             sourceSpan.textContent = getSourceIcon(essay.source);
 
+            // 添加权限级别标识
+            const permissionSpan = document.createElement('span');
+            permissionSpan.className = 'essay-permission';
+            permissionSpan.textContent = getPermissionIcon(essay._accessLevel);
+            permissionSpan.title = getPermissionDescription(essay._accessLevel, essay._accessReason);
+
             headerDiv.appendChild(titleSpan);
             headerDiv.appendChild(sourceSpan);
+            headerDiv.appendChild(permissionSpan);
 
             // 创建元数据区域
             const metaDiv = document.createElement('div');
@@ -284,6 +425,178 @@ function showEssayNotification(message, type = 'info') {
 }
 
 // 移动端菜单功能已由页眉组件提供，移除重复代码
+
+// 根据用户权限过滤随笔列表
+async function filterEssaysByPermissions(essays) {
+    if (!essays || essays.length === 0) {
+        return [];
+    }
+
+    console.log(`🔍 开始权限过滤，原始随笔数量: ${essays.length}`);
+
+    // 获取当前用户信息
+    const currentUser = (typeof auth !== 'undefined') ? auth.currentUser : null;
+    console.log(`👤 当前用户状态: ${currentUser ? `${currentUser.username} (${currentUser.role})` : '未登录'}`);
+
+    // 如果内容访问控制系统未初始化，使用基本权限过滤逻辑
+    if (!window.contentAccessControl) {
+        console.warn('⚠️ 内容访问控制系统未初始化，使用基本权限过滤逻辑');
+        return applyBasicPermissionFilter(essays, currentUser);
+    }
+
+    try {
+        // 为每个随笔添加必要的权限检查字段
+        const essaysWithPermissionData = essays.map(essay => {
+            // 确保随笔有必要的权限相关字段
+            return {
+                ...essay,
+                // 如果没有作者信息，尝试从其他字段获取
+                author: essay.author || essay.uploadedBy || essay.owner || 'unknown',
+                // 如果没有权限设置，根据内容推断默认权限
+                permissions: essay.permissions || inferEssayPermissions(essay),
+                // 添加内容类型标识
+                contentType: 'essay'
+            };
+        });
+
+        // 使用内容访问控制系统过滤
+        const filteredEssays = await window.contentAccessControl.filterContentList(
+            essaysWithPermissionData,
+            'essay'
+        );
+
+        console.log(`✅ 权限过滤完成，可访问随笔数量: ${filteredEssays.length}`);
+
+        // 记录过滤详情
+        if (auth.currentUser) {
+            console.log(`👤 当前用户: ${auth.currentUser.username} (${auth.currentUser.role})`);
+        } else {
+            console.log('👤 当前用户: 未登录');
+        }
+
+        return filteredEssays;
+    } catch (error) {
+        console.error('❌ 权限过滤失败:', error);
+        // 出错时返回空数组，确保安全
+        return [];
+    }
+}
+
+// 推断随笔的默认权限设置
+function inferEssayPermissions(essay) {
+    // 如果随笔已经有明确的权限设置
+    if (essay.permissions) {
+        return essay.permissions;
+    }
+
+    // 根据随笔的其他属性推断权限
+    let permissionLevel = 'public'; // 默认为公开可见，确保未登录用户能看到内容
+
+    // 检查是否有明确的权限标识
+    if (essay.isPublic === true || essay.visibility === 'public') {
+        permissionLevel = 'public';
+    } else if (essay.isPrivate === true || essay.visibility === 'private') {
+        permissionLevel = 'private';
+    } else if (essay.visibility === 'visitor') {
+        permissionLevel = 'visitor';
+    } else if (essay.visibility === 'friend') {
+        permissionLevel = 'friend';
+    }
+
+    // 如果没有明确的可见性设置，但有作者信息，可能需要更严格的权限
+    if (!essay.visibility && !essay.isPublic && !essay.isPrivate) {
+        // 检查是否是从GitHub加载的文件（通常是公开的）
+        if (essay.source === 'github' || essay.source === 'github_uploads') {
+            permissionLevel = 'public';
+        }
+        // 检查是否是从localStorage加载的（可能是私人的）
+        else if (essay.source === 'localStorage' || essay.source === 'local') {
+            permissionLevel = 'friend';
+        }
+        // 其他情况保持公开
+    }
+
+    // 使用文件权限系统创建权限结构
+    if (window.filePermissionsSystem) {
+        return window.filePermissionsSystem.createPermissionStructure(permissionLevel);
+    }
+
+    // 如果权限系统不可用，返回基本权限结构
+    return {
+        level: permissionLevel,
+        isPublic: permissionLevel === 'public',
+        requiredRole: permissionLevel === 'public' ? null : permissionLevel,
+        metadata: {
+            createdBy: essay.author || 'unknown',
+            createdAt: essay.date || new Date().toISOString(),
+            source: 'inferred'
+        }
+    };
+}
+
+// 基本权限过滤逻辑（当权限控制系统未初始化时使用）
+function applyBasicPermissionFilter(essays, currentUser) {
+    console.log(`🔧 执行基本权限过滤，用户: ${currentUser ? `${currentUser.username} (${currentUser.role})` : '未登录'}`);
+
+    const filteredEssays = essays.filter(essay => {
+        // 为随笔添加权限信息（如果没有的话）
+        const permissions = essay.permissions || inferEssayPermissions(essay);
+        const permissionLevel = permissions.level || 'public'; // 默认为公开可见
+
+        // 记录权限检查过程
+        console.log(`📝 检查随笔 "${essay.title}" 权限: ${permissionLevel}`);
+
+        // 公开内容所有人都可以查看
+        if (permissionLevel === 'public') {
+            console.log(`  ✅ 公开内容，允许访问`);
+            return true;
+        }
+
+        // 未登录用户只能查看公开内容
+        if (!currentUser) {
+            console.log(`  ❌ 未登录用户，拒绝访问非公开内容`);
+            return false;
+        }
+
+        // 管理员可以查看所有内容
+        if (currentUser.role === 'admin') {
+            console.log(`  ✅ 管理员用户，允许访问所有内容`);
+            return true;
+        }
+
+        // 私人内容只有作者可以查看
+        if (permissionLevel === 'private') {
+            const isAuthor = currentUser.username === essay.author;
+            console.log(`  ${isAuthor ? '✅' : '❌'} 私人内容，作者检查: ${isAuthor}`);
+            return isAuthor;
+        }
+
+        // 根据权限级别和用户角色判断
+        switch (permissionLevel) {
+            case 'visitor':
+                const visitorAccess = ['visitor', 'friend', 'admin'].includes(currentUser.role);
+                console.log(`  ${visitorAccess ? '✅' : '❌'} 访客级别内容，用户角色: ${currentUser.role}`);
+                return visitorAccess;
+
+            case 'friend':
+                const friendAccess = ['friend', 'admin'].includes(currentUser.role);
+                console.log(`  ${friendAccess ? '✅' : '❌'} 好友级别内容，用户角色: ${currentUser.role}`);
+                return friendAccess;
+
+            case 'admin':
+                const adminAccess = currentUser.role === 'admin';
+                console.log(`  ${adminAccess ? '✅' : '❌'} 管理员级别内容，用户角色: ${currentUser.role}`);
+                return adminAccess;
+
+            default:
+                console.log(`  ❌ 未知权限级别: ${permissionLevel}，拒绝访问`);
+                return false;
+        }
+    });
+
+    console.log(`✅ 基本权限过滤完成，可访问随笔数量: ${filteredEssays.length}/${essays.length}`);
+    return filteredEssays;
+}
 
 // 从多个数据源智能加载随笔
 async function loadEssaysFromFiles() {
@@ -1100,6 +1413,43 @@ function getSourceIcon(source) {
         'unknown': '❓'
     };
     return icons[source] || icons.unknown;
+}
+
+// 获取权限级别图标
+function getPermissionIcon(accessLevel) {
+    const icons = {
+        'public': '🌍',      // 公开
+        'friend': '👥',      // 好友可见
+        'visitor': '👤',     // 访客可见
+        'admin': '🔑',       // 管理员访问
+        'private': '🔒',     // 私有
+        'custom': '⚙️',      // 自定义权限
+        'anonymous': '👻',   // 匿名访问
+        'error': '⚠️'        // 错误
+    };
+    return icons[accessLevel] || '📄';
+}
+
+// 获取权限级别描述
+function getPermissionDescription(accessLevel, accessReason) {
+    const descriptions = {
+        'public': '公开内容 - 所有人都可以查看',
+        'friend': '好友内容 - 好友及以上权限可查看',
+        'visitor': '访客内容 - 访客及以上权限可查看',
+        'admin': '管理员内容 - 仅管理员可查看',
+        'private': '私有内容 - 仅作者可查看',
+        'custom': '自定义权限 - 根据特定规则访问',
+        'anonymous': '匿名访问 - 允许未登录用户查看',
+        'error': '权限检查出错'
+    };
+
+    let description = descriptions[accessLevel] || '未知权限级别';
+
+    if (accessReason) {
+        description += ` (${accessReason})`;
+    }
+
+    return description;
 }
 
 // 改进的日期格式化函数

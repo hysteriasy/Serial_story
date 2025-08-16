@@ -3,16 +3,24 @@ class PoetryDisplay {
   constructor() {
     this.poetryData = [];
     this.currentFilter = 'all';
+    this.lastUserState = null; // 用户状态监听
     this.init();
   }
 
   async init() {
     console.log('🔄 初始化诗歌展示模块...');
-    
+
     try {
+      // 初始化权限控制系统
+      await this.initializePermissionSystems();
+
       await this.loadPoetryData();
       this.setupFilters();
       this.renderPoetry();
+
+      // 启动用户状态监听
+      this.startUserStateMonitoring();
+
       console.log('✅ 诗歌展示模块初始化完成');
     } catch (error) {
       console.error('❌ 诗歌展示模块初始化失败:', error);
@@ -135,10 +143,15 @@ class PoetryDisplay {
       }
 
       // 去重并按时间排序
-      this.poetryData = this.removeDuplicates(this.poetryData);
-      this.poetryData.sort((a, b) => new Date(b.uploadTime) - new Date(a.uploadTime));
+      const allPoetry = this.removeDuplicates(this.poetryData);
+      allPoetry.sort((a, b) => new Date(b.uploadTime) - new Date(a.uploadTime));
 
-      console.log(`📚 加载了 ${this.poetryData.length} 首诗歌`);
+      console.log(`📚 原始加载了 ${allPoetry.length} 首诗歌`);
+
+      // 应用权限过滤
+      this.poetryData = await this.filterPoetryByPermissions(allPoetry);
+
+      console.log(`📚 权限过滤后显示 ${this.poetryData.length}/${allPoetry.length} 首诗歌`);
     } catch (error) {
       console.error('加载诗歌数据失败:', error);
       throw error;
@@ -288,12 +301,17 @@ class PoetryDisplay {
       </div>
     ` : '';
 
+    // 添加权限级别标识
+    const permissionIcon = this.getPermissionIcon(poem._accessLevel);
+    const permissionDescription = this.getPermissionDescription(poem._accessLevel, poem._accessReason);
+
     return `
-      <div class="poetry-card" data-type="${poem.poetryType}" data-id="${poem.id}">
+      <div class="poetry-card" data-type="${poem.poetryType}" data-id="${poem.id}" ${poem._accessLevel ? `data-access-level="${poem._accessLevel}"` : ''}>
         <div class="poetry-meta">
           <span class="poetry-type">${typeLabel}</span>
           <span class="poetry-date">${formattedDate}</span>
           <span class="poetry-source" title="数据源: ${poem.source || 'unknown'}">${getSourceIcon(poem.source)}</span>
+          ${poem._accessLevel ? `<span class="poetry-permission" title="${permissionDescription}">${permissionIcon}</span>` : ''}
         </div>
         <h3 class="poetry-title">${this.escapeHtml(poem.title)}</h3>
         <div class="poetry-content">${this.formatPoetryContent(poem.content)}</div>
@@ -1031,3 +1049,230 @@ window.addEventListener('DOMContentLoaded', () => {
 
   poetryDisplay = new PoetryDisplay();
 });
+
+// 权限相关辅助函数
+PoetryDisplay.prototype.initializePermissionSystems = async function() {
+  try {
+    // 初始化文件权限系统
+    if (typeof FilePermissionsSystem !== 'undefined') {
+      window.filePermissionsSystem = new FilePermissionsSystem();
+      console.log('✅ Poetry: 文件权限系统初始化完成');
+    } else {
+      console.warn('⚠️ Poetry: FilePermissionsSystem 未找到');
+    }
+
+    // 初始化内容访问控制系统
+    if (typeof ContentAccessControl !== 'undefined') {
+      window.contentAccessControl = new ContentAccessControl();
+      await window.contentAccessControl.initialize();
+      console.log('✅ Poetry: 内容访问控制系统初始化完成');
+    } else {
+      console.warn('⚠️ Poetry: ContentAccessControl 未找到');
+    }
+
+    // 初始化白名单黑名单管理器
+    if (typeof WhitelistBlacklistManager !== 'undefined') {
+      window.whitelistBlacklistManager = new WhitelistBlacklistManager();
+      console.log('✅ Poetry: 白名单黑名单管理器初始化完成');
+    } else {
+      console.warn('⚠️ Poetry: WhitelistBlacklistManager 未找到');
+    }
+
+  } catch (error) {
+    console.error('❌ Poetry: 权限控制系统初始化失败:', error);
+  }
+};
+
+// 根据用户权限过滤诗歌列表
+PoetryDisplay.prototype.filterPoetryByPermissions = async function(poetry) {
+  if (!poetry || poetry.length === 0) {
+    return [];
+  }
+
+  console.log(`🔍 Poetry: 开始权限过滤，原始诗歌数量: ${poetry.length}`);
+
+  // 确保内容访问控制系统已初始化
+  if (!window.contentAccessControl) {
+    console.warn('⚠️ Poetry: 内容访问控制系统未初始化，跳过权限过滤');
+    return poetry;
+  }
+
+  try {
+    // 为每首诗歌添加必要的权限检查字段
+    const poetryWithPermissionData = poetry.map(poem => {
+      // 确保诗歌有必要的权限相关字段
+      return {
+        ...poem,
+        // 如果没有作者信息，尝试从其他字段获取
+        author: poem.author || poem.uploadedBy || poem.owner || 'unknown',
+        // 如果没有权限设置，根据内容推断默认权限
+        permissions: poem.permissions || this.inferPoetryPermissions(poem),
+        // 添加内容类型标识
+        contentType: 'poetry'
+      };
+    });
+
+    // 使用内容访问控制系统过滤
+    const filteredPoetry = await window.contentAccessControl.filterContentList(
+      poetryWithPermissionData,
+      'poetry'
+    );
+
+    console.log(`✅ Poetry: 权限过滤完成，可访问诗歌数量: ${filteredPoetry.length}`);
+
+    // 记录过滤详情
+    if (auth.currentUser) {
+      console.log(`👤 Poetry: 当前用户: ${auth.currentUser.username} (${auth.currentUser.role})`);
+    } else {
+      console.log('👤 Poetry: 当前用户: 未登录');
+    }
+
+    return filteredPoetry;
+  } catch (error) {
+    console.error('❌ Poetry: 权限过滤失败:', error);
+    // 出错时返回空数组，确保安全
+    return [];
+  }
+};
+
+// 推断诗歌的默认权限设置
+PoetryDisplay.prototype.inferPoetryPermissions = function(poem) {
+  // 如果诗歌已经有明确的权限设置
+  if (poem.permissions) {
+    return poem.permissions;
+  }
+
+  // 根据诗歌的其他属性推断权限
+  let permissionLevel = 'friend'; // 默认为好友可见
+
+  // 检查是否有公开标识
+  if (poem.isPublic === true || poem.visibility === 'public') {
+    permissionLevel = 'public';
+  } else if (poem.isPrivate === true || poem.visibility === 'private') {
+    permissionLevel = 'private';
+  } else if (poem.visibility === 'visitor') {
+    permissionLevel = 'visitor';
+  }
+
+  // 使用文件权限系统创建权限结构
+  if (window.filePermissionsSystem) {
+    return window.filePermissionsSystem.createPermissionStructure(permissionLevel);
+  }
+
+  // 如果权限系统不可用，返回基本权限结构
+  return {
+    level: permissionLevel,
+    isPublic: permissionLevel === 'public',
+    requiredRole: permissionLevel === 'public' ? null : permissionLevel,
+    metadata: {
+      createdBy: poem.author || 'unknown',
+      createdAt: poem.uploadTime || new Date().toISOString(),
+      source: 'inferred'
+    }
+  };
+};
+
+// 获取权限级别图标
+PoetryDisplay.prototype.getPermissionIcon = function(accessLevel) {
+  const icons = {
+    'public': '🌍',      // 公开
+    'friend': '👥',      // 好友可见
+    'visitor': '👤',     // 访客可见
+    'admin': '🔑',       // 管理员访问
+    'private': '🔒',     // 私有
+    'custom': '⚙️',      // 自定义权限
+    'anonymous': '👻',   // 匿名访问
+    'error': '⚠️'        // 错误
+  };
+  return icons[accessLevel] || '📄';
+};
+
+// 获取权限级别描述
+PoetryDisplay.prototype.getPermissionDescription = function(accessLevel, accessReason) {
+  const descriptions = {
+    'public': '公开内容 - 所有人都可以查看',
+    'friend': '好友内容 - 好友及以上权限可查看',
+    'visitor': '访客内容 - 访客及以上权限可查看',
+    'admin': '管理员内容 - 仅管理员可查看',
+    'private': '私有内容 - 仅作者可查看',
+    'custom': '自定义权限 - 根据特定规则访问',
+    'anonymous': '匿名访问 - 允许未登录用户查看',
+    'error': '权限检查出错'
+  };
+
+  let description = descriptions[accessLevel] || '未知权限级别';
+
+  if (accessReason) {
+    description += ` (${accessReason})`;
+  }
+
+  return description;
+};
+
+// 获取当前用户状态
+PoetryDisplay.prototype.getCurrentUserState = function() {
+  if (typeof auth === 'undefined' || !auth.currentUser) {
+    return { username: null, role: null, isLoggedIn: false };
+  }
+
+  return {
+    username: auth.currentUser.username,
+    role: auth.currentUser.role,
+    isLoggedIn: true
+  };
+};
+
+// 比较用户状态是否发生变化
+PoetryDisplay.prototype.hasUserStateChanged = function(oldState, newState) {
+  if (!oldState && !newState) return false;
+  if (!oldState || !newState) return true;
+
+  return oldState.username !== newState.username ||
+         oldState.role !== newState.role ||
+         oldState.isLoggedIn !== newState.isLoggedIn;
+};
+
+// 启动用户状态监听
+PoetryDisplay.prototype.startUserStateMonitoring = function() {
+  // 记录初始用户状态
+  this.lastUserState = this.getCurrentUserState();
+
+  // 每3秒检查一次用户状态变化
+  setInterval(() => {
+    const currentState = this.getCurrentUserState();
+
+    if (this.hasUserStateChanged(this.lastUserState, currentState)) {
+      console.log('🔄 Poetry: 检测到用户状态变化，刷新诗歌列表');
+      console.log('Poetry: 旧状态:', this.lastUserState);
+      console.log('Poetry: 新状态:', currentState);
+
+      // 更新状态记录
+      this.lastUserState = currentState;
+
+      // 刷新诗歌列表
+      this.loadPoetryData().then(() => {
+        this.renderPoetry();
+      }).catch(error => {
+        console.error('Poetry: 用户状态变化后刷新列表失败:', error);
+      });
+    }
+  }, 3000);
+
+  // 监听页面可见性变化，当页面重新可见时检查用户状态
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      setTimeout(() => {
+        const currentState = this.getCurrentUserState();
+        if (this.hasUserStateChanged(this.lastUserState, currentState)) {
+          console.log('🔄 Poetry: 页面重新可见，检测到用户状态变化');
+          this.lastUserState = currentState;
+          this.loadPoetryData().then(() => {
+            this.renderPoetry();
+          }).catch(error => {
+            console.error('Poetry: 页面可见性变化后刷新列表失败:', error);
+          });
+        }
+      }, 500);
+    }
+  });
+};
