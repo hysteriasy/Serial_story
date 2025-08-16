@@ -1,0 +1,30 @@
+{
+  "id": "work_1755305618071_gkzx0nueo",
+  "owner": "Linlin",
+  "title": "作品_work_1755305618071_gkzx0nueo",
+  "createdAt": "2025-08-16T11:14:09.032Z",
+  "updatedAt": "2025-08-16T11:14:09.032Z",
+  "permissions": {
+    "level": "friend",
+    "isPublic": false,
+    "requiredRole": "friend",
+    "minRoleLevel": 3,
+    "lastModified": "2025-08-16T11:14:08.315Z",
+    "modifiedBy": "hysteria",
+    "metadata": {
+      "lastModifiedBy": "hysteria",
+      "lastModifiedAt": "2025-08-16T11:14:08.665Z",
+      "version": "1.0.1",
+      "changeHistory": [
+        {
+          "action": "updated",
+          "by": "hysteria",
+          "at": "2025-08-16T11:14:08.665Z",
+          "from": "public",
+          "to": "friend",
+          "reason": "Permission update"
+        }
+      ]
+    }
+  }
+}
