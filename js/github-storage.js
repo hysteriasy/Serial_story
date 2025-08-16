@@ -401,15 +401,27 @@ class GitHubStorage {
     }
   }
 
-  // 列出目录下的文件
+  // 列出目录下的文件（优化版本）
   async listFiles(directoryPath = 'user-uploads') {
     if (!this.token) {
       throw new Error('GitHub token未配置');
     }
 
+    // 使用目录检查器预检查
+    if (window.directoryChecker) {
+      const exists = await window.directoryChecker.exists(directoryPath);
+      if (!exists) {
+        if (window.logManager) {
+          window.logManager.github404(directoryPath, 'GitHubStorage');
+        }
+        return [];
+      }
+    }
+
     try {
-      console.log(`🔍 正在获取目录: ${directoryPath}`);
-      console.log(`🔗 API URL: ${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${directoryPath}`);
+      if (window.logManager) {
+        window.logManager.debug('GitHubStorage', `正在获取目录: ${directoryPath}`);
+      }
 
       const response = await fetch(
         `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${directoryPath}`,
@@ -422,18 +434,29 @@ class GitHubStorage {
         }
       );
 
-      console.log(`📡 API响应状态: ${response.status} ${response.statusText}`);
+      if (window.logManager) {
+        window.logManager.debug('GitHubStorage', `API响应状态: ${response.status} ${response.statusText}`);
+      }
 
       if (!response.ok) {
         if (response.status === 404) {
-          return []; // 目录不存在，返回空数组
+          // 更新目录检查器缓存
+          if (window.directoryChecker) {
+            window.directoryChecker.markAsNonExistent(directoryPath);
+          }
+          if (window.logManager) {
+            window.logManager.github404(directoryPath, 'GitHubStorage');
+          }
+          return [];
         }
         throw new Error(`列出文件失败: ${response.status}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error('❌ 列出GitHub文件失败:', error);
+      if (error.status !== 404 && window.logManager) {
+        window.logManager.error('GitHubStorage', '列出GitHub文件失败', error);
+      }
       throw error;
     }
   }

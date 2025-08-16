@@ -1,6 +1,14 @@
 // 管理员文件管理器 - 专门用于 admin.html 页面的文件管理功能
 class AdminFileManager {
   constructor() {
+    // 防止重复初始化
+    if (window.adminFileManager) {
+      if (window.logManager) {
+        window.logManager.warn('AdminFileManager', '实例已存在，跳过重复初始化');
+      }
+      return window.adminFileManager;
+    }
+
     this.currentFiles = [];
     this.filteredFiles = [];
     this.sortBy = 'uploadTime';
@@ -13,6 +21,9 @@ class AdminFileManager {
     // 初始化过滤器状态
     this.ownerFilter = 'all';
     this.permissionFilter = 'all';
+
+    // 设置全局引用
+    window.adminFileManager = this;
   }
 
   // 初始化文件管理器
@@ -215,29 +226,36 @@ class AdminFileManager {
       loadingIndicator.style.display = 'flex';
       fileListContent.innerHTML = '';
 
-      console.log('📁 开始加载文件列表...');
+      // 使用日志管理器
+      if (window.logManager) {
+        window.logManager.info('AdminFileManager', '开始加载文件列表...');
+      } else {
+        console.log('📁 开始加载文件列表...');
+      }
 
       // 获取所有文件
       this.currentFiles = await this.getAllFiles();
 
-      // 调试信息
-      console.log('🔍 文件列表详情:', {
-        totalFiles: this.currentFiles.length,
-        filesBySource: this.currentFiles.reduce((acc, file) => {
-          acc[file.source] = (acc[file.source] || 0) + 1;
-          return acc;
-        }, {}),
-        filesByOwner: this.currentFiles.reduce((acc, file) => {
-          acc[file.owner] = (acc[file.owner] || 0) + 1;
-          return acc;
-        }, {}),
-        sampleFiles: this.currentFiles.slice(0, 3).map(f => ({
-          title: f.title,
-          owner: f.owner,
-          source: f.source,
-          permissions: f.permissions?.level
-        }))
-      });
+      // 调试信息（只在调试模式下显示）
+      if (window.logManager) {
+        window.logManager.debug('AdminFileManager', '文件列表详情', {
+          totalFiles: this.currentFiles.length,
+          filesBySource: this.currentFiles.reduce((acc, file) => {
+            acc[file.source] = (acc[file.source] || 0) + 1;
+            return acc;
+          }, {}),
+          filesByOwner: this.currentFiles.reduce((acc, file) => {
+            acc[file.owner] = (acc[file.owner] || 0) + 1;
+            return acc;
+          }, {}),
+          sampleFiles: this.currentFiles.slice(0, 3).map(f => ({
+            title: f.title,
+            owner: f.owner,
+            source: f.source,
+            permissions: f.permissions?.level
+          }))
+        });
+      }
 
       // 重置过滤器确保管理员看到所有文件
       this.resetFilters();
@@ -2437,15 +2455,25 @@ class AdminFileManager {
   }
 }
 
-// 创建全局实例
-window.adminFileManager = new AdminFileManager();
+// 创建全局实例（防止重复创建）
+window.preventDuplicateInit('AdminFileManager', () => {
+  if (!window.adminFileManager) {
+    window.adminFileManager = new AdminFileManager();
+
+    if (window.logManager) {
+      window.logManager.info('AdminFileManager', '管理员文件管理器已初始化');
+    }
+  }
+});
 
 // 添加全局调试函数
 window.debugFileManager = () => {
   if (window.adminFileManager) {
     return window.adminFileManager.debugStatus();
   } else {
-    console.error('文件管理器未初始化');
+    if (window.logManager) {
+      window.logManager.error('AdminFileManager', '文件管理器未初始化');
+    }
     return null;
   }
 };

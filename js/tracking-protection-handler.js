@@ -10,7 +10,12 @@ class TrackingProtectionHandler {
     this.maxErrors = 5; // 最大错误次数
     this.fallbackMode = false;
     this.userNotified = false;
-    
+
+    // 日志级别控制
+    this.logLevel = this.getLogLevel();
+    this.messageCache = new Map(); // 消息去重缓存
+    this.maxCacheSize = 100;
+
     // 存储访问统计
     this.accessStats = {
       attempts: 0,
@@ -18,9 +23,34 @@ class TrackingProtectionHandler {
       failures: 0,
       lastFailure: null
     };
-    
-    console.log('🛡️ 跟踪保护处理器初始化');
+
+    // 只在调试模式下输出初始化日志
+    if (this.logLevel >= 2) {
+      console.log('🛡️ 跟踪保护处理器初始化');
+    }
     this.initializeHandler();
+  }
+
+  // 获取日志级别
+  getLogLevel() {
+    // 0: 静默模式（生产环境）
+    // 1: 错误模式（只显示错误）
+    // 2: 警告模式（显示错误和警告）
+    // 3: 调试模式（显示所有日志）
+
+    if (window.location.search.includes('debug=true')) {
+      return 3; // 调试模式
+    }
+
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 2; // 本地开发环境，显示警告
+    }
+
+    if (window.location.hostname.includes('github.io')) {
+      return 1; // GitHub Pages 生产环境，只显示错误
+    }
+
+    return 0; // 其他环境，静默模式
   }
 
   // 初始化处理器
@@ -361,11 +391,38 @@ class TrackingProtectionHandler {
     return normalErrorPatterns.some(pattern => pattern.test(message));
   }
 
-  // 处理跟踪保护相关的控制台消息
+  // 处理跟踪保护相关的控制台消息（带去重）
   handleTrackingProtectionConsoleMessage(message, level) {
-    // 静默处理跟踪保护消息，只在调试模式下记录
-    if (window.location.search.includes('debug=true')) {
+    // 消息去重处理
+    const messageKey = `${level}:${message.substring(0, 100)}`;
+    const now = Date.now();
+
+    if (this.messageCache.has(messageKey)) {
+      const lastTime = this.messageCache.get(messageKey);
+      // 5分钟内的重复消息不再输出
+      if (now - lastTime < 300000) {
+        return;
+      }
+    }
+
+    // 更新缓存
+    this.messageCache.set(messageKey, now);
+
+    // 清理过期缓存
+    if (this.messageCache.size > this.maxCacheSize) {
+      const entries = Array.from(this.messageCache.entries());
+      entries.sort((a, b) => a[1] - b[1]);
+      // 删除最旧的一半
+      for (let i = 0; i < entries.length / 2; i++) {
+        this.messageCache.delete(entries[i][0]);
+      }
+    }
+
+    // 根据日志级别决定是否输出
+    if (this.logLevel >= 3) {
       console.info(`🛡️ [跟踪保护] ${level.toUpperCase()}: ${message}`);
+    } else if (this.logLevel >= 2 && level === 'error') {
+      console.warn(`🛡️ 跟踪保护检测到存储访问问题`);
     }
 
     // 更新跟踪保护状态
@@ -379,19 +436,19 @@ class TrackingProtectionHandler {
     }
   }
 
-  // 处理被过滤的消息
+  // 处理被过滤的消息（优化版本）
   handleFilteredMessage(message, level) {
     // 静默记录，不输出到控制台
     this.accessStats.failures++;
     this.accessStats.lastFailure = new Date().toISOString();
 
-    // 只在开发环境下记录过滤统计
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // 只在调试模式下记录过滤统计
+    if (this.logLevel >= 3) {
       if (!this.filteredCount) this.filteredCount = 0;
       this.filteredCount++;
 
-      // 每50个过滤消息报告一次
-      if (this.filteredCount % 50 === 0) {
+      // 每100个过滤消息报告一次（减少频率）
+      if (this.filteredCount % 100 === 0) {
         console.info(`🔇 已过滤 ${this.filteredCount} 个跟踪保护/404相关消息`);
       }
     }

@@ -1216,7 +1216,12 @@
   <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
   <script src="js/ios-compatibility.js"></script>
 
-  <!-- 核心环境和存储管理脚本 - 必须在其他脚本之前加载 -->
+  <!-- 核心管理脚本 - 必须在其他脚本之前加载 -->
+  <script src="js/log-manager.js"></script>
+  <script src="js/script-loader-manager.js"></script>
+  <script src="js/directory-checker.js"></script>
+
+  <!-- 核心环境和存储管理脚本 -->
   <script src="js/tracking-protection-handler.js"></script>
   <script src="js/storage-optimizer.js"></script>
   <script src="js/github-storage.js"></script>
@@ -1248,18 +1253,34 @@
   <script src="js/file-deletion-fix.js"></script>
   <!-- 开发环境下加载验证脚本 -->
   <script>
-    if (window.location.hostname === 'localhost' || window.location.hostname.includes('github.io')) {
-      const verifyScript = document.createElement('script');
-      verifyScript.src = 'verify-admin-layout-fixes.js';
-      verifyScript.onload = () => console.log('✅ 管理员布局修复验证脚本已加载');
-      document.head.appendChild(verifyScript);
+    // 防止重复加载验证脚本
+    window.preventDuplicateInit('verificationScripts', () => {
+      if (window.location.hostname === 'localhost' || window.location.hostname.includes('github.io')) {
+        // 使用脚本加载管理器防止重复加载
+        if (window.scriptLoaderManager && !window.scriptLoaderManager.loadedScripts.has('verify-admin-layout-fixes')) {
+          const verifyScript = document.createElement('script');
+          verifyScript.src = 'verify-admin-layout-fixes.js';
+          verifyScript.onload = () => {
+            if (window.logManager) {
+              window.logManager.debug('Admin', '管理员布局修复验证脚本已加载');
+            }
+          };
+          document.head.appendChild(verifyScript);
+        }
 
-      // 加载文件删除功能验证脚本
-      const deletionVerifyScript = document.createElement('script');
-      deletionVerifyScript.src = 'verify-file-deletion-fixes.js';
-      deletionVerifyScript.onload = () => console.log('✅ 文件删除功能验证脚本已加载');
-      document.head.appendChild(deletionVerifyScript);
-    }
+        // 加载文件删除功能验证脚本
+        if (window.scriptLoaderManager && !window.scriptLoaderManager.loadedScripts.has('verify-file-deletion-fixes')) {
+          const deletionVerifyScript = document.createElement('script');
+          deletionVerifyScript.src = 'verify-file-deletion-fixes.js';
+          deletionVerifyScript.onload = () => {
+            if (window.logManager) {
+              window.logManager.debug('Admin', '文件删除功能验证脚本已加载');
+            }
+          };
+          document.head.appendChild(deletionVerifyScript);
+        }
+      }
+    });
   </script>
 
   <script>
