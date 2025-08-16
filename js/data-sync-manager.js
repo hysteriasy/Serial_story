@@ -345,13 +345,45 @@ class DataSyncManager {
 
   // 通知页面刷新
   notifyPageRefresh(type, data) {
-    // 通知管理员页面刷新
-    if (window.adminFileManager && typeof window.adminFileManager.loadFileList === 'function') {
+    console.log(`📡 通知页面刷新: ${type}`, data);
+
+    // 对于文件删除，使用更智能的刷新策略
+    if (type === 'fileDelete' && window.adminFileManager) {
+      // 先尝试从当前列表中移除文件（立即更新UI）
+      if (window.adminFileManager.currentFiles && data.fileId && data.owner) {
+        const fileIndex = window.adminFileManager.currentFiles.findIndex(f =>
+          f.fileId === data.fileId && f.owner === data.owner
+        );
+        if (fileIndex !== -1) {
+          window.adminFileManager.currentFiles.splice(fileIndex, 1);
+          console.log('🔄 已从当前文件列表中移除文件');
+
+          // 立即更新显示
+          if (typeof window.adminFileManager.applyFilters === 'function') {
+            window.adminFileManager.applyFilters();
+          }
+          if (typeof window.adminFileManager.renderFileList === 'function') {
+            window.adminFileManager.renderFileList();
+          }
+        }
+      }
+
+      // 延迟完整刷新以确保数据一致性
       setTimeout(() => {
-        window.adminFileManager.loadFileList();
-      }, 100);
+        if (typeof window.adminFileManager.loadFileList === 'function') {
+          console.log('🔄 执行延迟文件列表刷新');
+          window.adminFileManager.loadFileList();
+        }
+      }, 1000);
+    } else {
+      // 其他类型的变更使用标准刷新
+      if (window.adminFileManager && typeof window.adminFileManager.loadFileList === 'function') {
+        setTimeout(() => {
+          window.adminFileManager.loadFileList();
+        }, 100);
+      }
     }
-    
+
     // 通知其他页面刷新（通过自定义事件）
     const refreshEvent = new CustomEvent('pageRefreshNeeded', {
       detail: { type, data, timestamp: Date.now() }

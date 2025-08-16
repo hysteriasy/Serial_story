@@ -247,25 +247,30 @@ class GitHubStorage {
   }
 
   // 删除文件
-  async deleteFile(filePath, commitMessage) {
+  async deleteFile(filePath, commitMessage = '删除文件') {
     if (!this.token) {
       throw new Error('GitHub token未配置');
     }
+
+    console.log(`🗑️ GitHub删除文件: ${filePath}`);
 
     try {
       // 先获取文件的SHA
       let fileInfo;
       try {
         fileInfo = await this.getFile(filePath);
+        console.log(`📄 获取到文件信息: ${filePath} (SHA: ${fileInfo.sha.substring(0, 8)}...)`);
       } catch (error) {
         // 如果文件不存在，直接返回成功（文件已经不存在了）
         if (error.status === 404 || error.message.includes('文件不存在')) {
-          // 静默处理，不输出日志（这是正常情况）
+          console.log(`ℹ️ 文件不存在，跳过删除: ${filePath}`);
           return { success: true, alreadyDeleted: true };
         }
+        console.error(`❌ 获取文件信息失败: ${filePath}`, error);
         throw error;
       }
 
+      console.log(`🔄 正在删除GitHub文件: ${filePath}`);
       const response = await fetch(
         `${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`,
         {
@@ -284,26 +289,37 @@ class GitHubStorage {
         }
       );
 
+      console.log(`📡 删除请求响应: ${response.status} ${response.statusText}`);
+
       if (!response.ok) {
         // 如果删除时文件已不存在，也视为成功
         if (response.status === 404) {
-          // 静默处理，不输出日志（这是正常情况）
+          console.log(`ℹ️ 删除时文件已不存在: ${filePath}`);
           return { success: true, alreadyDeleted: true };
         }
 
-        const errorData = await response.json();
-        throw new Error(`删除文件失败: ${response.status} - ${errorData.message}`);
+        let errorMessage = `删除文件失败: ${response.status} - ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = `删除文件失败: ${response.status} - ${errorData.message}`;
+        } catch (e) {
+          // 如果无法解析错误响应，使用默认错误消息
+        }
+
+        console.error(`❌ GitHub删除失败: ${errorMessage}`);
+        throw new Error(errorMessage);
       }
 
-      // 只在调试模式下输出成功日志
-      if (window.location.search.includes('debug=true')) {
-        console.log(`✅ 文件删除成功: ${filePath}`);
-      }
+      console.log(`✅ GitHub文件删除成功: ${filePath}`);
       return { success: true, alreadyDeleted: false };
     } catch (error) {
-      // 只有非预期错误才输出到控制台
+      // 增强错误处理和日志记录
       if (!error.message.includes('文件不存在') && error.status !== 404) {
-        console.error('❌ GitHub文件删除失败:', error);
+        console.error(`❌ GitHub文件删除失败: ${filePath}`, {
+          error: error.message,
+          status: error.status,
+          stack: error.stack
+        });
       }
       throw error;
     }

@@ -1377,6 +1377,8 @@ class AdminFileManager {
   // 删除文件
   async deleteFile(fileId, owner) {
     try {
+      console.log(`🗑️ 开始删除文件: ${fileId} (所有者: ${owner})`);
+
       // 检查权限
       if (!this.canDeleteFile(owner)) {
         this.showNotification('您没有权限删除此文件', 'error');
@@ -1387,31 +1389,59 @@ class AdminFileManager {
       const file = this.currentFiles.find(f => f.fileId === fileId && f.owner === owner);
       if (!file) {
         this.showNotification('文件不存在', 'error');
+        console.warn(`⚠️ 文件不存在: ${fileId} (${owner})`);
         return;
       }
+
+      console.log(`📄 找到文件: ${file.title || file.originalName} (${file.source})`);
 
       // 显示确认对话框
       const confirmed = await this.showDeleteConfirmation(file);
       if (!confirmed) {
+        console.log('❌ 用户取消删除操作');
         return;
       }
 
-      // 执行删除
-      await this.performFileDelete(file);
+      // 显示删除进度
+      this.showNotification('正在删除文件...', 'info');
 
-      // 触发数据同步
+      // 执行删除
+      console.log('🔄 执行文件删除操作...');
+      await this.performFileDelete(file);
+      console.log('✅ 文件删除操作完成');
+
+      // 立即从当前文件列表中移除该文件（优化用户体验）
+      const fileIndex = this.currentFiles.findIndex(f => f.fileId === fileId && f.owner === owner);
+      if (fileIndex !== -1) {
+        this.currentFiles.splice(fileIndex, 1);
+        console.log('🔄 已从当前文件列表中移除文件');
+      }
+
+      // 立即更新显示
+      this.applyFilters();
+      this.renderFileList();
+
+      // 触发数据同步（异步进行，不阻塞UI更新）
       if (window.dataSyncManager) {
-        window.dataSyncManager.syncFileDelete(file.fileId, file.owner);
+        console.log('🔄 触发数据同步...');
+        setTimeout(() => {
+          window.dataSyncManager.syncFileDelete(file.fileId, file.owner);
+        }, 100);
       } else {
-        // 如果没有数据同步管理器，手动刷新列表
-        await this.loadFileList();
+        // 如果没有数据同步管理器，延迟刷新列表以确保删除操作完成
+        console.log('🔄 手动刷新文件列表...');
+        setTimeout(async () => {
+          await this.loadFileList();
+        }, 500);
       }
 
       this.showNotification('文件删除成功', 'success');
 
       // 更新首页统计数据
       if (typeof window.updateHomepageStats === 'function') {
-        window.updateHomepageStats();
+        setTimeout(() => {
+          window.updateHomepageStats();
+        }, 200);
       }
 
     } catch (error) {

@@ -1245,6 +1245,7 @@
   <script src="js/admin-file-manager.js"></script>
   <script src="js/enhanced-permissions-manager.js"></script>
   <script src="js/whitelist-blacklist-manager.js"></script>
+  <script src="js/file-deletion-fix.js"></script>
   <!-- 开发环境下加载验证脚本 -->
   <script>
     if (window.location.hostname === 'localhost' || window.location.hostname.includes('github.io')) {
@@ -1252,6 +1253,12 @@
       verifyScript.src = 'verify-admin-layout-fixes.js';
       verifyScript.onload = () => console.log('✅ 管理员布局修复验证脚本已加载');
       document.head.appendChild(verifyScript);
+
+      // 加载文件删除功能验证脚本
+      const deletionVerifyScript = document.createElement('script');
+      deletionVerifyScript.src = 'verify-file-deletion-fixes.js';
+      deletionVerifyScript.onload = () => console.log('✅ 文件删除功能验证脚本已加载');
+      document.head.appendChild(deletionVerifyScript);
     }
   </script>
 
