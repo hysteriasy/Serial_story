@@ -1,7 +1,13 @@
 // 主页文件展示集成模块
 class HomepageIntegration {
   constructor() {
-    this.database = firebase.database();
+    // 安全的 Firebase 初始化检查
+    this.database = null;
+    this.firebaseAvailable = false;
+
+    // 检查 Firebase 是否可用
+    this.initializeFirebase();
+
     this.categories = {
       literature: {
         name: '文学作品',
@@ -9,7 +15,7 @@ class HomepageIntegration {
         container: '.project-card.literature'
       },
       art: {
-        name: '绘画作品', 
+        name: '绘画作品',
         icon: '🎨',
         container: '.project-card.art'
       },
@@ -24,6 +30,60 @@ class HomepageIntegration {
         container: '.project-card.video'
       }
     };
+  }
+
+  // 安全的 Firebase 初始化
+  initializeFirebase() {
+    try {
+      // 检查是否在 GitHub Pages 环境 - 使用精确匹配以保持一致性
+      const isGitHubPages = window.location.hostname === 'hysteriasy.github.io';
+
+      if (isGitHubPages) {
+        console.info('🌐 Homepage: 检测到 GitHub Pages 环境，跳过 Firebase 初始化');
+        this.firebaseAvailable = false;
+        this.database = null;
+        return;
+      }
+
+      // 检查 Firebase 是否已加载和初始化
+      // 首先检查 Firebase 对象是否存在
+      if (typeof firebase === 'undefined') {
+        console.info('📱 Homepage: Firebase 库未加载，使用离线模式');
+        this.firebaseAvailable = false;
+        this.database = null;
+        return;
+      }
+
+      // 检查 Firebase 应用是否已初始化
+      let hasFirebaseApps = false;
+      try {
+        hasFirebaseApps = firebase.apps && firebase.apps.length > 0;
+      } catch (appsError) {
+        console.warn('⚠️ Homepage: 无法检查 Firebase 应用状态:', appsError.message);
+        hasFirebaseApps = false;
+      }
+
+      // 只有在所有条件都满足时才尝试初始化数据库
+      if (hasFirebaseApps && window.firebaseAvailable) {
+        try {
+          this.database = firebase.database();
+          this.firebaseAvailable = true;
+          console.log('✅ Homepage: Firebase 数据库已初始化');
+        } catch (dbError) {
+          console.warn('⚠️ Homepage: Firebase 数据库初始化失败:', dbError.message);
+          this.firebaseAvailable = false;
+          this.database = null;
+        }
+      } else {
+        console.info('📱 Homepage: Firebase 不可用，使用离线模式');
+        this.firebaseAvailable = false;
+        this.database = null;
+      }
+    } catch (error) {
+      console.warn('⚠️ Homepage: Firebase 初始化失败，使用离线模式:', error.message);
+      this.firebaseAvailable = false;
+      this.database = null;
+    }
   }
 
   // 初始化主页文件展示
@@ -113,8 +173,9 @@ class HomepageIntegration {
       }
 
       // 2. 从Firebase获取作品（如果可用）
-      if (window.firebaseAvailable && firebase.apps && firebase.apps.length) {
+      if (this.firebaseAvailable && this.database) {
         try {
+          console.log('🔥 从 Firebase 获取作品数据...');
           const usersSnapshot = await this.database.ref('userFiles').once('value');
           const usersData = usersSnapshot.val() || {};
 
@@ -131,9 +192,12 @@ class HomepageIntegration {
               }
             });
           });
+          console.log(`✅ 从 Firebase 获取了 ${Object.keys(usersData).length} 个用户的作品`);
         } catch (error) {
-          console.warn('从Firebase获取作品失败:', error);
+          console.warn('⚠️ 从Firebase获取作品失败:', error);
         }
+      } else {
+        console.log('📱 Firebase 不可用，跳过 Firebase 数据获取');
       }
 
       console.log(`✅ 共获取到 ${allWorks.length} 个作品`);
@@ -206,7 +270,7 @@ class HomepageIntegration {
 
     try {
       // 首先尝试从Firebase获取
-      if (window.firebaseAvailable && firebase.apps.length) {
+      if (this.firebaseAvailable && this.database) {
         // 从公共文件列表获取
         const publicSnapshot = await this.database.ref(`publicFiles/${category}`).once('value');
         const publicData = publicSnapshot.val() || {};
@@ -412,7 +476,7 @@ class HomepageIntegration {
       }
 
       // 如果本地没有，尝试从Firebase获取
-      if (!workInfo && window.firebaseAvailable && firebase.apps.length) {
+      if (!workInfo && this.firebaseAvailable && this.database) {
         try {
           const snapshot = await this.database.ref(`userFiles/${owner}/${fileId}`).once('value');
           workInfo = snapshot.val();
@@ -764,17 +828,69 @@ window.updateHomepageStats = function() {
 };
 
 // 初始化主页集成
+// 安全的首页统计模块初始化
+function initializeHomepageIntegration() {
+  let initAttempts = 0;
+  const maxAttempts = 3;
+
+  const attemptInit = () => {
+    initAttempts++;
+    console.log(`🏠 首页统计模块初始化尝试 ${initAttempts}/${maxAttempts}...`);
+
+    try {
+      // 检查必要的依赖是否已加载
+      const dependenciesReady = (
+        typeof window !== 'undefined' &&
+        document.readyState === 'complete'
+      );
+
+      if (!dependenciesReady && initAttempts < maxAttempts) {
+        console.log('⚠️ 依赖尚未完全加载，1秒后重试...');
+        setTimeout(attemptInit, 1000);
+        return;
+      }
+
+      // 创建实例
+      window.homepageIntegration = new HomepageIntegration();
+
+      // 初始化
+      window.homepageIntegration.init().then(() => {
+        console.log('✅ 首页统计模块初始化完成');
+      }).catch(error => {
+        console.warn('⚠️ 首页统计模块初始化部分失败，但模块已创建:', error.message);
+        // 即使初始化失败，模块仍然可用，只是可能没有统计数据
+      });
+
+    } catch (error) {
+      console.error(`❌ 首页统计模块初始化失败 (尝试 ${initAttempts}/${maxAttempts}):`, error);
+
+      if (initAttempts < maxAttempts) {
+        console.log(`⚠️ 将在 2 秒后重试...`);
+        setTimeout(attemptInit, 2000);
+      } else {
+        console.error('❌ 首页统计模块初始化最终失败，已达到最大重试次数');
+        // 创建一个最小化的备用实例
+        try {
+          window.homepageIntegration = {
+            init: () => Promise.resolve(),
+            updateWorksStats: () => Promise.resolve(),
+            firebaseAvailable: false
+          };
+          console.log('📱 已创建首页统计模块的备用实例');
+        } catch (fallbackError) {
+          console.error('❌ 创建备用实例也失败了:', fallbackError);
+        }
+      }
+    }
+  };
+
+  // 开始初始化
+  attemptInit();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🏠 开始初始化首页统计模块...');
 
   // 延迟初始化以确保所有依赖都已加载
-  setTimeout(() => {
-    try {
-      homepageIntegration = new HomepageIntegration();
-      homepageIntegration.init();
-      console.log('✅ 首页统计模块初始化完成');
-    } catch (error) {
-      console.error('❌ 首页统计模块初始化失败:', error);
-    }
-  }, 500); // 延迟500ms确保其他模块已加载
+  setTimeout(initializeHomepageIntegration, 500);
 });

@@ -82,10 +82,16 @@ class ArtworksDisplay {
     const artworks = [];
 
     try {
+      // 检查Firebase是否可用
+      if (!window.firebaseAvailable || typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
+        console.info('📱 Artworks: Firebase 不可用，跳过 Firebase 数据获取');
+        return artworks;
+      }
+
       // 从公共文件列表获取
       const publicSnapshot = await firebase.database().ref('publicFiles/art').once('value');
       const publicData = publicSnapshot.val() || {};
-      
+
       Object.values(publicData).forEach(work => {
         if (work.permissions?.isPublic) {
           artworks.push(this.formatArtworkData(work));

@@ -82,10 +82,16 @@ class MusicDisplay {
     const music = [];
 
     try {
+      // 检查Firebase是否可用
+      if (!window.firebaseAvailable || typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
+        console.info('📱 Music: Firebase 不可用，跳过 Firebase 数据获取');
+        return music;
+      }
+
       // 从公共文件列表获取
       const publicSnapshot = await firebase.database().ref('publicFiles/music').once('value');
       const publicData = publicSnapshot.val() || {};
-      
+
       Object.values(publicData).forEach(work => {
         if (work.permissions?.isPublic) {
           music.push(this.formatMusicData(work));

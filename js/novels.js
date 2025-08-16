@@ -84,10 +84,16 @@ class NovelsDisplay {
     const novels = [];
 
     try {
+      // 检查Firebase是否可用
+      if (!window.firebaseAvailable || typeof firebase === 'undefined' || !firebase.apps || !firebase.apps.length) {
+        console.info('📱 Novels: Firebase 不可用，跳过 Firebase 数据获取');
+        return novels;
+      }
+
       // 从公共文件列表获取
       const publicSnapshot = await firebase.database().ref('publicFiles/literature').once('value');
       const publicData = publicSnapshot.val() || {};
-      
+
       Object.values(publicData).forEach(work => {
         if (work.subcategory === 'novel' && work.permissions?.isPublic) {
           novels.push(this.formatNovelData(work));
