@@ -555,7 +555,11 @@ class EnhancedPermissionsManager {
         // 显示成功消息
         this.showNotification('权限设置保存成功', 'success');
 
-        // 触发数据同步
+        if (window.logManager) {
+          window.logManager.info('EnhancedPermissions', `权限保存成功: ${this.currentFileId} (${this.currentOwner})`);
+        }
+
+        // 触发数据同步（优先使用数据同步管理器）
         if (window.dataSyncManager) {
           window.dataSyncManager.syncPermissionChange(
             this.currentFileId,
@@ -565,15 +569,31 @@ class EnhancedPermissionsManager {
             reason
           );
         } else {
-          // 如果没有数据同步管理器，直接刷新文件列表
-          if (window.adminFileManager) {
-            setTimeout(() => {
-              window.adminFileManager.loadFileList();
-            }, 100);
+          // 如果没有数据同步管理器，只更新当前文件的权限信息，不刷新整个列表
+          if (window.adminFileManager && window.adminFileManager.currentFiles) {
+            const fileIndex = window.adminFileManager.currentFiles.findIndex(f =>
+              f.fileId === this.currentFileId && f.owner === this.currentOwner
+            );
+            if (fileIndex !== -1) {
+              window.adminFileManager.currentFiles[fileIndex].permissions = permissions;
+              window.adminFileManager.currentFiles[fileIndex].lastModified = new Date().toISOString();
+
+              // 只重新渲染列表，不重新加载
+              if (typeof window.adminFileManager.renderFileList === 'function') {
+                window.adminFileManager.renderFileList();
+              }
+
+              if (window.logManager) {
+                window.logManager.debug('EnhancedPermissions', '已更新文件列表中的权限信息');
+              }
+            }
           }
         }
       } else {
         this.showNotification('权限设置保存失败: ' + (result?.message || '未知错误'), 'error');
+        if (window.logManager) {
+          window.logManager.error('EnhancedPermissions', `权限保存失败: ${result?.message || '未知错误'}`);
+        }
       }
 
     } catch (error) {

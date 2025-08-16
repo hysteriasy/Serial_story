@@ -470,39 +470,58 @@ class FilePermissionsSystem {
       const workKey = `work_${fileId}`;
       let workData = null;
 
-      // 首先尝试获取完整的作品数据
-      // 1. 优先从 GitHub 获取（如果在网络环境）
-      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
-        try {
-          workData = await window.dataManager.loadData(workKey, {
-            category: 'works',
-            fallbackToLocal: true
-          });
-          console.log(`📁 从 GitHub 获取作品数据用于权限更新: ${fileId}`);
-        } catch (error) {
-          console.warn(`⚠️ 从 GitHub 获取作品数据失败: ${error.message}`);
+      if (window.logManager) {
+        window.logManager.debug('FilePermissions', `开始保存文件权限: ${fileId} (${owner})`);
+      }
+
+      // 1. 优先从管理员文件列表获取完整数据（避免重复创建）
+      if (window.adminFileManager && window.adminFileManager.currentFiles) {
+        const existingFile = window.adminFileManager.currentFiles.find(f =>
+          f.fileId === fileId && f.owner === owner
+        );
+        if (existingFile) {
+          workData = { ...existingFile };
+          if (window.logManager) {
+            window.logManager.debug('FilePermissions', `从管理员文件列表获取数据: ${fileId}`);
+          }
         }
       }
 
-      // 2. 如果 GitHub 获取失败，从本地存储获取
+      // 2. 从 GitHub 获取（如果在网络环境且未从管理员列表获取到）
+      if (!workData && window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        try {
+          workData = await window.dataManager.loadData(workKey, {
+            category: 'works',
+            fallbackToLocal: false
+          });
+          if (window.logManager) {
+            window.logManager.debug('FilePermissions', `从 GitHub 获取作品数据: ${fileId}`);
+          }
+        } catch (error) {
+          if (window.logManager) {
+            window.logManager.warn('FilePermissions', `从 GitHub 获取作品数据失败: ${error.message}`);
+          }
+        }
+      }
+
+      // 3. 从本地存储获取
       if (!workData) {
         const localData = localStorage.getItem(workKey);
         if (localData) {
           workData = JSON.parse(localData);
-          console.log(`📱 从本地存储获取作品数据用于权限更新: ${fileId}`);
+          if (window.logManager) {
+            window.logManager.debug('FilePermissions', `从本地存储获取作品数据: ${fileId}`);
+          }
         }
       }
 
-      // 3. 如果都没有数据，创建基本的作品数据结构
+      // 4. 如果仍然没有数据，说明文件不存在，不应该创建新文件
       if (!workData) {
-        console.warn(`⚠️ 未找到作品数据，创建基本结构: ${fileId}`);
-        workData = {
-          id: fileId,
-          owner: owner,
-          title: `作品_${fileId}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+        const errorMsg = `文件不存在，无法修改权限: ${fileId} (${owner})`;
+        if (window.logManager) {
+          window.logManager.error('FilePermissions', errorMsg);
+        }
+        throw new Error(errorMsg);
       }
 
       // 更新权限数据

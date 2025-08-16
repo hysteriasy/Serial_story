@@ -166,22 +166,34 @@ class DataSyncManager {
 
   // 处理权限变更
   async handlePermissionChange(fileId, owner, data) {
-    console.log(`🔐 处理权限变更: ${fileId} (${owner})`);
-    
+    if (window.logManager) {
+      window.logManager.info('DataSync', `处理权限变更: ${fileId} (${owner})`);
+    }
+
     // 清理相关缓存
     this.clearRelatedCache(fileId, owner, data);
-    
-    // 更新管理员文件列表中的权限信息
+
+    // 更新管理员文件列表中的权限信息（就地更新，避免重复文件）
     if (window.adminFileManager && window.adminFileManager.currentFiles) {
-      const fileIndex = window.adminFileManager.currentFiles.findIndex(f => 
+      const fileIndex = window.adminFileManager.currentFiles.findIndex(f =>
         f.fileId === fileId && f.owner === owner
       );
       if (fileIndex !== -1) {
+        // 只更新权限信息，保持其他数据不变
         window.adminFileManager.currentFiles[fileIndex].permissions = data.newPermissions;
-        console.log('✅ 已更新管理员文件列表中的权限信息');
+        window.adminFileManager.currentFiles[fileIndex].lastModified = new Date().toISOString();
+
+        if (window.logManager) {
+          window.logManager.debug('DataSync', `已更新管理员文件列表中的权限信息: ${fileId}`);
+        }
+
+        // 立即更新显示，避免完整刷新
+        if (typeof window.adminFileManager.renderFileList === 'function') {
+          window.adminFileManager.renderFileList();
+        }
       }
     }
-    
+
     // 根据新权限更新公共作品列表
     if (data.newPermissions?.isPublic) {
       // 获取完整文件信息并添加到公共列表
@@ -192,9 +204,16 @@ class DataSyncManager {
     } else {
       await this.removeFromPublicWorksList(fileId, owner);
     }
-    
-    // 通知页面刷新
-    this.notifyPageRefresh('permissionChange', { fileId, owner, permissions: data.newPermissions });
+
+    // 不触发完整页面刷新，只发送权限变更通知
+    const refreshEvent = new CustomEvent('permissionChanged', {
+      detail: { fileId, owner, permissions: data.newPermissions, timestamp: Date.now() }
+    });
+    window.dispatchEvent(refreshEvent);
+
+    if (window.logManager) {
+      window.logManager.debug('DataSync', `权限变更处理完成: ${fileId}`);
+    }
   }
 
   // 清理相关缓存
