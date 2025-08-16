@@ -325,60 +325,42 @@ class SmartFileLoader {
 
     // 基于已知的文件结构构建文件路径
     if (directoryPath === 'user-uploads/literature/essay') {
-      // 尝试已知的用户和文件
-      const users = ['hysteria', 'Linlin'];
+      // 直接尝试已知的文件路径
+      const knownFilePaths = [
+        'user-uploads/literature/essay/hysteria/2025-08-11_essay_1754921280127.json',
+        'user-uploads/literature/essay/Linlin/2025-08-11_essay_1754918793664.json'
+      ];
 
-      for (const user of users) {
+      for (const filePath of knownFilePaths) {
         try {
-          // 尝试获取用户目录下的文件
-          const userPath = `${directoryPath}/${user}`;
-
-          // 这里我们可以尝试一些已知的文件名模式
-          // 或者从某个索引文件中读取
-          const possibleFiles = [
-            `${userPath}/2025-08-11_essay_1754921280127.json`,
-            `${userPath}/2025-08-11_essay_1754918793664.json`
-          ];
-
-          for (const filePath of possibleFiles) {
-            try {
-              const response = await fetch(filePath, { method: 'HEAD' });
-              if (response.ok) {
-                knownFiles.push(filePath);
-              }
-            } catch (error) {
-              // 文件不存在，继续
-            }
+          const response = await fetch(filePath, { method: 'HEAD' });
+          if (response.ok) {
+            knownFiles.push(filePath);
+            console.log(`✅ 找到已知文件: ${filePath}`);
+          } else {
+            console.log(`❌ 文件不存在: ${filePath}`);
           }
         } catch (error) {
-          // 用户目录不存在，继续
+          console.log(`❌ 检查文件失败: ${filePath}`, error.message);
         }
       }
     } else if (directoryPath === 'user-uploads/literature/poetry') {
-      // 尝试已知的poetry文件
-      const users = ['hysteria', 'Linlin'];
+      // 直接尝试已知的poetry文件路径
+      const knownPoetryPaths = [
+        'user-uploads/literature/poetry/hysteria/2025-08-11_poetry_1754921380127.json',
+        'user-uploads/literature/poetry/Linlin/2025-08-11_poetry_1754918893664.json',
+        'user-uploads/literature/poetry/hysteria/2025-08-15_poetry_1755275214809.json'
+      ];
 
-      for (const user of users) {
+      for (const filePath of knownPoetryPaths) {
         try {
-          const userPath = `${directoryPath}/${user}`;
-
-          const possibleFiles = [
-            `${userPath}/2025-08-11_poetry_1754921380127.json`,
-            `${userPath}/2025-08-11_poetry_1754918893664.json`
-          ];
-
-          for (const filePath of possibleFiles) {
-            try {
-              const response = await fetch(filePath, { method: 'HEAD' });
-              if (response.ok) {
-                knownFiles.push(filePath);
-              }
-            } catch (error) {
-              // 文件不存在，继续
-            }
+          const response = await fetch(filePath, { method: 'HEAD' });
+          if (response.ok) {
+            knownFiles.push(filePath);
+            console.log(`✅ 找到已知诗歌文件: ${filePath}`);
           }
         } catch (error) {
-          // 用户目录不存在，继续
+          // 文件不存在，继续
         }
       }
     }
@@ -391,6 +373,11 @@ class SmartFileLoader {
     // 检查是否有GitHub存储可用
     if (!window.githubStorage || !window.githubStorage.token) {
       console.warn('⚠️ GitHub存储不可用，尝试本地文件扫描');
+      // 在GitHub Pages环境中，即使没有token也要尝试公开API
+      if (this.environment === 'github_pages') {
+        console.log('🌐 GitHub Pages环境，尝试使用公开API扫描...');
+        return await this._loadFromGitHubPublic(category);
+      }
       return await this._loadFromLocalFiles(category);
     }
 
@@ -431,6 +418,34 @@ class SmartFileLoader {
     }
     // 可以根据需要扩展其他类别
     return [`user-uploads/${category}`];
+  }
+
+  // 从GitHub公开API加载（无需token）
+  async _loadFromGitHubPublic(category) {
+    const files = [];
+
+    try {
+      // 根据类别确定扫描路径
+      const scanPaths = this._getCategoryPaths(category);
+
+      for (const scanPath of scanPaths) {
+        try {
+          console.log(`🔍 使用公开API扫描GitHub路径: ${scanPath}`);
+          const pathFiles = await this._scanDirectoryPublic(scanPath);
+          files.push(...pathFiles);
+        } catch (error) {
+          // 404错误是正常的（目录可能不存在）
+          if (error.status !== 404) {
+            console.warn(`公开API扫描路径 ${scanPath} 失败:`, error.message);
+          }
+        }
+      }
+
+      return files;
+    } catch (error) {
+      console.error('❌ 公开API扫描user-uploads目录失败:', error);
+      return [];
+    }
   }
 
   // 递归扫描目录
@@ -492,6 +507,81 @@ class SmartFileLoader {
     }
 
     return files;
+  }
+
+  // 使用公开API扫描目录
+  async _scanDirectoryPublic(directoryPath) {
+    const files = [];
+
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/hysteriasy/Serial_story/contents/${directoryPath}`,
+        {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          const error = new Error('目录不存在');
+          error.status = 404;
+          throw error;
+        }
+        throw new Error(`API请求失败: ${response.status}`);
+      }
+
+      const items = await response.json();
+
+      for (const item of items) {
+        if (item.type === 'file' && item.name.endsWith('.json')) {
+          // 加载文件内容
+          try {
+            const fileContent = await this._loadFileContentPublic(item.download_url);
+            if (fileContent) {
+              files.push({
+                ...fileContent,
+                id: fileContent.id || this._extractFileId(item.name),
+                source: 'github_uploads',
+                filePath: item.path
+              });
+            }
+          } catch (error) {
+            console.warn(`加载文件内容失败: ${item.path}`, error.message);
+          }
+        } else if (item.type === 'dir') {
+          // 递归扫描子目录
+          try {
+            const subFiles = await this._scanDirectoryPublic(item.path);
+            files.push(...subFiles);
+          } catch (error) {
+            console.warn(`扫描子目录失败: ${item.path}`, error.message);
+          }
+        }
+      }
+
+    } catch (error) {
+      throw error;
+    }
+
+    return files;
+  }
+
+  // 使用公开API加载文件内容
+  async _loadFileContentPublic(downloadUrl) {
+    try {
+      const response = await fetch(downloadUrl);
+      if (response.ok) {
+        const content = await response.text();
+        return JSON.parse(content);
+      }
+    } catch (error) {
+      console.warn(`公开API加载文件内容失败: ${downloadUrl}`, error.message);
+      throw error;
+    }
+    return null;
   }
 
   // 加载文件内容

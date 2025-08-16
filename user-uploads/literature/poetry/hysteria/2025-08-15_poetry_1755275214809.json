@@ -1,0 +1,25 @@
+{
+  "id": "work_1755275214808_rw6nxczda",
+  "mainCategory": "literature",
+  "subcategory": "poetry",
+  "categoryName": "文学作品",
+  "subcategoryName": "诗歌创作",
+  "title": "你的名字",
+  "content": "Linlin",
+  "uploadedBy": "hysteria",
+  "userRole": "admin",
+  "uploadTime": "2025-08-15T16:26:54.808Z",
+  "permissions": {
+    "visibility": "public",
+    "isPublic": true,
+    "allowedUsers": [],
+    "blockedUsers": [],
+    "allowedRoles": [],
+    "setBy": "hysteria",
+    "setAt": "2025-08-15T16:26:54.808Z",
+    "lastModified": "2025-08-15T16:26:54.808Z",
+    "modifiedBy": "hysteria"
+  },
+  "storage_type": "local",
+  "poetryType": "modern"
+}

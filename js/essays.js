@@ -249,8 +249,12 @@ async function loadEssaysFromFiles() {
       if (files && files.length > 0) {
         console.log(`✅ 智能加载器加载了 ${files.length} 篇随笔`);
 
+        // 验证文件是否真实存在，清理无效记录
+        const validatedFiles = await validateEssayFiles(files);
+        console.log(`🔍 验证后保留 ${validatedFiles.length} 篇有效随笔`);
+
         // 转换为随笔格式并确保作者信息完整
-        const essays = files.map(file => {
+        const essays = validatedFiles.map(file => {
           // 智能提取标题 - 优先级：title > filename > content前50字符 > ID
           let title = file.title || file.filename;
 
@@ -310,7 +314,7 @@ async function loadEssaysFromFiles() {
         });
 
         // 调试信息：显示加载的数据结构
-        console.log('📊 智能加载器返回的随笔数据:', essays.map(essay => ({
+        console.log('📊 验证后的随笔数据:', essays.map(essay => ({
           id: essay.id,
           title: essay.title,
           author: essay.author,
@@ -528,6 +532,137 @@ async function verifyPassword(action, workAuthor = null) {
   }
 
   return isValid;
+}
+
+// 验证随笔文件是否真实存在
+async function validateEssayFiles(files) {
+  if (!files || files.length === 0) {
+    return [];
+  }
+
+  console.log(`🔍 开始验证 ${files.length} 个随笔文件...`);
+  const validFiles = [];
+  const invalidFiles = [];
+
+  for (const file of files) {
+    try {
+      // 检查文件是否来自实际的文件系统
+      if (file.source === 'github_uploads' && file.filePath) {
+        // 对于GitHub uploads的文件，检查文件是否真实存在
+        const exists = await checkFileExists(file.filePath);
+        if (exists) {
+          validFiles.push(file);
+        } else {
+          invalidFiles.push(file);
+          console.warn(`❌ 文件不存在: ${file.filePath}`);
+        }
+      } else if (file.source === 'localStorage') {
+        // 对于localStorage的文件，检查数据是否完整
+        if (file.id && file.content && file.title) {
+          validFiles.push(file);
+        } else {
+          invalidFiles.push(file);
+          console.warn(`❌ localStorage数据不完整: ${file.id}`);
+        }
+      } else {
+        // 其他来源的文件，暂时保留
+        validFiles.push(file);
+      }
+    } catch (error) {
+      invalidFiles.push(file);
+      console.warn(`❌ 验证文件失败: ${file.id || file.filePath}`, error.message);
+    }
+  }
+
+  // 清理无效的localStorage记录
+  if (invalidFiles.length > 0) {
+    await cleanupInvalidLocalStorageRecords(invalidFiles);
+  }
+
+  console.log(`✅ 验证完成: ${validFiles.length} 个有效文件, ${invalidFiles.length} 个无效文件已清理`);
+  return validFiles;
+}
+
+// 检查文件是否存在
+async function checkFileExists(filePath) {
+  try {
+    if (window.githubStorage && window.githubStorage.token) {
+      // 使用GitHub API检查文件是否存在
+      const response = await fetch(
+        `https://api.github.com/repos/hysteriasy/Serial_story/contents/${filePath}`,
+        {
+          method: 'HEAD',
+          headers: {
+            'Authorization': `Bearer ${window.githubStorage.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        }
+      );
+      return response.ok;
+    } else {
+      // 在本地环境中，尝试fetch文件
+      const response = await fetch(filePath, { method: 'HEAD' });
+      return response.ok;
+    }
+  } catch (error) {
+    console.warn(`检查文件存在性失败: ${filePath}`, error.message);
+    return false;
+  }
+}
+
+// 清理无效的localStorage记录
+async function cleanupInvalidLocalStorageRecords(invalidFiles) {
+  console.log(`🧹 开始清理 ${invalidFiles.length} 个无效记录...`);
+
+  for (const file of invalidFiles) {
+    try {
+      // 清理work_记录
+      if (file.id) {
+        const workKey = `work_${file.id}`;
+        if (localStorage.getItem(workKey)) {
+          localStorage.removeItem(workKey);
+          console.log(`🗑️ 已清理: ${workKey}`);
+        }
+      }
+
+      // 从publicWorks_literature列表中移除
+      const publicWorksKey = 'publicWorks_literature';
+      const publicWorks = localStorage.getItem(publicWorksKey);
+      if (publicWorks) {
+        try {
+          const worksList = JSON.parse(publicWorks);
+          const filteredList = worksList.filter(work => work.id !== file.id);
+          if (filteredList.length !== worksList.length) {
+            localStorage.setItem(publicWorksKey, JSON.stringify(filteredList));
+            console.log(`🗑️ 已从公共作品列表移除: ${file.id}`);
+          }
+        } catch (error) {
+          console.warn('清理公共作品列表失败:', error);
+        }
+      }
+
+      // 从essays列表中移除
+      const essaysKey = 'essays';
+      const essays = localStorage.getItem(essaysKey);
+      if (essays) {
+        try {
+          const essaysList = JSON.parse(essays);
+          const filteredEssays = essaysList.filter(essay => essay.id !== file.id);
+          if (filteredEssays.length !== essaysList.length) {
+            localStorage.setItem(essaysKey, JSON.stringify(filteredEssays));
+            console.log(`🗑️ 已从随笔列表移除: ${file.id}`);
+          }
+        } catch (error) {
+          console.warn('清理随笔列表失败:', error);
+        }
+      }
+    } catch (error) {
+      console.warn(`清理记录失败: ${file.id}`, error);
+    }
+  }
+
+  console.log('✅ 无效记录清理完成');
 }
 
 // 删除功能已移除，保持页面简洁性和安全性
