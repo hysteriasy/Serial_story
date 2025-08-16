@@ -1,0 +1,24 @@
+{
+  "id": "work_1755305543116_4a0dmo0jl",
+  "mainCategory": "literature",
+  "subcategory": "essay",
+  "categoryName": "文学作品",
+  "subcategoryName": "生活随笔",
+  "title": "会忘记吗",
+  "content": "会忘记的",
+  "uploadedBy": "hysteria",
+  "userRole": "admin",
+  "uploadTime": "2025-08-16T00:52:23.116Z",
+  "permissions": {
+    "visibility": "public",
+    "isPublic": true,
+    "allowedUsers": [],
+    "blockedUsers": [],
+    "allowedRoles": [],
+    "setBy": "hysteria",
+    "setAt": "2025-08-16T00:52:23.116Z",
+    "lastModified": "2025-08-16T00:52:23.116Z",
+    "modifiedBy": "hysteria"
+  },
+  "storage_type": "local"
+}
