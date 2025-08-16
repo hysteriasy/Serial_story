@@ -78,9 +78,10 @@ class DataManager {
           const fileData = await this.githubStorage.getFile(filePath);
           
           if (fileData && fileData.content) {
-            const content = atob(fileData.content);
+            // 正确处理UTF-8编码的base64内容
+            const content = this._decodeBase64UTF8(fileData.content);
             console.log(`✅ 从GitHub加载数据: ${key}`);
-            
+
             try {
               return JSON.parse(content);
             } catch {
@@ -161,6 +162,24 @@ class DataManager {
     } catch (error) {
       console.error(`❌ 数据删除失败: ${key}`, error);
       throw error;
+    }
+  }
+
+  // 正确解码base64编码的UTF-8字符串
+  _decodeBase64UTF8(base64String) {
+    try {
+      // 使用TextDecoder正确处理UTF-8编码
+      const binaryString = atob(base64String);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(bytes);
+    } catch (error) {
+      console.warn('UTF-8解码失败，尝试直接解码:', error.message);
+      // 回退到简单的atob解码
+      return atob(base64String);
     }
   }
 

@@ -154,7 +154,7 @@ class SmartFileLoader {
 
     const files = [];
 
-    // 尝试加载文件索引
+    // 尝试加载文件索引（静默处理404错误）
     try {
       const indexKey = `${category}_index`;
       const index = await window.dataManager.loadData(indexKey, {
@@ -178,8 +178,12 @@ class SmartFileLoader {
         }
       }
     } catch (error) {
-      // 如果没有索引，尝试其他方法
-      console.info('未找到文件索引，使用备用加载方法');
+      // 静默处理索引文件不存在的情况（这是正常的）
+      if (error.message && (error.message.includes('404') || error.message.includes('文件不存在'))) {
+        // 索引文件不存在是正常情况，不输出日志
+      } else {
+        console.info('未找到文件索引，使用备用加载方法');
+      }
     }
 
     // 如果索引加载失败或没有数据，尝试直接扫描user-uploads目录
@@ -572,8 +576,13 @@ class SmartFileLoader {
   // 使用公开API加载文件内容
   async _loadFileContentPublic(downloadUrl) {
     try {
-      const response = await fetch(downloadUrl);
+      const response = await fetch(downloadUrl, {
+        headers: {
+          'Accept': 'application/json; charset=utf-8'
+        }
+      });
       if (response.ok) {
+        // 确保以UTF-8编码读取文本
         const content = await response.text();
         return JSON.parse(content);
       }
@@ -589,7 +598,8 @@ class SmartFileLoader {
     try {
       const fileData = await window.githubStorage.getFile(filePath);
       if (fileData && fileData.content) {
-        const content = atob(fileData.content);
+        // 正确处理UTF-8编码的base64内容
+        const content = this._decodeBase64UTF8(fileData.content);
         return JSON.parse(content);
       }
     } catch (error) {
@@ -599,6 +609,24 @@ class SmartFileLoader {
       throw error;
     }
     return null;
+  }
+
+  // 正确解码base64编码的UTF-8字符串
+  _decodeBase64UTF8(base64String) {
+    try {
+      // 使用TextDecoder正确处理UTF-8编码
+      const binaryString = atob(base64String);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(bytes);
+    } catch (error) {
+      console.warn('UTF-8解码失败，尝试直接解码:', error.message);
+      // 回退到简单的atob解码
+      return atob(base64String);
+    }
   }
 
   // 从文件名提取文件ID

@@ -5,7 +5,7 @@ class TrackingProtectionHandler {
   constructor() {
     this.storageBlocked = false;
     this.lastStorageTest = 0;
-    this.testInterval = 30000; // 30秒测试一次
+    this.testInterval = 300000; // 5分钟测试一次，减少日志噪音
     this.errorCount = 0;
     this.maxErrors = 5; // 最大错误次数
     this.fallbackMode = false;
@@ -74,7 +74,12 @@ class TrackingProtectionHandler {
           this.showStorageRestoredNotification();
           this.userNotified = false;
         }
-        
+
+        // 只在调试模式下输出成功日志
+        if (window.location.search.includes('debug=true')) {
+          console.log('🛡️ 存储访问测试成功');
+        }
+
         return true;
       } else {
         throw new Error('存储读写不一致');
@@ -331,6 +336,12 @@ class TrackingProtectionHandler {
       // 用户索引文件不存在（首次使用时正常）
       /users_index\.json.*404/i,
       /data\/system\/.*users_index\.json/i,
+
+      // 随笔和诗歌索引文件不存在（正常情况）
+      /essays_index\.json.*404/i,
+      /poetry_index\.json.*404/i,
+      /data\/system\/.*essays_index\.json/i,
+      /data\/system\/.*poetry_index\.json/i,
 
       // Firebase 相关的预期错误
       /Firebase未初始化/i,
