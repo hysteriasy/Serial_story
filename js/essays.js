@@ -1,3 +1,11 @@
+// essays.js - 随笔页面功能
+// 处理随笔的显示、加载和管理
+
+// 缓存变量，避免重复加载
+let essaysCache = null;
+let essaysCacheTime = 0;
+const CACHE_DURATION = 30000; // 30秒缓存
+
 // 等待DOM加载完成
 document.addEventListener('DOMContentLoaded', function() {
     // 确保auth对象已加载并检查登录状态
@@ -53,20 +61,54 @@ async function loadEssaysList(forceRefresh = false) {
         essays.forEach((essay, index) => {
             const li = document.createElement('li');
             li.className = 'essay-item';
-            li.innerHTML = `
-                <div class="essay-item-content" data-index="${index}">
-                    <div class="essay-header">
-                        <span class="essay-title">${essay.title}</span>
-                        <span class="essay-source">${getSourceIcon(essay.source)}</span>
-                    </div>
-                    <div class="essay-meta">
-                        <span class="essay-author">作者: ${essay.author}</span>
-                        <span class="essay-date">${formatDate(essay.date)}</span>
-                        ${essay.lastModified && essay.lastModified !== essay.date ?
-                          `<span class="essay-modified">修改: ${formatDate(essay.lastModified)}</span>` : ''}
-                    </div>
-                </div>
-            `;
+
+            // 创建内容容器
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'essay-item-content';
+            contentDiv.setAttribute('data-index', index);
+
+            // 创建标题区域
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'essay-header';
+
+            // 安全地设置标题文本（避免HTML转义问题）
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'essay-title';
+            titleSpan.textContent = essay.title; // 使用textContent确保中文正确显示
+
+            const sourceSpan = document.createElement('span');
+            sourceSpan.className = 'essay-source';
+            sourceSpan.textContent = getSourceIcon(essay.source);
+
+            headerDiv.appendChild(titleSpan);
+            headerDiv.appendChild(sourceSpan);
+
+            // 创建元数据区域
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'essay-meta';
+
+            const authorSpan = document.createElement('span');
+            authorSpan.className = 'essay-author';
+            authorSpan.textContent = `作者: ${essay.author}`;
+
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'essay-date';
+            dateSpan.textContent = formatDate(essay.date);
+
+            metaDiv.appendChild(authorSpan);
+            metaDiv.appendChild(dateSpan);
+
+            // 如果有修改时间，添加修改时间
+            if (essay.lastModified && essay.lastModified !== essay.date) {
+                const modifiedSpan = document.createElement('span');
+                modifiedSpan.className = 'essay-modified';
+                modifiedSpan.textContent = `修改: ${formatDate(essay.lastModified)}`;
+                metaDiv.appendChild(modifiedSpan);
+            }
+
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(metaDiv);
+            li.appendChild(contentDiv);
             essaysList.appendChild(li);
 
             // 添加点击事件监听器
@@ -127,12 +169,22 @@ ${convertMarkdownToHtml(essay.content)}`;
 // 获取存储的随笔
 function getEssaysFromStorage() {
   try {
+    // 检查缓存是否有效
+    const now = Date.now();
+    if (essaysCache && (now - essaysCacheTime) < CACHE_DURATION) {
+      console.log(`📋 从缓存返回 ${essaysCache.length} 篇随笔`);
+      return essaysCache;
+    }
+
     // 首先尝试从essays键获取数据（兼容格式）
     const essays = localStorage.getItem('essays');
     if (essays) {
       const essayList = JSON.parse(essays);
       if (essayList.length > 0) {
         console.log(`✅ 从essays存储加载了 ${essayList.length} 篇随笔`);
+        // 更新缓存
+        essaysCache = essayList;
+        essaysCacheTime = now;
         return essayList;
       }
     }
@@ -258,6 +310,12 @@ async function loadEssaysFromFiles() {
           // 智能提取标题 - 优先级：title > filename > content前50字符 > ID
           let title = file.title || file.filename;
 
+          // 确保标题是字符串类型，并且正确处理中文字符
+          if (title && typeof title === 'string') {
+            // 验证标题是否包含有效的中文字符
+            title = title.trim();
+          }
+
           // 如果没有标题，尝试从内容中提取
           if (!title && file.content) {
             // 尝试提取第一行作为标题（如果是Markdown格式）
@@ -280,6 +338,13 @@ async function loadEssaysFromFiles() {
           // 最后的备用方案
           if (!title) {
             title = file.id ? `作品 ${file.id.substring(0, 8)}` : '无标题';
+          }
+
+          // 调试输出：检查标题编码
+          if (title && title.includes('很久很久')) {
+            console.log(`🔍 标题编码检查: "${title}"`);
+            console.log(`🔍 标题字节: ${Array.from(title).map(c => c.charCodeAt(0)).join(',')}`);
+            console.log(`🔍 标题Unicode: ${Array.from(title).map(c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')).join('')}`);
           }
 
           // 处理从user-uploads目录加载的数据
@@ -663,6 +728,13 @@ async function cleanupInvalidLocalStorageRecords(invalidFiles) {
   }
 
   console.log('✅ 无效记录清理完成');
+}
+
+// 清除缓存函数
+function clearEssaysCache() {
+  essaysCache = null;
+  essaysCacheTime = 0;
+  console.log('🗑️ 随笔缓存已清除');
 }
 
 // 删除功能已移除，保持页面简洁性和安全性
