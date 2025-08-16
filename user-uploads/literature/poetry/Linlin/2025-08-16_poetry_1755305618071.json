@@ -1,0 +1,25 @@
+{
+  "id": "work_1755305618071_gkzx0nueo",
+  "mainCategory": "literature",
+  "subcategory": "poetry",
+  "categoryName": "文学作品",
+  "subcategoryName": "诗歌创作",
+  "title": "太年少",
+  "content": "我只是年幼",
+  "uploadedBy": "Linlin",
+  "userRole": "friend",
+  "uploadTime": "2025-08-16T00:53:38.071Z",
+  "permissions": {
+    "visibility": "public",
+    "isPublic": true,
+    "allowedUsers": [],
+    "blockedUsers": [],
+    "allowedRoles": [],
+    "setBy": "Linlin",
+    "setAt": "2025-08-16T00:53:38.071Z",
+    "lastModified": "2025-08-16T00:53:38.071Z",
+    "modifiedBy": "Linlin"
+  },
+  "storage_type": "local",
+  "poetryType": "modern"
+}
