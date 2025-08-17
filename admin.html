@@ -539,73 +539,7 @@
       }
     }
 
-    /* 页脚下拉菜单样式 */
-    .works-dropdown {
-      position: relative;
-      display: inline-block;
-    }
-
-    .dropdown-trigger {
-      color: #ffffff;
-      text-decoration: none;
-      cursor: pointer;
-      padding: 5px 10px;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
-    }
-
-    .dropdown-trigger:hover {
-      background-color: rgba(0, 123, 255, 0.1);
-    }
-
-    .dropdown-menu {
-      position: absolute;
-      bottom: 100%;
-      left: 0;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      min-width: 180px;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(10px);
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-
-    .works-dropdown:hover .dropdown-menu {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .dropdown-menu a {
-      display: block;
-      padding: 12px 16px;
-      color: #333;
-      text-decoration: none;
-      border-bottom: 1px solid #f0f0f0;
-      transition: background-color 0.3s ease;
-    }
-
-    .dropdown-menu a:last-child {
-      border-bottom: none;
-    }
-
-    .dropdown-menu a:hover {
-      background-color: #f8f9fa;
-    }
-
-    .dropdown-menu a.current-page {
-      background-color: #007bff;
-      color: white;
-      font-weight: 500;
-    }
-
-    .dropdown-menu a.current-page:hover {
-      background-color: #0056b3;
-    }
+    /* 页脚下拉菜单样式 - 将由页脚组件提供 */
 
     /* GitHub 配置样式 */
     .settings-section {
@@ -922,30 +856,7 @@
   </style>
 </head>
 <body>
-  <!-- 导航栏 -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <div class="nav-logo">
-        <h2>桑梓</h2>
-      </div>
-      <ul class="nav-menu">
-        <li class="nav-item">
-          <a href="index.html" class="nav-link">首页</a>
-        </li>
-        <li class="nav-item">
-          <a href="index.html#about" class="nav-link">关于我</a>
-        </li>
-        <li class="nav-item">
-          <a href="index.html#contact" class="nav-link">联系我</a>
-        </li>
-      </ul>
-      <div class="nav-toggle" id="mobile-menu">
-        <span class="bar"></span>
-        <span class="bar"></span>
-        <span class="bar"></span>
-      </div>
-    </div>
-  </nav>
+  <!-- 页眉将由页眉组件动态插入 -->
 
   <!-- 主标题区域 -->
   <header class="admin-hero">
@@ -1137,32 +1048,7 @@
     </div>
   </main>
 
-  <!-- 页脚 -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
-        <div class="footer-links">
-          <a href="index.html" class="home-button">首页</a>
-          <div class="works-dropdown">
-            <span class="dropdown-trigger">作品展示 ▼</span>
-            <div class="dropdown-menu">
-              <a href="essays.html">生活随笔</a>
-              <a href="poetry.html">诗歌创作</a>
-              <a href="novels.html">小说连载</a>
-              <a href="artworks.html">绘画作品</a>
-              <a href="music.html">音乐作品</a>
-              <a href="videos.html">视频作品</a>
-            </div>
-          </div>
-          <a href="upload.html">上传作品</a>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- 返回顶部按钮 -->
-  <button id="backToTop" class="back-to-top" onclick="scrollToTop()">↑</button>
+  <!-- 页脚和返回顶部按钮将由页脚组件动态插入 -->
 
   <!-- 创建用户模态框 -->
   <div id="createUserModal" class="modal" style="display: none;">
@@ -1231,6 +1117,10 @@
   <!-- 权限安全管理器 - 必须在auth.js之前加载 -->
   <script src="js/permission-security-manager.js"></script>
 
+  <!-- 页眉页脚组件脚本 -->
+  <script src="js/header.js"></script>
+  <script src="js/footer.js"></script>
+
   <!-- 应用脚本 -->
   <script src="js/script.js"></script>
   <script src="js/auth.js"></script>
@@ -1280,6 +1170,18 @@
             }
           };
           document.head.appendChild(deletionVerifyScript);
+        }
+
+        // 加载页眉页脚集成验证脚本
+        if (window.scriptLoaderManager && !window.scriptLoaderManager.loadedScripts.has('verify-admin-header-footer-integration')) {
+          const headerFooterVerifyScript = document.createElement('script');
+          headerFooterVerifyScript.src = 'verify-admin-header-footer-integration.js';
+          headerFooterVerifyScript.onload = () => {
+            if (window.logManager) {
+              window.logManager.debug('Admin', '页眉页脚集成验证脚本已加载');
+            }
+          };
+          document.head.appendChild(headerFooterVerifyScript);
         }
       }
     });
@@ -1392,20 +1294,7 @@
       document.getElementById('filePermissionModal').style.display = 'none';
     }
 
-    // 返回顶部功能
-    function scrollToTop() {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // 显示返回顶部按钮
-    window.addEventListener('scroll', () => {
-      const backToTop = document.getElementById('backToTop');
-      if (window.pageYOffset > 300) {
-        backToTop.style.display = 'block';
-      } else {
-        backToTop.style.display = 'none';
-      }
-    });
+    // 返回顶部功能将由页脚组件提供
 
     // 创建用户表单提交
     document.getElementById('createUserForm').addEventListener('submit', async (e) => {
@@ -3338,6 +3227,43 @@
           setInterval(() => updateSystemStatus(false, 'timer'), 60000);
         });
       }, 100);
+    });
+
+    // 页眉页脚组件初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 开始初始化页眉页脚组件...');
+
+      // 初始化页眉组件
+      if (typeof HeaderComponent !== 'undefined') {
+        window.headerComponent = new HeaderComponent();
+        window.headerComponent.init();
+        console.log('✅ 页眉组件初始化完成');
+      } else {
+        console.warn('⚠️ HeaderComponent 未找到，跳过页眉初始化');
+      }
+
+      // 初始化页脚组件
+      if (typeof FooterComponent !== 'undefined') {
+        window.footerComponent = new FooterComponent();
+        window.footerComponent.init();
+        console.log('✅ 页脚组件初始化完成');
+      } else {
+        console.warn('⚠️ FooterComponent 未找到，跳过页脚初始化');
+      }
+
+      // 确保页眉页脚组件与现有功能的兼容性
+      setTimeout(() => {
+        // 检查登录状态并更新页眉
+        if (window.headerComponent && typeof auth !== 'undefined') {
+          window.headerComponent.updateAuthNavigation();
+        }
+
+        // 确保返回顶部按钮功能正常
+        const backToTopBtn = document.getElementById('backToTop');
+        if (backToTopBtn && typeof scrollToTop === 'function') {
+          backToTopBtn.onclick = scrollToTop;
+        }
+      }, 500);
     });
   </script>
 </body>
