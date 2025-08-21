@@ -487,6 +487,15 @@
 
     <!-- 页脚将通过组件动态插入 -->
 
+    <!-- 环境配置管理器 - 必须在最早加载 -->
+    <script src="js/environment-config.js"></script>
+
+    <!-- 生产环境日志管理器 - 必须在其他脚本之前加载 -->
+    <script src="js/production-logger.js"></script>
+
+    <!-- Essays页面专用日志管理器 -->
+    <script src="js/essays-logger.js"></script>
+
     <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
     <script src="js/ios-compatibility.js"></script>
 
@@ -518,12 +527,19 @@
     <script>
         // 页面加载完成后初始化组件
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 开始初始化essays页面组件...');
+            const isProduction = window.location.hostname.includes('github.io');
+            const isDebug = window.location.search.includes('debug=true');
+
+            if (!isProduction || isDebug) {
+                console.log('🚀 开始初始化essays页面组件...');
+            }
 
             // 初始化页眉组件
             if (typeof initHeader === 'function') {
                 window.headerComponent = initHeader();
-                console.log('✅ 页眉组件初始化完成');
+                if (!isProduction || isDebug) {
+                    console.log('✅ 页眉组件初始化完成');
+                }
             } else {
                 console.error('❌ initHeader 函数未找到');
             }
@@ -531,12 +547,16 @@
             // 初始化页脚组件
             if (typeof initFooter === 'function') {
                 window.footerComponent = initFooter();
-                console.log('✅ 页脚组件初始化完成');
+                if (!isProduction || isDebug) {
+                    console.log('✅ 页脚组件初始化完成');
+                }
             } else {
                 console.error('❌ initFooter 函数未找到');
             }
 
-            console.log('🎉 essays页面组件初始化完成');
+            if (!isProduction || isDebug) {
+                console.log('🎉 essays页面组件初始化完成');
+            }
 
             // 登录表单处理 - 确保登录功能正常工作
             setTimeout(() => {
@@ -559,8 +579,13 @@
                         const password = document.getElementById('loginPassword').value;
 
                         try {
-                            console.log('🔐 Essays页面：开始登录流程...');
-                            console.log('📝 输入的用户名:', username);
+                            const isProduction = window.location.hostname.includes('github.io');
+                            const isDebug = window.location.search.includes('debug=true');
+
+                            if (!isProduction || isDebug) {
+                                console.log('🔐 Essays页面：开始登录流程...');
+                                console.log('📝 输入的用户名:', username);
+                            }
 
                             // 显示登录中状态
                             const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -569,35 +594,49 @@
                             submitBtn.disabled = true;
 
                             const result = await auth.login(username, password);
-                            console.log('🔍 登录结果:', result);
+                            if (!isProduction || isDebug) {
+                                console.log('🔍 登录结果:', result);
+                            }
 
                             // 恢复按钮状态
                             submitBtn.textContent = originalText;
                             submitBtn.disabled = false;
 
                             if (result) {
-                                console.log('✅ 登录成功，开始更新UI...');
-                                console.log('👤 当前用户:', auth.currentUser);
+                                if (!isProduction || isDebug) {
+                                    console.log('✅ 登录成功，开始更新UI...');
+                                    console.log('👤 当前用户:', auth.currentUser);
+                                }
 
                                 // 步骤1：关闭登录模态框
-                                console.log('🔄 步骤1：关闭登录模态框...');
+                                if (!isProduction || isDebug) {
+                                    console.log('🔄 步骤1：关闭登录模态框...');
+                                }
                                 try {
                                     closeLoginModal();
-                                    console.log('✅ 登录模态框已关闭');
+                                    if (!isProduction || isDebug) {
+                                        console.log('✅ 登录模态框已关闭');
+                                    }
                                 } catch (error) {
                                     console.error('❌ 关闭模态框失败:', error);
                                 }
 
                                 // 步骤2：更新页眉导航状态
-                                console.log('🔄 步骤2：更新导航状态...');
+                                if (!isProduction || isDebug) {
+                                    console.log('🔄 步骤2：更新导航状态...');
+                                }
                                 setTimeout(() => {
                                     try {
                                         if (window.headerComponent && typeof window.headerComponent.updateAuthNavigation === 'function') {
                                             window.headerComponent.updateAuthNavigation();
-                                            console.log('✅ 页眉导航状态已更新');
+                                            if (!isProduction || isDebug) {
+                                                console.log('✅ 页眉导航状态已更新');
+                                            }
                                         } else if (window.headerFooterManager && typeof window.headerFooterManager.updateAuthNavigation === 'function') {
                                             window.headerFooterManager.updateAuthNavigation();
-                                            console.log('✅ 页眉导航状态已更新（备用方法）');
+                                            if (!isProduction || isDebug) {
+                                                console.log('✅ 页眉导航状态已更新（备用方法）');
+                                            }
                                         } else {
                                             console.warn('⚠️ 未找到页眉更新方法');
                                         }

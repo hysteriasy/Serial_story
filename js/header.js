@@ -178,12 +178,19 @@ class HeaderComponent {
     // 等待auth系统加载
     waitForAuth(callback, attempts = 0) {
         const maxAttempts = 20; // 最多等待10秒
+        const isProduction = window.location.hostname.includes('github.io');
+        const isDebug = window.location.search.includes('debug=true');
 
         if (typeof auth !== 'undefined' && typeof auth.currentUser !== 'undefined') {
-            console.log('✅ Auth系统已加载，当前用户状态:', auth.currentUser ? auth.currentUser.username : '未登录');
+            if (!isProduction || isDebug) {
+                console.log('✅ Auth系统已加载，当前用户状态:', auth.currentUser ? auth.currentUser.username : '未登录');
+            }
             callback();
         } else if (attempts < maxAttempts) {
-            console.log(`⏳ 等待Auth系统加载... (${attempts + 1}/${maxAttempts})`);
+            // 只在前3次尝试或调试模式下显示日志
+            if (attempts < 3 || (!isProduction || isDebug)) {
+                console.log(`⏳ 等待Auth系统加载... (${attempts + 1}/${maxAttempts})`);
+            }
             setTimeout(() => {
                 this.waitForAuth(callback, attempts + 1);
             }, 500);
@@ -210,7 +217,11 @@ class HeaderComponent {
 
             // 确保用户信息显示区域存在
             if (!document.getElementById('userInfoDisplay')) {
-                console.log('🔧 用户信息显示区域不存在，重新创建...');
+                const isProduction = window.location.hostname.includes('github.io');
+                const isDebug = window.location.search.includes('debug=true');
+                if (!isProduction || isDebug) {
+                    console.log('🔧 用户信息显示区域不存在，重新创建...');
+                }
                 this.initializeUserInfo();
             }
 
@@ -241,7 +252,11 @@ class HeaderComponent {
                 if (userInfoDisplay) {
                     const display = userInfoDisplay.style.display;
                     userInfoDisplay.style.display = display === 'none' ? 'block' : 'none';
-                    console.log('🔄 用户信息显示状态切换:', userInfoDisplay.style.display);
+                    const isProduction = window.location.hostname.includes('github.io');
+                    const isDebug = window.location.search.includes('debug=true');
+                    if (!isProduction || isDebug) {
+                        console.log('🔄 用户信息显示状态切换:', userInfoDisplay.style.display);
+                    }
                 } else {
                     console.error('❌ userInfoDisplay元素不存在，尝试重新创建');
                     // 尝试重新创建用户信息显示区域
@@ -250,7 +265,11 @@ class HeaderComponent {
                     const newUserInfoDisplay = document.getElementById('userInfoDisplay');
                     if (newUserInfoDisplay) {
                         newUserInfoDisplay.style.display = 'block';
-                        console.log('✅ 重新创建用户信息面板成功');
+                        const isProduction = window.location.hostname.includes('github.io');
+                        const isDebug = window.location.search.includes('debug=true');
+                        if (!isProduction || isDebug) {
+                            console.log('✅ 重新创建用户信息面板成功');
+                        }
                     } else {
                         console.error('❌ 重新创建用户信息面板失败');
                     }
@@ -582,12 +601,19 @@ class HeaderComponent {
 
     // 初始化用户信息显示
     initializeUserInfo() {
-        console.log('👤 初始化用户信息显示...');
+        const isProduction = window.location.hostname.includes('github.io');
+        const isDebug = window.location.search.includes('debug=true');
+
+        if (!isProduction || isDebug) {
+            console.log('👤 初始化用户信息显示...');
+        }
 
         // 清除重复的用户信息显示区域
         const existingUserInfos = document.querySelectorAll('#userInfoDisplay');
         if (existingUserInfos.length > 1) {
-            console.log('🧹 发现多个用户信息显示区域，清除重复项...');
+            if (!isProduction || isDebug) {
+                console.log('🧹 发现多个用户信息显示区域，清除重复项...');
+            }
             existingUserInfos.forEach((info, index) => {
                 if (index > 0) { // 保留第一个，删除其他
                     info.remove();
@@ -600,7 +626,9 @@ class HeaderComponent {
             this.createUserInfoDisplay();
         }
 
-        console.log('✅ 用户信息显示初始化完成');
+        if (!isProduction || isDebug) {
+            console.log('✅ 用户信息显示初始化完成');
+        }
     }
 
     // 通知页面更新认证状态

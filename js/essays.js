@@ -153,7 +153,11 @@ async function loadEssaysList(forceRefresh = false) {
     // 如果强制刷新，清除智能加载器的缓存
     if (forceRefresh && window.smartFileLoader) {
         window.smartFileLoader.clearCache();
-        console.log('🔄 强制刷新：已清除缓存');
+        const isProduction = window.location.hostname.includes('github.io');
+        const isDebug = window.location.search.includes('debug=true');
+        if (!isProduction || isDebug) {
+            console.log('🔄 强制刷新：已清除缓存');
+        }
     }
 
     try {
@@ -594,7 +598,11 @@ function applyBasicPermissionFilter(essays, currentUser) {
         }
     });
 
-    console.log(`✅ 基本权限过滤完成，可访问随笔数量: ${filteredEssays.length}/${essays.length}`);
+    const isProduction = window.location.hostname.includes('github.io');
+    const isDebug = window.location.search.includes('debug=true');
+    if (!isProduction || isDebug) {
+        console.log(`✅ 基本权限过滤完成，可访问随笔数量: ${filteredEssays.length}/${essays.length}`);
+    }
     return filteredEssays;
 }
 
@@ -612,11 +620,18 @@ async function loadEssaysFromFiles() {
       const files = await window.smartFileLoader.loadFileList('essays');
 
       if (files && files.length > 0) {
-        console.log(`✅ 智能加载器加载了 ${files.length} 篇随笔`);
+        const isProduction = window.location.hostname.includes('github.io');
+        const isDebug = window.location.search.includes('debug=true');
+
+        if (!isProduction || isDebug) {
+            console.log(`✅ 智能加载器加载了 ${files.length} 篇随笔`);
+        }
 
         // 验证文件是否真实存在，清理无效记录
         const validatedFiles = await validateEssayFiles(files);
-        console.log(`🔍 验证后保留 ${validatedFiles.length} 篇有效随笔`);
+        if (!isProduction || isDebug) {
+            console.log(`🔍 验证后保留 ${validatedFiles.length} 篇有效随笔`);
+        }
 
         // 转换为随笔格式并确保作者信息完整
         const essays = validatedFiles.map(file => {
@@ -691,13 +706,15 @@ async function loadEssaysFromFiles() {
           return processedFile;
         });
 
-        // 调试信息：显示加载的数据结构
-        console.log('📊 验证后的随笔数据:', essays.map(essay => ({
-          id: essay.id,
-          title: essay.title,
-          author: essay.author,
-          source: essay.source
-        })));
+        // 调试信息：显示加载的数据结构（仅在调试模式下）
+        if (!isProduction || isDebug) {
+            console.log('📊 验证后的随笔数据:', essays.map(essay => ({
+              id: essay.id,
+              title: essay.title,
+              author: essay.author,
+              source: essay.source
+            })));
+        }
 
         return essays.sort((a, b) => new Date(b.date) - new Date(a.date));
       }

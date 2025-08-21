@@ -24,11 +24,27 @@ class TrackingProtectionHandler {
       lastFailure: null
     };
 
+    // 检查环境配置
+    this.checkEnvironmentConfig();
+
     // 只在调试模式下输出初始化日志
-    if (this.logLevel >= 2) {
+    if (this.logLevel >= 3) {
       console.log('🛡️ 跟踪保护处理器初始化');
     }
     this.initializeHandler();
+  }
+
+  // 检查环境配置
+  checkEnvironmentConfig() {
+    if (window.environmentConfig) {
+      const logLevel = window.environmentConfig.getConfig('logging.level');
+      switch (logLevel) {
+        case 'debug': this.logLevel = 3; break;
+        case 'warn': this.logLevel = 2; break;
+        case 'error': this.logLevel = 1; break;
+        default: this.logLevel = 0; break;
+      }
+    }
   }
 
   // 获取日志级别
@@ -47,7 +63,7 @@ class TrackingProtectionHandler {
     }
 
     if (window.location.hostname.includes('github.io')) {
-      return 1; // GitHub Pages 生产环境，只显示错误
+      return 0; // GitHub Pages 生产环境，静默模式（减少控制台噪音）
     }
 
     return 0; // 其他环境，静默模式

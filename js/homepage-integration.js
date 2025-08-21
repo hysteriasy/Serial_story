@@ -172,6 +172,12 @@ class HomepageIntegration {
         }
       }
 
+      // 2. 从GitHub获取作品数据（如果在网络环境）
+      if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+        console.log('🌐 从GitHub获取作品数据...');
+        await this.loadWorksFromGitHub(allWorks, processedIds);
+      }
+
       // 2. 从Firebase获取作品（如果可用）
       if (this.firebaseAvailable && this.database) {
         try {
@@ -206,6 +212,115 @@ class HomepageIntegration {
     } catch (error) {
       console.error('获取作品数据失败:', error);
       return [];
+    }
+  }
+
+  // 从GitHub加载作品数据
+  async loadWorksFromGitHub(allWorks, processedIds) {
+    try {
+      // 方法1：扫描data/works目录
+      if (window.fileHierarchyManager) {
+        console.log('📂 扫描GitHub data/works目录...');
+        const githubFiles = await window.fileHierarchyManager.listGitHubWorkFiles();
+        console.log(`📂 找到 ${githubFiles.length} 个GitHub作品文件`);
+
+        for (const fileInfo of githubFiles) {
+          try {
+            const workData = await window.dataManager.loadData(fileInfo.key, {
+              category: 'works',
+              fallbackToLocal: false
+            });
+
+            if (workData) {
+              const workId = workData.id || fileInfo.key.replace('work_', '');
+
+              if (!processedIds.has(workId)) {
+                allWorks.push({
+                  ...workData,
+                  id: workId,
+                  source: 'github_data'
+                });
+                processedIds.add(workId);
+                console.log(`✅ 从GitHub data/works加载作品: ${workId}`);
+              }
+            }
+          } catch (error) {
+            console.warn(`⚠️ 加载GitHub作品文件失败: ${fileInfo.key}`, error);
+          }
+        }
+      }
+
+      // 方法2：扫描user-uploads目录
+      if (window.smartFileLoader) {
+        console.log('📁 扫描GitHub user-uploads目录...');
+        const categories = ['literature', 'art', 'music', 'video'];
+
+        for (const category of categories) {
+          try {
+            const files = await window.smartFileLoader._loadFromUserUploads(category);
+            console.log(`📁 在${category}分类中找到 ${files.length} 个文件`);
+
+            files.forEach(file => {
+              const workId = file.id || file.fileId;
+              if (workId && !processedIds.has(workId)) {
+                allWorks.push({
+                  ...file,
+                  id: workId,
+                  source: 'github_uploads'
+                });
+                processedIds.add(workId);
+                console.log(`✅ 从GitHub user-uploads加载作品: ${workId}`);
+              }
+            });
+          } catch (error) {
+            console.warn(`⚠️ 扫描${category}分类失败:`, error);
+          }
+        }
+      }
+
+      // 方法3：尝试从所有已知用户的作品列表加载
+      if (window.auth && window.auth.getAllUsers) {
+        try {
+          console.log('👥 从所有用户的作品列表加载...');
+          const users = await window.auth.getAllUsers();
+
+          for (const user of users) {
+            const username = typeof user === 'string' ? user : user.username;
+            try {
+              const userWorksList = await window.dataManager.loadUserWorksList(username);
+              if (userWorksList && userWorksList.length > 0) {
+                console.log(`👤 用户 ${username} 有 ${userWorksList.length} 个作品`);
+
+                for (const workId of userWorksList) {
+                  if (!processedIds.has(workId)) {
+                    try {
+                      const workData = await window.dataManager.loadWorkData(workId);
+                      if (workData) {
+                        allWorks.push({
+                          ...workData,
+                          id: workId,
+                          source: 'github_userlist'
+                        });
+                        processedIds.add(workId);
+                        console.log(`✅ 从用户列表加载作品: ${workId} (${username})`);
+                      }
+                    } catch (error) {
+                      console.warn(`⚠️ 加载用户作品失败: ${workId}`, error);
+                    }
+                  }
+                }
+              }
+            } catch (error) {
+              console.warn(`⚠️ 获取用户 ${username} 的作品列表失败:`, error);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ 获取所有用户失败:', error);
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ 从GitHub加载作品失败:', error);
     }
   }
 
@@ -835,7 +950,14 @@ function initializeHomepageIntegration() {
 
   const attemptInit = () => {
     initAttempts++;
-    console.log(`🏠 首页统计模块初始化尝试 ${initAttempts}/${maxAttempts}...`);
+
+    // 在生产环境中减少重试日志
+    const isProduction = window.location.hostname.includes('github.io');
+    const isDebug = window.location.search.includes('debug=true');
+
+    if (!isProduction || isDebug) {
+      console.log(`🏠 首页统计模块初始化尝试 ${initAttempts}/${maxAttempts}...`);
+    }
 
     try {
       // 检查必要的依赖是否已加载
@@ -845,7 +967,9 @@ function initializeHomepageIntegration() {
       );
 
       if (!dependenciesReady && initAttempts < maxAttempts) {
-        console.log('⚠️ 依赖尚未完全加载，1秒后重试...');
+        if (!isProduction || isDebug) {
+          console.log('⚠️ 依赖尚未完全加载，1秒后重试...');
+        }
         setTimeout(attemptInit, 1000);
         return;
       }
@@ -855,9 +979,13 @@ function initializeHomepageIntegration() {
 
       // 初始化
       window.homepageIntegration.init().then(() => {
-        console.log('✅ 首页统计模块初始化完成');
+        if (!isProduction || isDebug) {
+          console.log('✅ 首页统计模块初始化完成');
+        }
       }).catch(error => {
-        console.warn('⚠️ 首页统计模块初始化部分失败，但模块已创建:', error.message);
+        if (!isProduction || isDebug) {
+          console.warn('⚠️ 首页统计模块初始化部分失败，但模块已创建:', error.message);
+        }
         // 即使初始化失败，模块仍然可用，只是可能没有统计数据
       });
 

@@ -207,11 +207,47 @@ class DataManager {
   // 保存作品数据
   async saveWorkData(workId, workData) {
     const key = `work_${workId}`;
-    return await this.saveData(key, workData, {
+    const result = await this.saveData(key, workData, {
       category: 'works',
       isPublic: workData.permissions?.isPublic,
       commitMessage: `保存作品: ${workData.title || workId}`
     });
+
+    // 同时更新用户作品列表
+    if (result.success && workData.uploadedBy) {
+      await this.updateUserWorksList(workData.uploadedBy, workId, 'add');
+    }
+
+    return result;
+  }
+
+  // 更新用户作品列表
+  async updateUserWorksList(username, workId, action = 'add') {
+    try {
+      console.log(`📝 更新用户作品列表: ${username}, 作品: ${workId}, 操作: ${action}`);
+
+      // 获取当前用户作品列表
+      let userWorksList = await this.loadUserWorksList(username);
+
+      if (action === 'add') {
+        // 添加作品ID（如果不存在）
+        if (!userWorksList.includes(workId)) {
+          userWorksList.push(workId);
+          console.log(`✅ 添加作品到用户列表: ${workId}`);
+        }
+      } else if (action === 'remove') {
+        // 移除作品ID
+        userWorksList = userWorksList.filter(id => id !== workId);
+        console.log(`✅ 从用户列表移除作品: ${workId}`);
+      }
+
+      // 保存更新后的列表
+      await this.saveUserWorksList(username, userWorksList);
+      console.log(`✅ 用户作品列表已更新，共 ${userWorksList.length} 个作品`);
+
+    } catch (error) {
+      console.error('❌ 更新用户作品列表失败:', error);
+    }
   }
 
   // 读取作品数据
@@ -248,6 +284,29 @@ class DataManager {
   async loadUserWorksList(username) {
     const key = `userWorks_${username}`;
     return await this.loadData(key, { category: 'users' }) || [];
+  }
+
+  // 删除作品数据
+  async deleteWorkData(workId) {
+    const key = `work_${workId}`;
+
+    // 先获取作品数据以确定所有者
+    let workData = null;
+    try {
+      workData = await this.loadWorkData(workId);
+    } catch (error) {
+      console.warn('获取作品数据失败，继续删除操作:', error);
+    }
+
+    // 删除作品文件
+    const result = await this.deleteData(key, { category: 'works' });
+
+    // 如果删除成功且知道作品所有者，更新用户作品列表
+    if (result.success && workData && workData.uploadedBy) {
+      await this.updateUserWorksList(workData.uploadedBy, workId, 'remove');
+    }
+
+    return result;
   }
 
   // 获取环境信息

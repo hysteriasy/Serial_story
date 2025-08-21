@@ -28,13 +28,24 @@
             // 重写console.warn
             console.warn = function(...args) {
                 const message = args.join(' ');
+                const isProduction = window.location.hostname.includes('github.io');
 
-                // 过滤跟踪防护相关警告
-                if (message.includes('Tracking Prevention') ||
+                // 在生产环境中过滤更多类型的警告
+                const shouldFilter = message.includes('Tracking Prevention') ||
                     message.includes('blocked access to storage') ||
                     message.includes('ERR_BLOCKED_BY_CLIENT') ||
                     message.includes('-ms-high-contrast') ||
-                    message.includes('deprecated')) {
+                    message.includes('deprecated') ||
+                    (isProduction && (
+                        message.includes('跟踪保护') ||
+                        message.includes('iOS特定修复') ||
+                        message.includes('Firebase 不可用') ||
+                        message.includes('扫描路径') ||
+                        message.includes('加载文件内容失败') ||
+                        message.includes('跳过损坏的文件')
+                    ));
+
+                if (shouldFilter) {
                     filteredWarnings++;
                     return; // 完全阻止显示
                 }
@@ -46,14 +57,24 @@
             // 重写console.error
             console.error = function(...args) {
                 const message = args.join(' ');
+                const isProduction = window.location.hostname.includes('github.io');
 
-                // 过滤广告和第三方相关错误
-                if (message.includes('googleads') ||
+                // 在生产环境中过滤更多类型的错误
+                const shouldFilter = message.includes('googleads') ||
                     message.includes('doubleclick') ||
                     message.includes('ad_status.js') ||
                     message.includes('ERR_NAME_NOT_RESOLVED') ||
                     message.includes('ERR_BLOCKED_BY_CLIENT') ||
-                    message.includes('Failed to load resource')) {
+                    message.includes('Failed to load resource') ||
+                    message.includes('404 (Not Found)') ||
+                    (isProduction && (
+                        message.includes('网络连接问题') ||
+                        message.includes('Firebase 初始化失败') ||
+                        message.includes('存储访问失败') ||
+                        message.includes('获取GitHub文件失败')
+                    ));
+
+                if (shouldFilter) {
                     filteredErrors++;
                     return; // 完全阻止显示
                 }
@@ -460,6 +481,18 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
+    <!-- 环境配置管理器 - 必须在最早加载 -->
+    <script src="js/environment-config.js"></script>
+
+    <!-- 生产环境日志管理器 - 必须在其他脚本之前加载 -->
+    <script src="js/production-logger.js"></script>
+
+    <!-- Poetry页面专用日志管理器 -->
+    <script src="js/poetry-logger.js"></script>
+
+    <!-- 跟踪保护处理器 - 必须在存储相关脚本之前加载 -->
+    <script src="js/tracking-protection-handler.js"></script>
+
     <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
     <script src="js/ios-compatibility.js"></script>
 
@@ -474,7 +507,7 @@
     <script src="js/smart-file-loader.js"></script>
     <script src="js/script.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/user-status.js"></script>
+    <!-- <script src="js/user-status.js"></script> 已移除，页眉组件已包含用户状态管理 -->
 
     <!-- 权限控制系统 -->
     <script src="js/file-permissions-system.js"></script>
@@ -489,12 +522,19 @@
     <script>
         // 页面加载完成后初始化组件
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 开始初始化诗歌创作页面组件...');
+            const isProduction = window.location.hostname.includes('github.io');
+            const isDebug = window.location.search.includes('debug=true');
+
+            if (!isProduction || isDebug) {
+                console.log('🚀 开始初始化诗歌创作页面组件...');
+            }
 
             // 初始化页眉组件
             if (typeof initHeader === 'function') {
                 window.headerComponent = initHeader();
-                console.log('✅ 页眉组件初始化完成');
+                if (!isProduction || isDebug) {
+                    console.log('✅ 页眉组件初始化完成');
+                }
             } else {
                 console.error('❌ initHeader 函数未找到');
             }
@@ -502,12 +542,16 @@
             // 初始化页脚组件
             if (typeof initFooter === 'function') {
                 window.footerComponent = initFooter();
-                console.log('✅ 页脚组件初始化完成');
+                if (!isProduction || isDebug) {
+                    console.log('✅ 页脚组件初始化完成');
+                }
             } else {
                 console.error('❌ initFooter 函数未找到');
             }
 
-            console.log('🎉 诗歌创作页面组件初始化完成');
+            if (!isProduction || isDebug) {
+                console.log('🎉 诗歌创作页面组件初始化完成');
+            }
         });
     </script>
 </body>

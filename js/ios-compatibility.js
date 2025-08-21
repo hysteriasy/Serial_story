@@ -209,7 +209,10 @@
         });
 
     } else {
-        console.log('🖥️ 非iOS Safari环境，跳过iOS特定修复');
+        // 在生产环境中减少日志输出
+        if (window.location.hostname === 'localhost' || window.location.search.includes('debug=true')) {
+            console.log('🖥️ 非iOS Safari环境，跳过iOS特定修复');
+        }
     }
 
     // 通用移动端优化（适用于所有移动设备）

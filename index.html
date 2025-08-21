@@ -27,13 +27,22 @@
             // 重写console.warn
             console.warn = function(...args) {
                 const message = args.join(' ');
+                const isProduction = window.location.hostname.includes('github.io');
 
-                // 过滤跟踪防护相关警告
-                if (message.includes('Tracking Prevention') ||
+                // 在生产环境中过滤更多类型的警告
+                const shouldFilter = message.includes('Tracking Prevention') ||
                     message.includes('blocked access to storage') ||
                     message.includes('ERR_BLOCKED_BY_CLIENT') ||
                     message.includes('-ms-high-contrast') ||
-                    message.includes('deprecated')) {
+                    message.includes('deprecated') ||
+                    (isProduction && (
+                        message.includes('跟踪保护') ||
+                        message.includes('iOS特定修复') ||
+                        message.includes('初始化部分失败') ||
+                        message.includes('Firebase 不可用')
+                    ));
+
+                if (shouldFilter) {
                     filteredWarnings++;
                     return; // 完全阻止显示
                 }
@@ -45,14 +54,22 @@
             // 重写console.error
             console.error = function(...args) {
                 const message = args.join(' ');
+                const isProduction = window.location.hostname.includes('github.io');
 
-                // 过滤广告和第三方相关错误
-                if (message.includes('googleads') ||
+                // 在生产环境中过滤更多类型的错误
+                const shouldFilter = message.includes('googleads') ||
                     message.includes('doubleclick') ||
                     message.includes('ad_status.js') ||
                     message.includes('ERR_NAME_NOT_RESOLVED') ||
                     message.includes('ERR_BLOCKED_BY_CLIENT') ||
-                    message.includes('Failed to load resource')) {
+                    message.includes('Failed to load resource') ||
+                    (isProduction && (
+                        message.includes('网络连接问题') ||
+                        message.includes('Firebase 初始化失败') ||
+                        message.includes('存储访问失败')
+                    ));
+
+                if (shouldFilter) {
                     filteredErrors++;
                     return; // 完全阻止显示
                 }
@@ -386,12 +403,18 @@
 
 
 
+    <!-- 环境配置管理器 - 必须在最早加载 -->
+    <script src="js/environment-config.js"></script>
+
     <!-- iOS兼容性修复 - 必须在其他脚本之前加载 -->
     <script src="js/ios-compatibility.js"></script>
 
     <!-- 页眉页脚组件 - 在其他脚本之前加载 -->
     <script src="js/header.js"></script>
     <script src="js/footer.js"></script>
+
+    <!-- 生产环境日志管理器 - 必须在其他脚本之前加载 -->
+    <script src="js/production-logger.js"></script>
 
     <!-- 跟踪保护处理器 - 必须在存储相关脚本之前加载 -->
     <script src="js/tracking-protection-handler.js"></script>
@@ -405,6 +428,9 @@
     <!-- <script src="js/user-status.js"></script> 已移除，页眉组件已包含用户状态管理 -->
     <script src="js/system-stats.js"></script>
     <script src="js/homepage-integration.js"></script>
+
+    <!-- 用户作品列表修复工具 -->
+    <script src="js/fix-user-works-list.js"></script>
 
     <!-- 初始化页眉页脚组件 -->
     <script>

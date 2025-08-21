@@ -64,7 +64,11 @@ class PoetryDisplay {
         const files = await window.smartFileLoader.loadFileList('poetry');
 
         if (files && files.length > 0) {
-          console.log(`✅ 智能加载器加载了 ${files.length} 首诗歌`);
+          const isProduction = window.location.hostname.includes('github.io');
+          const isDebug = window.location.search.includes('debug=true');
+          if (!isProduction || isDebug) {
+            console.log(`✅ 智能加载器加载了 ${files.length} 首诗歌`);
+          }
 
           // 处理智能加载器返回的数据
           const poetry = files.map(file => {
@@ -113,13 +117,17 @@ class PoetryDisplay {
 
           this.poetryData.push(...poetry);
 
-          // 调试信息：显示加载的数据结构
-          console.log('📊 智能加载器返回的诗歌数据:', poetry.map(poem => ({
-            id: poem.id,
-            title: poem.title,
-            author: poem.author,
-            source: poem.source
-          })));
+          // 调试信息：显示加载的数据结构（仅在调试模式下）
+          const isProduction = window.location.hostname.includes('github.io');
+          const isDebug = window.location.search.includes('debug=true');
+          if (!isProduction || isDebug) {
+            console.log('📊 智能加载器返回的诗歌数据:', poetry.map(poem => ({
+              id: poem.id,
+              title: poem.title,
+              author: poem.author,
+              source: poem.source
+            })));
+          }
         }
       }
 
@@ -618,7 +626,11 @@ class PoetryDisplay {
     if (typeof auth !== 'undefined') {
       // 如果auth.currentUser为空，尝试从sessionStorage恢复登录状态
       if (!auth.currentUser) {
-        console.log('🔄 Poetry: auth.currentUser为空，尝试恢复登录状态...');
+        const isProduction = window.location.hostname.includes('github.io');
+        const isDebug = window.location.search.includes('debug=true');
+        if (!isProduction || isDebug) {
+          console.log('🔄 Poetry: auth.currentUser为空，尝试恢复登录状态...');
+        }
         auth.checkAuthStatus();
       }
 

@@ -68,7 +68,11 @@ class EssaysDataManager {
         try {
           sources.github_files = await window.smartFileLoader._loadFromUserUploads('essays');
         } catch (error) {
-          console.warn('获取GitHub文件失败:', error);
+          const isProduction = window.location.hostname.includes('github.io');
+          const isDebug = window.location.search.includes('debug=true');
+          if (!isProduction || isDebug) {
+            console.warn('获取GitHub文件失败:', error);
+          }
         }
       }
 

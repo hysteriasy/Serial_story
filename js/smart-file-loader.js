@@ -157,6 +157,15 @@ class SmartFileLoader {
     // 尝试加载文件索引（静默处理404错误）
     try {
       const indexKey = `${category}_index`;
+
+      // 在生产环境中，先检查索引文件是否存在，避免404请求
+      const isProduction = window.location.hostname.includes('github.io');
+      if (isProduction) {
+        // 生产环境中跳过索引文件加载，直接使用user-uploads扫描
+        // 这避免了不必要的404请求
+        throw new Error('生产环境跳过索引文件加载');
+      }
+
       const index = await window.dataManager.loadData(indexKey, {
         category: 'system',
         fallbackToLocal: false
@@ -173,30 +182,42 @@ class SmartFileLoader {
               files.push({ ...fileData, id: fileId, source: 'github' });
             }
           } catch (error) {
-            console.warn(`跳过损坏的文件: ${fileId}`);
+            // 在生产环境中减少错误日志
+            if (!isProduction) {
+              console.warn(`跳过损坏的文件: ${fileId}`);
+            }
           }
         }
       }
     } catch (error) {
       // 静默处理索引文件不存在的情况（这是正常的）
-      if (error.message && (error.message.includes('404') || error.message.includes('文件不存在'))) {
+      const isProduction = window.location.hostname.includes('github.io');
+      if (error.message && (error.message.includes('404') || error.message.includes('文件不存在') || error.message.includes('生产环境跳过'))) {
         // 索引文件不存在是正常情况，不输出日志
-      } else {
+      } else if (!isProduction) {
         console.info('未找到文件索引，使用备用加载方法');
       }
     }
 
     // 如果索引加载失败或没有数据，尝试直接扫描user-uploads目录
     if (files.length === 0) {
-      console.log('📁 尝试直接扫描user-uploads目录...');
+      const isProduction = window.location.hostname.includes('github.io');
+      const isDebug = window.location.search.includes('debug=true');
+
+      if (!isProduction || isDebug) {
+        console.log('📁 尝试直接扫描user-uploads目录...');
+      }
+
       try {
         const uploadFiles = await this._loadFromUserUploads(category);
         files.push(...uploadFiles);
-        if (uploadFiles.length > 0) {
+        if (uploadFiles.length > 0 && (!isProduction || isDebug)) {
           console.log(`✅ 从user-uploads目录加载到 ${uploadFiles.length} 个文件`);
         }
       } catch (error) {
-        console.warn(`⚠️ 扫描user-uploads目录失败: ${error.message}`);
+        if (!isProduction || isDebug) {
+          console.warn(`⚠️ 扫描user-uploads目录失败: ${error.message}`);
+        }
       }
     }
 
@@ -361,7 +382,11 @@ class SmartFileLoader {
           const response = await fetch(filePath, { method: 'HEAD' });
           if (response.ok) {
             knownFiles.push(filePath);
-            console.log(`✅ 找到已知诗歌文件: ${filePath}`);
+            const isProduction = window.location.hostname.includes('github.io');
+            const isDebug = window.location.search.includes('debug=true');
+            if (!isProduction || isDebug) {
+              console.log(`✅ 找到已知诗歌文件: ${filePath}`);
+            }
           }
         } catch (error) {
           // 文件不存在，继续
@@ -393,12 +418,21 @@ class SmartFileLoader {
 
       for (const scanPath of scanPaths) {
         try {
-          console.log(`🔍 扫描GitHub路径: ${scanPath}`);
+          const isProduction = window.location.hostname.includes('github.io');
+          const isDebug = window.location.search.includes('debug=true');
+
+          if (!isProduction || isDebug) {
+            console.log(`🔍 扫描GitHub路径: ${scanPath}`);
+          }
+
           const pathFiles = await this._scanDirectoryRecursively(scanPath);
           files.push(...pathFiles);
         } catch (error) {
           // 404错误是正常的（目录可能不存在）
-          if (error.status !== 404) {
+          const isProduction = window.location.hostname.includes('github.io');
+          const isDebug = window.location.search.includes('debug=true');
+
+          if (error.status !== 404 && (!isProduction || isDebug)) {
             console.warn(`扫描路径 ${scanPath} 失败:`, error.message);
           }
         }
@@ -434,12 +468,18 @@ class SmartFileLoader {
 
       for (const scanPath of scanPaths) {
         try {
-          console.log(`🔍 使用公开API扫描GitHub路径: ${scanPath}`);
+          const isProduction = window.location.hostname.includes('github.io');
+          const isDebug = window.location.search.includes('debug=true');
+          if (!isProduction || isDebug) {
+            console.log(`🔍 使用公开API扫描GitHub路径: ${scanPath}`);
+          }
           const pathFiles = await this._scanDirectoryPublic(scanPath);
           files.push(...pathFiles);
         } catch (error) {
           // 404错误是正常的（目录可能不存在）
-          if (error.status !== 404) {
+          const isProduction = window.location.hostname.includes('github.io');
+          const isDebug = window.location.search.includes('debug=true');
+          if (error.status !== 404 && (!isProduction || isDebug)) {
             console.warn(`公开API扫描路径 ${scanPath} 失败:`, error.message);
           }
         }
@@ -493,7 +533,11 @@ class SmartFileLoader {
               });
             }
           } catch (error) {
-            console.warn(`加载文件内容失败: ${item.path}`, error.message);
+            const isProduction = window.location.hostname.includes('github.io');
+            const isDebug = window.location.search.includes('debug=true');
+            if (!isProduction || isDebug) {
+              console.warn(`加载文件内容失败: ${item.path}`, error.message);
+            }
           }
         } else if (item.type === 'dir') {
           // 递归扫描子目录
@@ -501,7 +545,11 @@ class SmartFileLoader {
             const subFiles = await this._scanDirectoryRecursively(item.path);
             files.push(...subFiles);
           } catch (error) {
-            console.warn(`扫描子目录失败: ${item.path}`, error.message);
+            const isProduction = window.location.hostname.includes('github.io');
+            const isDebug = window.location.search.includes('debug=true');
+            if (!isProduction || isDebug) {
+              console.warn(`扫描子目录失败: ${item.path}`, error.message);
+            }
           }
         }
       }
@@ -553,7 +601,11 @@ class SmartFileLoader {
               });
             }
           } catch (error) {
-            console.warn(`加载文件内容失败: ${item.path}`, error.message);
+            const isProduction = window.location.hostname.includes('github.io');
+            const isDebug = window.location.search.includes('debug=true');
+            if (!isProduction || isDebug) {
+              console.warn(`加载文件内容失败: ${item.path}`, error.message);
+            }
           }
         } else if (item.type === 'dir') {
           // 递归扫描子目录
@@ -561,7 +613,11 @@ class SmartFileLoader {
             const subFiles = await this._scanDirectoryPublic(item.path);
             files.push(...subFiles);
           } catch (error) {
-            console.warn(`扫描子目录失败: ${item.path}`, error.message);
+            const isProduction = window.location.hostname.includes('github.io');
+            const isDebug = window.location.search.includes('debug=true');
+            if (!isProduction || isDebug) {
+              console.warn(`扫描子目录失败: ${item.path}`, error.message);
+            }
           }
         }
       }
