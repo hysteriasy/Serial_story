@@ -114,6 +114,7 @@
                 <div class="hero-buttons">
                     <button class="btn btn-primary" onclick="scrollToSection('works')">阅读作品</button>
                     <button class="btn btn-secondary" onclick="scrollToSection('about')">了解作者</button>
+                    <button class="btn btn-outline" onclick="navigateToMyWorks()" id="myWorksBtn" style="display: none;">我的作品</button>
                 </div>
             </div>
         </section>
@@ -983,6 +984,9 @@
                 console.log('👤 用户不是管理员，隐藏管理员控制面板');
                 updateAdminSection(false);
             }
+
+            // 更新我的作品按钮显示状态
+            updateMyWorksButton();
         }
 
         function hideAuthenticatedContent() {
@@ -1011,6 +1015,9 @@
 
             // 隐藏管理员控制面板
             updateAdminSection(false);
+
+            // 更新我的作品按钮显示状态
+            updateMyWorksButton();
         }
 
         // 更新欢迎区域标题，显示个性化用户名
@@ -1620,6 +1627,41 @@
                 closeLoginModal();
             }
         });
+
+        // 导航到我的作品页面
+        function navigateToMyWorks() {
+            console.log('🔗 导航到我的作品页面');
+
+            if (!auth || !auth.currentUser) {
+                console.log('❌ 用户未登录，显示登录提示');
+                alert('请先登录以查看您的作品');
+
+                // 显示登录模态框
+                if (typeof showLoginModal === 'function') {
+                    showLoginModal();
+                } else if (window.headerFooterComponent && typeof window.headerFooterComponent.showLoginModal === 'function') {
+                    window.headerFooterComponent.showLoginModal();
+                }
+                return;
+            }
+
+            console.log('✅ 用户已登录，跳转到我的作品页面');
+            window.location.href = 'my-works.html';
+        }
+
+        // 更新我的作品按钮显示状态
+        function updateMyWorksButton() {
+            const myWorksBtn = document.getElementById('myWorksBtn');
+            if (!myWorksBtn) return;
+
+            if (auth && auth.currentUser) {
+                console.log('👤 用户已登录，显示我的作品按钮');
+                myWorksBtn.style.display = 'inline-block';
+            } else {
+                console.log('🔒 用户未登录，隐藏我的作品按钮');
+                myWorksBtn.style.display = 'none';
+            }
+        }
 
         // 用户功能函数
         function showMyWorks() {

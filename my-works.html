@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的作品 - 桑梓</title>
+    
+    <!-- 基础样式 -->
+    <link rel="stylesheet" href="css/style.css?v=20240807">
+    <link rel="stylesheet" href="css/ios-compatibility.css?v=20240810">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    
+    <!-- 页面特定样式 -->
+    <style>
+        /* 我的作品页面特定样式 */
+        .my-works-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0 60px 0;
+            text-align: center;
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .my-works-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .works-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 120px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .works-content {
+            padding: 60px 0;
+            background: #f8f9fa;
+        }
+        
+        .works-section {
+            margin-bottom: 50px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: #333;
+            margin: 0;
+        }
+        
+        .section-count {
+            background: #007bff;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .works-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .work-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+        
+        .work-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .work-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .work-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .work-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-view {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-edit {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-permissions {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        
+        .work-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .work-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .work-visibility {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        
+        .visibility-public {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .visibility-private {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .visibility-friends {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .empty-description {
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .login-required {
+            text-align: center;
+            padding: 100px 20px;
+            background: white;
+            margin: 40px auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+        }
+        
+        .login-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #007bff;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .my-works-hero {
+                padding: 80px 0 40px 0;
+                min-height: 40vh;
+            }
+            
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .works-stats {
+                gap: 15px;
+            }
+            
+            .stat-item {
+                min-width: 100px;
+                padding: 15px;
+            }
+            
+            .works-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .work-actions {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .action-btn {
+                padding: 5px 10px;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 页眉将通过组件动态插入 -->
+    
+    <!-- 主要内容 -->
+    <main>
+        <!-- 英雄区 -->
+        <section class="my-works-hero">
+            <div class="my-works-container">
+                <h1 class="hero-title">我的作品</h1>
+                <p class="hero-description">管理和展示您的创作成果</p>
+                
+                <!-- 作品统计 -->
+                <div class="works-stats" id="worksStats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalWorksCount">0</span>
+                        <span class="stat-label">总作品</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="publicWorksCount">0</span>
+                        <span class="stat-label">公开作品</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="privateWorksCount">0</span>
+                        <span class="stat-label">私有作品</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="categoriesCount">0</span>
+                        <span class="stat-label">分类数量</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 作品内容区 -->
+        <section class="works-content">
+            <div class="my-works-container">
+                <!-- 登录提示区域 -->
+                <div id="loginRequired" class="login-required" style="display: none;">
+                    <div class="login-icon">🔐</div>
+                    <h2>需要登录</h2>
+                    <p>请先登录以查看和管理您的作品</p>
+                    <button class="btn btn-primary" onclick="showLoginModal()">立即登录</button>
+                </div>
+
+                <!-- 作品展示区域 -->
+                <div id="worksDisplay" style="display: none;">
+                    <!-- 生活随笔 -->
+                    <div class="works-section" id="essaysSection">
+                        <div class="section-header">
+                            <h2 class="section-title">📝 生活随笔</h2>
+                            <span class="section-count" id="essaysCount">0</span>
+                        </div>
+                        <div class="works-grid" id="essaysGrid">
+                            <!-- 作品卡片将动态插入 -->
+                        </div>
+                    </div>
+
+                    <!-- 诗歌创作 -->
+                    <div class="works-section" id="poetrySection">
+                        <div class="section-header">
+                            <h2 class="section-title">🌸 诗歌创作</h2>
+                            <span class="section-count" id="poetryCount">0</span>
+                        </div>
+                        <div class="works-grid" id="poetryGrid">
+                            <!-- 作品卡片将动态插入 -->
+                        </div>
+                    </div>
+
+                    <!-- 小说连载 -->
+                    <div class="works-section" id="novelsSection">
+                        <div class="section-header">
+                            <h2 class="section-title">📚 小说连载</h2>
+                            <span class="section-count" id="novelsCount">0</span>
+                        </div>
+                        <div class="works-grid" id="novelsGrid">
+                            <!-- 作品卡片将动态插入 -->
+                        </div>
+                    </div>
+
+                    <!-- 绘画作品 -->
+                    <div class="works-section" id="artworksSection">
+                        <div class="section-header">
+                            <h2 class="section-title">🎨 绘画作品</h2>
+                            <span class="section-count" id="artworksCount">0</span>
+                        </div>
+                        <div class="works-grid" id="artworksGrid">
+                            <!-- 作品卡片将动态插入 -->
+                        </div>
+                    </div>
+
+                    <!-- 音乐作品 -->
+                    <div class="works-section" id="musicSection">
+                        <div class="section-header">
+                            <h2 class="section-title">🎵 音乐作品</h2>
+                            <span class="section-count" id="musicCount">0</span>
+                        </div>
+                        <div class="works-grid" id="musicGrid">
+                            <!-- 作品卡片将动态插入 -->
+                        </div>
+                    </div>
+
+                    <!-- 视频作品 -->
+                    <div class="works-section" id="videosSection">
+                        <div class="section-header">
+                            <h2 class="section-title">🎬 视频作品</h2>
+                            <span class="section-count" id="videosCount">0</span>
+                        </div>
+                        <div class="works-grid" id="videosGrid">
+                            <!-- 作品卡片将动态插入 -->
+                        </div>
+                    </div>
+
+                    <!-- 空状态 -->
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <div class="empty-icon">📝</div>
+                        <h3 class="empty-title">还没有作品</h3>
+                        <p class="empty-description">
+                            您还没有发布任何作品。<br>
+                            开始创作，分享您的精彩内容吧！
+                        </p>
+                        <button class="btn btn-primary" onclick="window.location.href='upload.html'">
+                            开始创作
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚将通过组件动态插入 -->
+
+    <!-- 编辑作品模态框 -->
+    <div id="editWorkModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑作品</h3>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editWorkForm">
+                    <div class="form-group">
+                        <label for="editTitle">标题</label>
+                        <input type="text" id="editTitle" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescription">描述</label>
+                        <textarea id="editDescription" name="description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editContent">内容</label>
+                        <textarea id="editContent" name="content" rows="10"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveWorkEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 权限设置模态框 -->
+    <div id="permissionsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>权限设置</h3>
+                <span class="close" onclick="closePermissionsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>可见性设置</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="visibility" value="public">
+                            <span>🌍 公开 - 所有人可见</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="visibility" value="friends">
+                            <span>👥 朋友 - 仅朋友可见</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="visibility" value="private">
+                            <span>🔒 私有 - 仅自己可见</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="allowComments">
+                        允许评论
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="allowDownload">
+                        允许下载
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePermissionsModal()">取消</button>
+                <button type="button" class="btn btn-primary" onclick="savePermissions()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 依赖 -->
+    <script src="js/auth.js"></script>
+    <script src="js/data-manager.js"></script>
+    <script src="js/header-footer.js"></script>
+    <script src="js/permissions-manager.js"></script>
+
+    <!-- 我的作品页面脚本 -->
+    <script>
+        /**
+         * 我的作品页面管理器
+         */
+        class MyWorksManager {
+            constructor() {
+                this.currentUser = null;
+                this.userWorks = [];
+                this.worksByCategory = {};
+                this.currentEditingWork = null;
+                this.currentPermissionsWork = null;
+
+                // 分类配置
+                this.categories = {
+                    essays: { name: '生活随笔', icon: '📝' },
+                    poetry: { name: '诗歌创作', icon: '🌸' },
+                    novels: { name: '小说连载', icon: '📚' },
+                    artworks: { name: '绘画作品', icon: '🎨' },
+                    music: { name: '音乐作品', icon: '🎵' },
+                    videos: { name: '视频作品', icon: '🎬' }
+                };
+            }
+
+            // 初始化页面
+            async init() {
+                console.log('🚀 初始化我的作品页面...');
+
+                // 初始化页眉页脚组件
+                await this.initHeaderFooter();
+
+                // 检查登录状态
+                this.checkAuthStatus();
+
+                // 监听登录状态变化
+                this.setupAuthListeners();
+
+                // 绑定事件
+                this.bindEvents();
+
+                console.log('✅ 我的作品页面初始化完成');
+            }
+
+            // 初始化页眉页脚组件
+            async initHeaderFooter() {
+                try {
+                    if (typeof HeaderFooterComponent !== 'undefined') {
+                        window.headerFooterComponent = new HeaderFooterComponent();
+                        await window.headerFooterComponent.init();
+                        console.log('✅ 页眉页脚组件初始化成功');
+                    } else {
+                        console.warn('⚠️ HeaderFooterComponent 未定义，跳过页眉页脚初始化');
+                    }
+                } catch (error) {
+                    console.error('❌ 页眉页脚组件初始化失败:', error);
+                }
+            }
+
+            // 检查认证状态
+            checkAuthStatus() {
+                console.log('🔍 检查用户登录状态...');
+
+                if (auth && auth.currentUser) {
+                    this.currentUser = auth.currentUser;
+                    console.log('✅ 用户已登录:', this.currentUser.username);
+                    this.showWorksContent();
+                    this.loadUserWorks();
+                } else {
+                    console.log('❌ 用户未登录');
+                    this.showLoginRequired();
+                }
+            }
+
+            // 设置认证状态监听器
+            setupAuthListeners() {
+                // 监听全局认证状态更新事件
+                window.addEventListener('authStateUpdate', (event) => {
+                    console.log('📢 收到认证状态更新事件:', event.detail);
+
+                    if (event.detail.isLoggedIn && event.detail.user) {
+                        this.currentUser = event.detail.user;
+                        this.showWorksContent();
+                        this.loadUserWorks();
+                    } else {
+                        this.currentUser = null;
+                        this.showLoginRequired();
+                    }
+                });
+
+                // 定期检查认证状态（防止状态不同步）
+                setInterval(() => {
+                    if (auth && auth.currentUser && !this.currentUser) {
+                        console.log('🔄 检测到登录状态变化，更新页面');
+                        this.checkAuthStatus();
+                    } else if (!auth?.currentUser && this.currentUser) {
+                        console.log('🔄 检测到登出状态变化，更新页面');
+                        this.checkAuthStatus();
+                    }
+                }, 2000);
+            }
+
+            // 显示登录要求
+            showLoginRequired() {
+                document.getElementById('loginRequired').style.display = 'block';
+                document.getElementById('worksDisplay').style.display = 'none';
+
+                // 隐藏统计数据
+                this.updateStats(0, 0, 0, 0);
+            }
+
+            // 显示作品内容
+            showWorksContent() {
+                document.getElementById('loginRequired').style.display = 'none';
+                document.getElementById('worksDisplay').style.display = 'block';
+            }
+
+            // 加载用户作品
+            async loadUserWorks() {
+                if (!this.currentUser) {
+                    console.warn('⚠️ 用户未登录，无法加载作品');
+                    return;
+                }
+
+                console.log('📚 开始加载用户作品...');
+
+                try {
+                    this.userWorks = [];
+                    this.worksByCategory = {};
+
+                    // 初始化分类
+                    Object.keys(this.categories).forEach(category => {
+                        this.worksByCategory[category] = [];
+                    });
+
+                    // 从localStorage加载作品
+                    await this.loadWorksFromLocalStorage();
+
+                    // 如果支持GitHub API，也从GitHub加载
+                    if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+                        await this.loadWorksFromGitHub();
+                    }
+
+                    // 渲染作品
+                    this.renderAllWorks();
+
+                    // 更新统计
+                    this.updateStatistics();
+
+                    console.log('✅ 用户作品加载完成，共', this.userWorks.length, '个作品');
+
+                } catch (error) {
+                    console.error('❌ 加载用户作品失败:', error);
+                    this.showErrorMessage('加载作品失败，请刷新页面重试');
+                }
+            }
+
+            // 从localStorage加载作品
+            async loadWorksFromLocalStorage() {
+                console.log('📂 从localStorage加载作品...');
+
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('work_')) {
+                        try {
+                            const workData = localStorage.getItem(key);
+                            if (workData) {
+                                const work = JSON.parse(workData);
+
+                                // 检查是否是当前用户的作品
+                                if (work.uploadedBy === this.currentUser.username ||
+                                    work.author === this.currentUser.username) {
+
+                                    // 添加工作ID
+                                    work.workId = key.replace('work_', '');
+
+                                    // 确保有权限设置
+                                    if (!work.permissions) {
+                                        work.permissions = this.createDefaultPermissions(work);
+                                    }
+
+                                    this.userWorks.push(work);
+
+                                    // 按分类组织
+                                    const category = this.getCategoryFromWork(work);
+                                    if (category && this.worksByCategory[category]) {
+                                        this.worksByCategory[category].push(work);
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            console.warn('解析作品数据失败:', key, error);
+                        }
+                    }
+                }
+
+                console.log('✅ localStorage作品加载完成，共', this.userWorks.length, '个作品');
+            }
+
+            // 从GitHub加载作品（如果可用）
+            async loadWorksFromGitHub() {
+                console.log('🌐 从GitHub加载作品...');
+
+                try {
+                    if (window.dataManager) {
+                        // 加载用户作品列表
+                        const userWorksList = await window.dataManager.loadUserWorksList(this.currentUser.username);
+
+                        if (userWorksList && userWorksList.length > 0) {
+                            for (const workId of userWorksList) {
+                                try {
+                                    const workData = await window.dataManager.loadWorkData(workId);
+                                    if (workData && !this.userWorks.find(w => w.workId === workId)) {
+                                        workData.workId = workId;
+                                        this.userWorks.push(workData);
+
+                                        // 按分类组织
+                                        const category = this.getCategoryFromWork(workData);
+                                        if (category && this.worksByCategory[category]) {
+                                            this.worksByCategory[category].push(workData);
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.warn('加载GitHub作品失败:', workId, error);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn('GitHub作品加载失败:', error);
+                }
+            }
+
+            // 获取作品分类
+            getCategoryFromWork(work) {
+                // 优先使用mainCategory
+                if (work.mainCategory && this.categories[work.mainCategory]) {
+                    return work.mainCategory;
+                }
+
+                // 根据categoryName推断
+                if (work.categoryName) {
+                    const categoryName = work.categoryName.toLowerCase();
+                    for (const [key, config] of Object.entries(this.categories)) {
+                        if (categoryName.includes(config.name) || categoryName.includes(key)) {
+                            return key;
+                        }
+                    }
+                }
+
+                // 根据文件类型推断
+                if (work.fileType) {
+                    const fileType = work.fileType.toLowerCase();
+                    if (fileType.includes('image')) return 'artworks';
+                    if (fileType.includes('audio')) return 'music';
+                    if (fileType.includes('video')) return 'videos';
+                }
+
+                // 默认分类
+                return 'essays';
+            }
+
+            // 创建默认权限设置
+            createDefaultPermissions(work) {
+                return {
+                    visibility: 'public',
+                    isPublic: true,
+                    allowComments: true,
+                    allowDownload: false,
+                    requiredRole: 'guest',
+                    createdAt: new Date().toISOString(),
+                    createdBy: this.currentUser.username
+                };
+            }
+
+            // 渲染所有作品
+            renderAllWorks() {
+                console.log('🎨 开始渲染作品...');
+
+                let hasAnyWorks = false;
+
+                // 渲染各个分类
+                Object.keys(this.categories).forEach(category => {
+                    const works = this.worksByCategory[category] || [];
+                    this.renderCategoryWorks(category, works);
+
+                    if (works.length > 0) {
+                        hasAnyWorks = true;
+                    }
+                });
+
+                // 显示或隐藏空状态
+                document.getElementById('emptyState').style.display = hasAnyWorks ? 'none' : 'block';
+            }
+
+            // 渲染分类作品
+            renderCategoryWorks(category, works) {
+                const section = document.getElementById(`${category}Section`);
+                const grid = document.getElementById(`${category}Grid`);
+                const count = document.getElementById(`${category}Count`);
+
+                if (!section || !grid || !count) {
+                    console.warn('分类元素不存在:', category);
+                    return;
+                }
+
+                // 更新计数
+                count.textContent = works.length;
+
+                // 显示或隐藏分类
+                if (works.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+
+                // 按时间排序（最新的在前）
+                works.sort((a, b) => new Date(b.uploadTime || b.createdAt) - new Date(a.uploadTime || a.createdAt));
+
+                // 渲染作品卡片
+                grid.innerHTML = works.map(work => this.createWorkCard(work)).join('');
+            }
+
+            // 创建作品卡片
+            createWorkCard(work) {
+                const date = this.formatDate(work.uploadTime || work.createdAt);
+                const visibility = this.getVisibilityInfo(work.permissions);
+                const description = work.description || work.content || '';
+                const truncatedDesc = description.length > 100 ? description.substring(0, 100) + '...' : description;
+
+                return `
+                    <div class="work-card">
+                        <div class="work-header">
+                            <h3 class="work-title">${this.escapeHtml(work.title)}</h3>
+                            <div class="work-actions">
+                                <button class="action-btn btn-view" onclick="myWorksManager.viewWork('${work.workId}')" title="查看">
+                                    👁️
+                                </button>
+                                <button class="action-btn btn-edit" onclick="myWorksManager.editWork('${work.workId}')" title="编辑">
+                                    ✏️
+                                </button>
+                                <button class="action-btn btn-permissions" onclick="myWorksManager.editPermissions('${work.workId}')" title="权限设置">
+                                    🔒
+                                </button>
+                                <button class="action-btn btn-delete" onclick="myWorksManager.deleteWork('${work.workId}')" title="删除">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+
+                        ${truncatedDesc ? `<p class="work-description">${this.escapeHtml(truncatedDesc)}</p>` : ''}
+
+                        <div class="work-meta">
+                            <div class="work-date">
+                                <span>📅</span>
+                                <span>${date}</span>
+                            </div>
+                            <div class="work-visibility ${visibility.class}">
+                                <span>${visibility.icon}</span>
+                                <span>${visibility.text}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 获取可见性信息
+            getVisibilityInfo(permissions) {
+                if (!permissions) {
+                    return { icon: '🔒', text: '私有', class: 'visibility-private' };
+                }
+
+                switch (permissions.visibility) {
+                    case 'public':
+                        return { icon: '🌍', text: '公开', class: 'visibility-public' };
+                    case 'friends':
+                        return { icon: '👥', text: '朋友', class: 'visibility-friends' };
+                    case 'private':
+                    default:
+                        return { icon: '🔒', text: '私有', class: 'visibility-private' };
+                }
+            }
+
+            // 格式化日期
+            formatDate(dateString) {
+                if (!dateString) return '未知时间';
+
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('zh-CN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                } catch (error) {
+                    return '未知时间';
+                }
+            }
+
+            // HTML转义
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // 更新统计数据
+            updateStatistics() {
+                const totalWorks = this.userWorks.length;
+                const publicWorks = this.userWorks.filter(work =>
+                    work.permissions && work.permissions.visibility === 'public'
+                ).length;
+                const privateWorks = this.userWorks.filter(work =>
+                    !work.permissions || work.permissions.visibility === 'private'
+                ).length;
+                const categoriesWithWorks = Object.values(this.worksByCategory).filter(works => works.length > 0).length;
+
+                this.updateStats(totalWorks, publicWorks, privateWorks, categoriesWithWorks);
+            }
+
+            // 更新统计显示
+            updateStats(total, publicCount, privateCount, categories) {
+                document.getElementById('totalWorksCount').textContent = total;
+                document.getElementById('publicWorksCount').textContent = publicCount;
+                document.getElementById('privateWorksCount').textContent = privateCount;
+                document.getElementById('categoriesCount').textContent = categories;
+            }
+
+            // 查看作品
+            async viewWork(workId) {
+                console.log('👁️ 查看作品:', workId);
+
+                const work = this.userWorks.find(w => w.workId === workId);
+                if (!work) {
+                    this.showErrorMessage('作品不存在');
+                    return;
+                }
+
+                // 根据作品类型跳转到相应页面
+                const category = this.getCategoryFromWork(work);
+                let targetPage = '';
+
+                switch (category) {
+                    case 'essays':
+                        targetPage = 'essays.html';
+                        break;
+                    case 'poetry':
+                        targetPage = 'poetry.html';
+                        break;
+                    case 'novels':
+                        targetPage = 'novels.html';
+                        break;
+                    case 'artworks':
+                        targetPage = 'artworks.html';
+                        break;
+                    case 'music':
+                        targetPage = 'music.html';
+                        break;
+                    case 'videos':
+                        targetPage = 'videos.html';
+                        break;
+                    default:
+                        targetPage = 'index.html';
+                }
+
+                // 跳转到对应页面
+                window.location.href = targetPage;
+            }
+
+            // 编辑作品
+            async editWork(workId) {
+                console.log('✏️ 编辑作品:', workId);
+
+                const work = this.userWorks.find(w => w.workId === workId);
+                if (!work) {
+                    this.showErrorMessage('作品不存在');
+                    return;
+                }
+
+                this.currentEditingWork = work;
+
+                // 填充编辑表单
+                document.getElementById('editTitle').value = work.title || '';
+                document.getElementById('editDescription').value = work.description || '';
+                document.getElementById('editContent').value = work.content || '';
+
+                // 显示编辑模态框
+                document.getElementById('editWorkModal').style.display = 'block';
+            }
+
+            // 编辑权限
+            async editPermissions(workId) {
+                console.log('🔒 编辑权限:', workId);
+
+                const work = this.userWorks.find(w => w.workId === workId);
+                if (!work) {
+                    this.showErrorMessage('作品不存在');
+                    return;
+                }
+
+                this.currentPermissionsWork = work;
+
+                // 填充权限表单
+                const permissions = work.permissions || this.createDefaultPermissions(work);
+
+                // 设置可见性选项
+                const visibilityRadios = document.querySelectorAll('input[name="visibility"]');
+                visibilityRadios.forEach(radio => {
+                    radio.checked = radio.value === permissions.visibility;
+                });
+
+                // 设置其他选项
+                document.getElementById('allowComments').checked = permissions.allowComments !== false;
+                document.getElementById('allowDownload').checked = permissions.allowDownload === true;
+
+                // 显示权限模态框
+                document.getElementById('permissionsModal').style.display = 'block';
+            }
+
+            // 删除作品
+            async deleteWork(workId) {
+                console.log('🗑️ 删除作品:', workId);
+
+                const work = this.userWorks.find(w => w.workId === workId);
+                if (!work) {
+                    this.showErrorMessage('作品不存在');
+                    return;
+                }
+
+                // 确认删除
+                const confirmed = confirm(`确定要删除作品《${work.title}》吗？\n\n此操作不可撤销！`);
+                if (!confirmed) {
+                    return;
+                }
+
+                try {
+                    // 从localStorage删除
+                    localStorage.removeItem(`work_${workId}`);
+
+                    // 如果支持GitHub API，也从GitHub删除
+                    if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+                        try {
+                            await window.dataManager.deleteWorkData(workId);
+                        } catch (error) {
+                            console.warn('GitHub删除失败:', error);
+                        }
+                    }
+
+                    // 从内存中移除
+                    this.userWorks = this.userWorks.filter(w => w.workId !== workId);
+
+                    // 从分类中移除
+                    Object.keys(this.worksByCategory).forEach(category => {
+                        this.worksByCategory[category] = this.worksByCategory[category].filter(w => w.workId !== workId);
+                    });
+
+                    // 重新渲染
+                    this.renderAllWorks();
+                    this.updateStatistics();
+
+                    this.showSuccessMessage('作品删除成功！');
+
+                } catch (error) {
+                    console.error('删除作品失败:', error);
+                    this.showErrorMessage('删除失败：' + error.message);
+                }
+            }
+
+            // 保存作品编辑
+            async saveWorkEdit() {
+                if (!this.currentEditingWork) {
+                    this.showErrorMessage('没有正在编辑的作品');
+                    return;
+                }
+
+                try {
+                    const title = document.getElementById('editTitle').value.trim();
+                    const description = document.getElementById('editDescription').value.trim();
+                    const content = document.getElementById('editContent').value.trim();
+
+                    if (!title) {
+                        this.showErrorMessage('标题不能为空');
+                        return;
+                    }
+
+                    // 更新作品数据
+                    this.currentEditingWork.title = title;
+                    this.currentEditingWork.description = description;
+                    this.currentEditingWork.content = content;
+                    this.currentEditingWork.lastModified = new Date().toISOString();
+                    this.currentEditingWork.modifiedBy = this.currentUser.username;
+
+                    // 保存到localStorage
+                    localStorage.setItem(`work_${this.currentEditingWork.workId}`, JSON.stringify(this.currentEditingWork));
+
+                    // 如果支持GitHub API，也保存到GitHub
+                    if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+                        try {
+                            await window.dataManager.saveWorkData(this.currentEditingWork.workId, this.currentEditingWork);
+                        } catch (error) {
+                            console.warn('GitHub保存失败:', error);
+                        }
+                    }
+
+                    // 重新渲染
+                    this.renderAllWorks();
+
+                    // 关闭模态框
+                    this.closeEditModal();
+
+                    this.showSuccessMessage('作品更新成功！');
+
+                } catch (error) {
+                    console.error('保存作品编辑失败:', error);
+                    this.showErrorMessage('保存失败：' + error.message);
+                }
+            }
+
+            // 保存权限设置
+            async savePermissions() {
+                if (!this.currentPermissionsWork) {
+                    this.showErrorMessage('没有正在编辑权限的作品');
+                    return;
+                }
+
+                try {
+                    const visibility = document.querySelector('input[name="visibility"]:checked')?.value || 'private';
+                    const allowComments = document.getElementById('allowComments').checked;
+                    const allowDownload = document.getElementById('allowDownload').checked;
+
+                    // 更新权限设置
+                    const newPermissions = {
+                        ...this.currentPermissionsWork.permissions,
+                        visibility: visibility,
+                        isPublic: visibility === 'public',
+                        allowComments: allowComments,
+                        allowDownload: allowDownload,
+                        lastModified: new Date().toISOString(),
+                        modifiedBy: this.currentUser.username
+                    };
+
+                    this.currentPermissionsWork.permissions = newPermissions;
+
+                    // 保存到localStorage
+                    localStorage.setItem(`work_${this.currentPermissionsWork.workId}`, JSON.stringify(this.currentPermissionsWork));
+
+                    // 如果支持GitHub API，也保存到GitHub
+                    if (window.dataManager && window.dataManager.shouldUseGitHubStorage()) {
+                        try {
+                            await window.dataManager.saveWorkData(this.currentPermissionsWork.workId, this.currentPermissionsWork);
+                        } catch (error) {
+                            console.warn('GitHub权限保存失败:', error);
+                        }
+                    }
+
+                    // 重新渲染
+                    this.renderAllWorks();
+                    this.updateStatistics();
+
+                    // 关闭模态框
+                    this.closePermissionsModal();
+
+                    this.showSuccessMessage('权限设置保存成功！');
+
+                } catch (error) {
+                    console.error('保存权限设置失败:', error);
+                    this.showErrorMessage('保存失败：' + error.message);
+                }
+            }
+
+            // 绑定事件
+            bindEvents() {
+                // 模态框关闭事件
+                window.addEventListener('click', (event) => {
+                    if (event.target.classList.contains('modal')) {
+                        if (event.target.id === 'editWorkModal') {
+                            this.closeEditModal();
+                        } else if (event.target.id === 'permissionsModal') {
+                            this.closePermissionsModal();
+                        }
+                    }
+                });
+
+                // ESC键关闭模态框
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        this.closeEditModal();
+                        this.closePermissionsModal();
+                    }
+                });
+            }
+
+            // 关闭编辑模态框
+            closeEditModal() {
+                document.getElementById('editWorkModal').style.display = 'none';
+                this.currentEditingWork = null;
+            }
+
+            // 关闭权限模态框
+            closePermissionsModal() {
+                document.getElementById('permissionsModal').style.display = 'none';
+                this.currentPermissionsWork = null;
+            }
+
+            // 显示成功消息
+            showSuccessMessage(message) {
+                this.showMessage(message, 'success');
+            }
+
+            // 显示错误消息
+            showErrorMessage(message) {
+                this.showMessage(message, 'error');
+            }
+
+            // 显示消息
+            showMessage(message, type = 'success') {
+                // 创建消息元素
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message-toast message-${type}`;
+                messageDiv.textContent = message;
+
+                // 添加样式
+                messageDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: 500;
+                    z-index: 10000;
+                    max-width: 300px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    transform: translateX(100%);
+                    transition: transform 0.3s ease;
+                    background: ${type === 'success' ? '#28a745' : '#dc3545'};
+                `;
+
+                // 添加到页面
+                document.body.appendChild(messageDiv);
+
+                // 显示动画
+                setTimeout(() => {
+                    messageDiv.style.transform = 'translateX(0)';
+                }, 100);
+
+                // 自动移除
+                setTimeout(() => {
+                    messageDiv.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (messageDiv.parentNode) {
+                            messageDiv.parentNode.removeChild(messageDiv);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // 全局函数（供HTML调用）
+        function closeEditModal() {
+            if (window.myWorksManager) {
+                window.myWorksManager.closeEditModal();
+            }
+        }
+
+        function closePermissionsModal() {
+            if (window.myWorksManager) {
+                window.myWorksManager.closePermissionsModal();
+            }
+        }
+
+        function saveWorkEdit() {
+            if (window.myWorksManager) {
+                window.myWorksManager.saveWorkEdit();
+            }
+        }
+
+        function savePermissions() {
+            if (window.myWorksManager) {
+                window.myWorksManager.savePermissions();
+            }
+        }
+
+        function showLoginModal() {
+            // 调用页眉组件的登录模态框
+            if (window.headerFooterComponent && typeof window.headerFooterComponent.showLoginModal === 'function') {
+                window.headerFooterComponent.showLoginModal();
+            } else if (typeof window.showLoginModal === 'function') {
+                window.showLoginModal();
+            } else {
+                alert('登录功能暂时不可用，请刷新页面重试');
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('📄 我的作品页面DOM加载完成');
+
+            // 等待认证系统加载
+            let authLoadAttempts = 0;
+            const maxAuthLoadAttempts = 50;
+
+            const waitForAuth = () => {
+                return new Promise((resolve) => {
+                    const checkAuth = () => {
+                        authLoadAttempts++;
+                        if (typeof auth !== 'undefined' && auth) {
+                            console.log('✅ 认证系统已加载');
+                            resolve();
+                        } else if (authLoadAttempts < maxAuthLoadAttempts) {
+                            setTimeout(checkAuth, 100);
+                        } else {
+                            console.warn('⚠️ 认证系统加载超时，继续初始化');
+                            resolve();
+                        }
+                    };
+                    checkAuth();
+                });
+            };
+
+            await waitForAuth();
+
+            // 初始化我的作品管理器
+            window.myWorksManager = new MyWorksManager();
+            await window.myWorksManager.init();
+        });
+    </script>
+</body>
+</html>
