@@ -1,0 +1,27 @@
+{
+  "id": "work_1766057979008_5p2c8luyn",
+  "mainCategory": "literature",
+  "subcategory": "essay",
+  "categoryName": "文学作品",
+  "subcategoryName": "生活随笔",
+  "title": "咖啡与茶",
+  "content": "阿达是的",
+  "uploadedBy": "hysteria",
+  "userRole": "admin",
+  "uploadTime": "2025-12-18T11:39:39.008Z",
+  "permissions": {
+    "visibility": "friend",
+    "isPublic": false,
+    "allowedUsers": [],
+    "blockedUsers": [],
+    "allowedRoles": [
+      "friend",
+      "admin"
+    ],
+    "setBy": "hysteria",
+    "setAt": "2025-12-18T11:39:39.008Z",
+    "lastModified": "2025-12-18T11:39:39.008Z",
+    "modifiedBy": "hysteria"
+  },
+  "storage_type": "local"
+}
