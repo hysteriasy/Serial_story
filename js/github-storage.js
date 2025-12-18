@@ -181,10 +181,16 @@ class GitHubStorage {
   initializeToken() {
     // 从localStorage获取token
     this.token = localStorage.getItem('github_token');
-    
-    // 如果没有token，提示用户配置
+
+    // 如果没有token，只在本地开发环境提示用户配置
     if (!this.token) {
-      console.warn('⚠️ GitHub token未配置，将使用本地存储模式');
+      const isProduction = window.location.hostname.includes('github.io');
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      // 只在本地开发环境显示警告
+      if (isLocalhost && !isProduction) {
+        console.warn('⚠️ GitHub token未配置，将使用本地存储模式');
+      }
     }
   }
 

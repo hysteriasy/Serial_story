@@ -26,10 +26,10 @@ class HeaderFooterManager {
                     </div>
                     <ul class="nav-menu">
                         <li class="nav-item">
-                            <a href="#home" class="nav-link ${this.currentPage === 'index' ? 'active' : ''}">首页</a>
+                            <a href="#home" class="nav-link ${this.currentPage === 'index' ? 'active' : ''}" onclick="navigateToHome(event)">首页</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#about" class="nav-link">关于我</a>
+                            <a href="#about" class="nav-link" onclick="navigateToAbout(event)">关于我</a>
                         </li>
                         <li class="nav-item nav-dropdown">
                             <a href="#" class="nav-link dropdown-trigger">作品展示 ▼</a>
@@ -46,7 +46,7 @@ class HeaderFooterManager {
                             <a href="upload.html" class="nav-link" id="uploadBtn">作品上传</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#contact" class="nav-link">联系我</a>
+                            <a href="#contact" class="nav-link" onclick="navigateToContact(event)">联系我</a>
                         </li>
                         <li class="nav-item" id="authNavItem">
                             <a href="#" class="nav-link" id="authNavLink" onclick="showLoginModal()">登录</a>
@@ -71,8 +71,8 @@ class HeaderFooterManager {
                     <div class="footer-content">
                         <p>&copy; 2024 桑梓. 个人文学创作分享平台.</p>
                         <div class="footer-links">
-                            <a href="#home">首页</a>
-                            <a href="#about">关于作者</a>
+                            <a href="#home" onclick="navigateToHome(event)">首页</a>
+                            <a href="#about" onclick="navigateToAbout(event)">关于作者</a>
                         </div>
                     </div>
                 </div>
@@ -148,6 +148,9 @@ class HeaderFooterManager {
 
         // 初始化移动端触摸优化
         this.initMobileTouchOptimization();
+
+        // 处理URL中的hash锚点
+        this.handleUrlHash();
 
         // 等待auth系统加载
         this.waitForAuth(() => {
@@ -395,15 +398,18 @@ class HeaderFooterManager {
     initSmoothScrolling() {
         console.log('🎯 初始化平滑滚动...');
 
-        const navLinks = document.querySelectorAll('.nav-link[href^="#"]');
+        // 注意：主要的导航链接现在使用 onclick 处理函数（navigateToHome, navigateToAbout, navigateToContact）
+        // 这里只处理其他可能的锚点链接
+        const navLinks = document.querySelectorAll('.nav-link[href^="#"]:not([onclick])');
 
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
-                e.preventDefault();
                 const targetId = this.getAttribute('href').substring(1);
                 const targetElement = document.getElementById(targetId);
 
                 if (targetElement) {
+                    // 如果目标元素存在于当前页面，使用平滑滚动
+                    e.preventDefault();
                     targetElement.scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'
@@ -413,6 +419,31 @@ class HeaderFooterManager {
         });
 
         console.log('✅ 平滑滚动初始化完成');
+    }
+
+    // 处理URL中的hash锚点
+    handleUrlHash() {
+        console.log('🔗 处理URL hash锚点...');
+
+        // 检查URL中是否有hash
+        if (window.location.hash) {
+            const targetId = window.location.hash.substring(1);
+            console.log('📍 检测到URL hash:', targetId);
+
+            // 延迟执行，确保页面元素已加载
+            setTimeout(() => {
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    console.log('✅ 找到目标元素，滚动到:', targetId);
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                } else {
+                    console.warn('⚠️ 未找到目标元素:', targetId);
+                }
+            }, 500); // 延迟500ms确保页面完全加载
+        }
     }
 
     // 初始化模态框
@@ -573,31 +604,116 @@ class HeaderFooterManager {
 
             /* 移动端下拉菜单优化 */
             @media (max-width: 768px) {
+                /* 移动端导航菜单滚动优化 */
+                .nav-menu {
+                    max-height: calc(100vh - 70px) !important;
+                    overflow-y: auto !important;
+                    overflow-x: hidden !important;
+                    -webkit-overflow-scrolling: touch !important;
+                    padding: 1rem 0 !important; /* 减少内边距 */
+                }
+
+                /* 移动端下拉菜单触发器样式 */
+                .dropdown-trigger {
+                    color: #333 !important; /* 移动端使用深色文字，与其他菜单项一致 */
+                    display: block !important;
+                    padding: 12px 20px !important; /* 减少内边距 */
+                    font-size: 0.95rem !important;
+                    line-height: 1.4 !important;
+                }
+
+                .dropdown-trigger:hover {
+                    color: #007bff !important;
+                }
+
+                /* 移动端下拉菜单容器 - 始终展开显示 */
                 .nav-dropdown-menu {
-                    position: static;
-                    opacity: 1;
-                    visibility: visible;
-                    transform: none;
-                    box-shadow: none;
-                    border: none;
-                    border-radius: 0;
-                    background: #f8f9fa;
-                    margin-top: 10px;
+                    position: static !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    transform: none !important;
+                    box-shadow: none !important;
+                    border: none !important;
+                    background: #f8f9fa !important; /* 浅灰色背景区分子菜单 */
+                    margin: 0 !important;
+                    padding: 5px 0 !important; /* 减少内边距 */
+                    display: block !important; /* 强制显示 */
+                    border-radius: 0 !important;
                 }
 
-                .nav-dropdown:hover .nav-dropdown-menu {
-                    display: block;
-                }
-
+                /* 移动端下拉菜单链接 - 优化间距 */
                 .nav-dropdown-link {
-                    padding: 15px 20px;
-                    border-bottom: 1px solid #e9ecef;
-                    font-size: 1rem;
+                    display: block !important;
+                    padding: 10px 30px !important; /* 减少上下内边距，增加左侧缩进显示层级 */
+                    border-bottom: 1px solid #e9ecef !important;
+                    color: #555 !important; /* 深灰色文字 */
+                    font-size: 0.9rem !important; /* 稍微减小字体 */
+                    text-align: left !important;
+                    line-height: 1.3 !important; /* 优化行高 */
                 }
 
-                .nav-dropdown-link:hover {
-                    background: #667eea;
-                    transform: none;
+                .nav-dropdown-link:last-child {
+                    border-bottom: none !important;
+                }
+
+                .nav-dropdown-link:hover,
+                .nav-dropdown-link:active {
+                    background: #e9ecef !important;
+                    color: #007bff !important;
+                    transform: none !important;
+                }
+
+                /* 当前页面高亮 */
+                .nav-dropdown-link.current-page {
+                    background: #e3f2fd !important;
+                    color: #007bff !important;
+                    font-weight: 600 !important;
+                }
+
+                /* 确保下拉菜单项在移动端菜单中可见 */
+                .nav-dropdown {
+                    width: 100% !important;
+                }
+
+                /* 移动端菜单项边框优化 */
+                .nav-item.nav-dropdown {
+                    border-bottom: none !important; /* 下拉菜单项不需要底部边框 */
+                }
+
+                /* 移动端登录按钮 - 确保可见 */
+                #authNavItem {
+                    display: block !important;
+                    width: 100% !important;
+                }
+
+                #authNavLink {
+                    display: block !important;
+                    padding: 12px 20px !important; /* 与其他链接保持一致 */
+                    color: #007bff !important;
+                    font-weight: 600 !important;
+                    text-align: center !important;
+                    min-height: 44px !important;
+                    font-size: 0.95rem !important;
+                    line-height: 1.4 !important;
+                }
+
+                #authNavLink:hover {
+                    background: #f0f7ff !important;
+                    color: #0056b3 !important;
+                }
+
+                /* 移动端菜单项样式统一 */
+                .nav-item {
+                    display: block !important;
+                    width: 100% !important;
+                }
+
+                .nav-link {
+                    display: block !important;
+                    width: 100% !important;
+                    padding: 12px 20px !important; /* 统一内边距 */
+                    font-size: 0.95rem !important;
+                    line-height: 1.4 !important;
                 }
 
                 /* 移动端导航栏触摸优化 */
@@ -778,6 +894,108 @@ function scrollToSection(sectionId) {
             behavior: 'smooth',
             block: 'start'
         });
+    }
+}
+
+// 全局函数 - 导航到首页（跳过欢迎界面）
+if (typeof navigateToHome === 'undefined') {
+    function navigateToHome(event) {
+        if (event) {
+            event.preventDefault(); // 阻止默认的锚点跳转
+        }
+
+        // 如果当前就在首页，直接滚动到顶部并隐藏欢迎界面
+        if (window.location.pathname === '/' ||
+            window.location.pathname.endsWith('/index.html') ||
+            window.location.pathname === '/index.html') {
+
+            // 隐藏欢迎界面（如果存在）
+            if (typeof hideWelcomeScreen === 'function') {
+                hideWelcomeScreen();
+            }
+
+            // 滚动到顶部
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        } else {
+            // 跳转到首页，并添加参数跳过欢迎界面
+            window.location.href = 'index.html?skipWelcome=true';
+        }
+    }
+}
+
+// 全局函数 - 导航到关于我区域
+if (typeof navigateToAbout === 'undefined') {
+    function navigateToAbout(event) {
+        if (event) {
+            event.preventDefault(); // 阻止默认的锚点跳转
+        }
+
+        // 如果当前就在首页，直接滚动到关于我区域
+        if (window.location.pathname === '/' ||
+            window.location.pathname.endsWith('/index.html') ||
+            window.location.pathname === '/index.html') {
+
+            // 隐藏欢迎界面（如果存在）
+            if (typeof hideWelcomeScreen === 'function') {
+                hideWelcomeScreen();
+            }
+
+            // 等待欢迎界面隐藏动画完成后滚动
+            setTimeout(() => {
+                const aboutSection = document.getElementById('about');
+                if (aboutSection) {
+                    aboutSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                } else {
+                    console.warn('⚠️ 关于我区域未找到');
+                }
+            }, 300);
+        } else {
+            // 跳转到首页的关于我区域
+            window.location.href = 'index.html?skipWelcome=true#about';
+        }
+    }
+}
+
+// 全局函数 - 导航到联系我区域
+if (typeof navigateToContact === 'undefined') {
+    function navigateToContact(event) {
+        if (event) {
+            event.preventDefault(); // 阻止默认的锚点跳转
+        }
+
+        // 如果当前就在首页，直接滚动到联系我区域
+        if (window.location.pathname === '/' ||
+            window.location.pathname.endsWith('/index.html') ||
+            window.location.pathname === '/index.html') {
+
+            // 隐藏欢迎界面（如果存在）
+            if (typeof hideWelcomeScreen === 'function') {
+                hideWelcomeScreen();
+            }
+
+            // 等待欢迎界面隐藏动画完成后滚动
+            setTimeout(() => {
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                    contactSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    console.log('✅ 已滚动到联系我区域');
+                } else {
+                    console.warn('⚠️ 联系我区域未找到');
+                }
+            }, 300);
+        } else {
+            // 跳转到首页的联系我区域
+            window.location.href = 'index.html?skipWelcome=true#contact';
+        }
     }
 }
 

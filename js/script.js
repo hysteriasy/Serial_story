@@ -3,11 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Firebase 初始化（优雅的离线模式处理）
     window.firebaseAvailable = false;
 
-    // 检查是否在 GitHub Pages 环境下，如果是则跳过 Firebase 初始化
-    const isGitHubPages = window.location.hostname === 'hysteriasy.github.io';
+    // 环境检测
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isDebug = window.location.search.includes('debug=true');
 
     if (isGitHubPages) {
-      console.info('🌐 检测到 GitHub Pages 环境，使用 GitHub 存储模式');
+      // 生产环境：静默处理，不输出任何 Firebase 相关信息
       window.firebaseAvailable = false;
     } else if (typeof firebase !== 'undefined') {
       // 只在非 GitHub Pages 环境下尝试 Firebase 初始化
@@ -19,36 +21,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (hasValidConfig) {
           firebase.initializeApp(window.firebaseConfig);
-          console.log('🔧 Firebase 配置已加载');
+          if (isLocalhost || isDebug) {
+            console.log('🔧 Firebase 配置已加载');
+          }
 
           // 测试数据库连接（设置较短超时）
           const connectionTimeout = setTimeout(() => {
-            console.info('📱 Firebase 连接超时，使用离线模式');
+            if (isLocalhost || isDebug) {
+              console.info('📱 Firebase 连接超时，使用离线模式');
+            }
             window.firebaseAvailable = false;
           }, 2000);
 
           firebase.database().ref('.info/connected').on('value', (snapshot) => {
             clearTimeout(connectionTimeout);
             if (snapshot.val() === true) {
-              console.log('✅ Firebase 数据库连接正常');
+              if (isLocalhost || isDebug) {
+                console.log('✅ Firebase 数据库连接正常');
+              }
               window.firebaseAvailable = true;
             } else {
-              console.info('📱 Firebase 数据库连接断开，使用离线模式');
+              if (isLocalhost || isDebug) {
+                console.info('📱 Firebase 数据库连接断开，使用离线模式');
+              }
               window.firebaseAvailable = false;
             }
           });
         } else {
-          console.info('📱 未配置有效的 Firebase，使用离线模式');
+          // 只在开发环境显示未配置警告
+          if (isLocalhost || isDebug) {
+            console.info('📱 未配置有效的 Firebase，使用离线模式');
+          }
           window.firebaseAvailable = false;
         }
 
       } catch (error) {
-        // 静默处理 Firebase 错误，避免控制台噪音
-        console.info('📱 Firebase 不可用，系统在离线模式下运行');
+        // 只在开发环境显示错误信息
+        if (isLocalhost || isDebug) {
+          console.info('📱 Firebase 不可用，系统在离线模式下运行');
+        }
         window.firebaseAvailable = false;
       }
     } else {
-      console.info('📱 Firebase 库未加载，使用离线模式');
+      // 只在开发环境显示库未加载信息
+      if (isLocalhost || isDebug) {
+        console.info('📱 Firebase 库未加载，使用离线模式');
+      }
       window.firebaseAvailable = false;
     }
 
@@ -433,8 +451,40 @@ window.addEventListener('load', function() {
 
 // 错误处理
 window.addEventListener('error', function(e) {
-    console.error('页面发生错误:', e.error || e.message || '未知错误');
-    // 可以在这里添加错误报告功能
+    // 过滤掉跟踪保护相关的错误
+    const message = e.message || '';
+    const filename = e.filename || '';
+
+    // 跳过跟踪保护和已知的无害错误
+    const ignoredPatterns = [
+      'Tracking Prevention',
+      'blocked access to storage',
+      'Script error.',
+      'ResizeObserver loop',
+      'googleads',
+      'doubleclick'
+    ];
+
+    if (ignoredPatterns.some(pattern => message.includes(pattern))) {
+      return; // 静默处理
+    }
+
+    // 只在开发环境或调试模式下输出错误
+    const isProduction = window.location.hostname.includes('github.io');
+    const isDebug = window.location.search.includes('debug=true');
+
+    if (!isProduction || isDebug) {
+      // 提供更详细的错误信息
+      const errorInfo = {
+        message: e.message || '未知错误',
+        filename: filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        error: e.error
+      };
+
+      console.error('页面发生错误:', errorInfo);
+    }
 });
 
 // 欢迎页面功能 - 仅在首页初始化

@@ -37,7 +37,10 @@ class TrackingProtectionHandler {
     if (this.logLevel >= 3 && !this.silentMode) {
       console.log('🛡️ 跟踪保护处理器初始化');
     }
-    this.initializeHandler();
+
+    // 不再重写 console 方法，避免与 poetry-logger 冲突
+    // 只初始化存储检测和事件监听
+    this.initializeHandlerWithoutConsoleInterception();
   }
 
   // 检查环境配置
@@ -57,9 +60,10 @@ class TrackingProtectionHandler {
   configureSilentMode() {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
+    const isDebug = window.location.search.includes('debug=true');
 
-    // 在生产环境或文件协议下启用静默模式
-    if (hostname.includes('github.io') || protocol === 'file:') {
+    // 在生产环境或文件协议下启用静默模式（除非开启调试模式）
+    if ((hostname.includes('github.io') || protocol === 'file:') && !isDebug) {
       this.silentMode = true;
       this.logLevel = 0;
       this.suppressionActive = true;
@@ -88,21 +92,37 @@ class TrackingProtectionHandler {
     return 0; // 其他环境，静默模式
   }
 
-  // 初始化处理器
+  // 初始化处理器（原版本，保留用于兼容性）
   initializeHandler() {
     // 立即检测存储可用性
     this.detectStorageAvailability();
-    
+
     // 设置定期检测
     setInterval(() => {
       this.detectStorageAvailability();
     }, this.testInterval);
-    
+
     // 监听存储事件
     this.setupStorageEventListeners();
-    
+
     // 重写控制台方法以捕获跟踪保护错误
     this.setupConsoleInterception();
+  }
+
+  // 初始化处理器（不拦截控制台，避免与 poetry-logger 冲突）
+  initializeHandlerWithoutConsoleInterception() {
+    // 立即检测存储可用性
+    this.detectStorageAvailability();
+
+    // 设置定期检测
+    setInterval(() => {
+      this.detectStorageAvailability();
+    }, this.testInterval);
+
+    // 监听存储事件
+    this.setupStorageEventListeners();
+
+    // 不再重写控制台方法，让 poetry-logger 处理
   }
 
   // 检测存储可用性
@@ -111,37 +131,37 @@ class TrackingProtectionHandler {
     if (now - this.lastStorageTest < this.testInterval && this.lastStorageTest > 0) {
       return !this.storageBlocked;
     }
-    
+
     this.lastStorageTest = now;
     this.accessStats.attempts++;
-    
+
     try {
       // 测试基本存储访问
       const testKey = '__tracking_protection_test__';
       const testValue = `test_${now}`;
-      
+
       // 尝试写入
       localStorage.setItem(testKey, testValue);
-      
+
       // 尝试读取
       const readValue = localStorage.getItem(testKey);
-      
+
       // 尝试删除
       localStorage.removeItem(testKey);
-      
+
       if (readValue === testValue) {
         this.accessStats.successes++;
         this.storageBlocked = false;
         this.errorCount = 0;
         this.fallbackMode = false;
-        
-        if (this.userNotified) {
+
+        if (this.userNotified && !this.silentMode) {
           this.showStorageRestoredNotification();
           this.userNotified = false;
         }
 
         // 只在调试模式下输出成功日志
-        if (window.location.search.includes('debug=true')) {
+        if (this.logLevel >= 3) {
           console.log('🛡️ 存储访问测试成功');
         }
 
@@ -153,19 +173,22 @@ class TrackingProtectionHandler {
       this.accessStats.failures++;
       this.accessStats.lastFailure = new Date().toISOString();
       this.errorCount++;
-      
-      console.warn('🛡️ 存储访问测试失败:', error.message);
-      
+
+      // 只在非静默模式下输出警告
+      if (!this.silentMode && this.logLevel >= 2) {
+        console.warn('🛡️ 存储访问测试失败:', error.message);
+      }
+
       if (this.errorCount >= this.maxErrors) {
         this.storageBlocked = true;
         this.fallbackMode = true;
-        
-        if (!this.userNotified) {
+
+        if (!this.userNotified && !this.silentMode) {
           this.showTrackingProtectionNotification();
           this.userNotified = true;
         }
       }
-      
+
       return false;
     }
   }
@@ -308,11 +331,13 @@ class TrackingProtectionHandler {
 
   // 设置存储事件监听器
   setupStorageEventListeners() {
-    // 监听存储事件
+    // 监听存储事件（只在调试模式下输出）
     window.addEventListener('storage', (event) => {
-      console.log('🛡️ 存储事件:', event.key, event.newValue ? '已设置' : '已删除');
+      if (this.logLevel >= 3) {
+        console.log('🛡️ 存储事件:', event.key, event.newValue ? '已设置' : '已删除');
+      }
     });
-    
+
     // 监听页面可见性变化
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
@@ -773,4 +798,7 @@ window.safeStorage = {
   forceRedetection: () => window.trackingProtectionHandler.forceRedetection()
 };
 
-console.log('🛡️ 跟踪保护处理器已加载');
+// 只在调试模式下输出加载信息
+if (window.location.search.includes('debug=true')) {
+  console.log('🛡️ 跟踪保护处理器已加载');
+}

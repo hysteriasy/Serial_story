@@ -85,16 +85,39 @@ class PoetryLogger {
   
   // 启用生产模式（完全静默）
   enableProductionMode() {
+    // 保存原始的 console 方法
     const originalConsole = {
       log: console.log,
       warn: console.warn,
       error: console.error,
       info: console.info
     };
-    
+
+    // 跟踪保护消息检测（更全面的模式）
+    const isTrackingProtectionMessage = (message) => {
+      const trackingPatterns = [
+        /tracking prevention/i,
+        /blocked access to storage/i,
+        /storage access denied/i,
+        /privacy protection/i,
+        /cross-site tracking/i,
+        /third-party storage/i,
+        /blocked access to storage for <URL>/i
+      ];
+      return trackingPatterns.some(pattern => pattern.test(message));
+    };
+
     // 重写console.log - 只保留关键系统消息
     console.log = (...args) => {
       const message = args.join(' ');
+
+      // 过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
       if (this.isCriticalMessage(message)) {
         originalConsole.log.apply(console, args);
       } else {
@@ -102,27 +125,40 @@ class PoetryLogger {
         this.categorizeMessage(message);
       }
     };
-    
+
     // 重写console.info - 完全静默
-    console.info = () => {
+    console.info = (...args) => {
       this.stats.filteredMessages++;
     };
-    
+
     // 保留警告和错误，但过滤已知的无害消息
     console.warn = (...args) => {
       const message = args.join(' ');
+
+      // 优先过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
       if (this.isImportantWarning(message)) {
         originalConsole.warn.apply(console, args);
       } else {
         this.stats.filteredMessages++;
-        if (message.includes('Tracking Prevention')) {
-          this.stats.trackingProtectionErrors++;
-        }
       }
     };
-    
+
     console.error = (...args) => {
       const message = args.join(' ');
+
+      // 优先过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
       if (this.isImportantError(message)) {
         originalConsole.error.apply(console, args);
       } else {
@@ -141,29 +177,67 @@ class PoetryLogger {
       warn: console.warn,
       error: console.error
     };
-    
+
+    // 跟踪保护消息检测
+    const isTrackingProtectionMessage = (message) => {
+      const trackingPatterns = [
+        /tracking prevention/i,
+        /blocked access to storage/i,
+        /storage access denied/i,
+        /privacy protection/i
+      ];
+      return trackingPatterns.some(pattern => pattern.test(message));
+    };
+
     console.log = (...args) => {
       const message = args.join(' ');
+
+      // 过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
       if (this.isCriticalMessage(message)) {
         originalConsole.log.apply(console, args);
       } else {
         this.stats.filteredMessages++;
       }
     };
-    
+
     console.warn = (...args) => {
       const message = args.join(' ');
+
+      // 过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
       if (this.isImportantWarning(message)) {
         originalConsole.warn.apply(console, args);
       } else {
         this.stats.filteredMessages++;
       }
     };
-    
-    // 保留所有错误
-    console.error = originalConsole.error;
+
+    // 保留所有错误，但过滤跟踪保护错误
+    console.error = (...args) => {
+      const message = args.join(' ');
+
+      // 过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
+      originalConsole.error.apply(console, args);
+    };
   }
-  
+
   // 启用过滤模式（开发环境）
   enableFilteredMode() {
     const originalConsole = {
@@ -171,10 +245,29 @@ class PoetryLogger {
       warn: console.warn,
       error: console.error
     };
-    
+
+    // 跟踪保护消息检测
+    const isTrackingProtectionMessage = (message) => {
+      const trackingPatterns = [
+        /tracking prevention/i,
+        /blocked access to storage/i,
+        /storage access denied/i,
+        /privacy protection/i
+      ];
+      return trackingPatterns.some(pattern => pattern.test(message));
+    };
+
     // 减少重复的初始化日志
     console.log = (...args) => {
       const message = args.join(' ');
+
+      // 过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
       if (this.shouldShowMessage(message)) {
         originalConsole.log.apply(console, args);
       } else {
@@ -182,9 +275,34 @@ class PoetryLogger {
         this.categorizeMessage(message);
       }
     };
-    
-    console.warn = originalConsole.warn;
-    console.error = originalConsole.error;
+
+    // 在开发环境也过滤跟踪保护警告
+    console.warn = (...args) => {
+      const message = args.join(' ');
+
+      // 过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
+      originalConsole.warn.apply(console, args);
+    };
+
+    // 在开发环境也过滤跟踪保护错误
+    console.error = (...args) => {
+      const message = args.join(' ');
+
+      // 过滤跟踪保护消息
+      if (isTrackingProtectionMessage(message)) {
+        this.stats.filteredMessages++;
+        this.stats.trackingProtectionErrors++;
+        return;
+      }
+
+      originalConsole.error.apply(console, args);
+    };
   }
   
   // 判断是否为关键系统消息
@@ -210,14 +328,19 @@ class PoetryLogger {
     const filteredPatterns = [
       'Tracking Prevention',
       'blocked access to storage',
+      'storage access denied',
+      'privacy protection',
+      'cross-site tracking',
       '扫描路径',
       '加载文件内容失败',
       '跳过损坏的文件',
       'Firebase 不可用',
       'iOS特定修复',
-      '扫描子目录失败'
+      '扫描子目录失败',
+      'GitHub token未配置',
+      'GitHub token未设置'
     ];
-    
+
     return !filteredPatterns.some(pattern => message.includes(pattern));
   }
   
@@ -234,9 +357,12 @@ class PoetryLogger {
       'poetry_index.json',
       '获取GitHub文件失败',
       '网络连接问题',
-      'Firebase 初始化失败'
+      'Firebase 初始化失败',
+      'Script error.',
+      'Tracking Prevention',
+      'blocked access to storage'
     ];
-    
+
     return !filteredPatterns.some(pattern => message.includes(pattern));
   }
   

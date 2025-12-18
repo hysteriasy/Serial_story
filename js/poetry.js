@@ -64,9 +64,11 @@ class PoetryDisplay {
         const files = await window.smartFileLoader.loadFileList('poetry');
 
         if (files && files.length > 0) {
-          const isProduction = window.location.hostname.includes('github.io');
-          const isDebug = window.location.search.includes('debug=true');
-          if (!isProduction || isDebug) {
+          // 在代码块开始处统一声明环境变量
+          const envIsProduction = window.location.hostname.includes('github.io');
+          const envIsDebug = window.location.search.includes('debug=true');
+
+          if (!envIsProduction || envIsDebug) {
             console.log(`✅ 智能加载器加载了 ${files.length} 首诗歌`);
           }
 
@@ -118,9 +120,8 @@ class PoetryDisplay {
           this.poetryData.push(...poetry);
 
           // 调试信息：显示加载的数据结构（仅在调试模式下）
-          const isProduction = window.location.hostname.includes('github.io');
-          const isDebug = window.location.search.includes('debug=true');
-          if (!isProduction || isDebug) {
+          // 复用前面声明的环境变量
+          if (!envIsProduction || envIsDebug) {
             console.log('📊 智能加载器返回的诗歌数据:', poetry.map(poem => ({
               id: poem.id,
               title: poem.title,
@@ -626,9 +627,10 @@ class PoetryDisplay {
     if (typeof auth !== 'undefined') {
       // 如果auth.currentUser为空，尝试从sessionStorage恢复登录状态
       if (!auth.currentUser) {
-        const isProduction = window.location.hostname.includes('github.io');
-        const isDebug = window.location.search.includes('debug=true');
-        if (!isProduction || isDebug) {
+        // 使用全局环境检测变量，避免重复声明
+        const envIsProduction = window.location.hostname.includes('github.io');
+        const envIsDebug = window.location.search.includes('debug=true');
+        if (!envIsProduction || envIsDebug) {
           console.log('🔄 Poetry: auth.currentUser为空，尝试恢复登录状态...');
         }
         auth.checkAuthStatus();

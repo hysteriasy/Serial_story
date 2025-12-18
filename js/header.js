@@ -847,41 +847,123 @@ class HeaderComponent {
 
             /* 移动端下拉菜单适配 */
             @media (max-width: 768px) {
+                /* 移动端导航菜单滚动优化 */
+                .nav-menu {
+                    max-height: calc(100vh - 70px) !important;
+                    overflow-y: auto !important;
+                    overflow-x: hidden !important;
+                    -webkit-overflow-scrolling: touch !important;
+                    padding: 1rem 0 !important; /* 减少内边距 */
+                }
+
+                /* 移动端下拉菜单触发器样式 */
                 .dropdown-trigger {
-                    color: white !important; /* 移动端使用白色文字 */
+                    color: #333 !important; /* 移动端使用深色文字，与其他菜单项一致 */
+                    display: block !important;
+                    padding: 12px 20px !important; /* 减少内边距 */
+                    font-size: 0.95rem !important;
+                    line-height: 1.4 !important;
                 }
 
                 .dropdown-trigger:hover {
-                    color: #ccc !important;
+                    color: #007bff !important;
                 }
 
+                /* 移动端下拉菜单容器 - 始终展开显示 */
                 .nav-dropdown-menu {
-                    position: static;
-                    opacity: 1;
-                    visibility: visible;
-                    transform: none;
-                    box-shadow: none;
-                    border: none;
-                    background: transparent;
-                    margin-top: 10px;
+                    position: static !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    transform: none !important;
+                    box-shadow: none !important;
+                    border: none !important;
+                    background: #f8f9fa !important; /* 浅灰色背景区分子菜单 */
+                    margin: 0 !important;
+                    padding: 5px 0 !important; /* 减少内边距 */
+                    display: block !important; /* 强制显示 */
+                    border-radius: 0 !important;
                 }
 
+                /* 移动端下拉菜单链接 - 优化间距 */
                 .nav-dropdown-link {
-                    padding: 8px 0;
-                    border-bottom: none;
-                    color: white;
+                    display: block !important;
+                    padding: 10px 30px !important; /* 减少上下内边距，增加左侧缩进显示层级 */
+                    border-bottom: 1px solid #e9ecef !important;
+                    color: #555 !important; /* 深灰色文字 */
+                    font-size: 0.9rem !important; /* 稍微减小字体 */
+                    text-align: left !important;
+                    line-height: 1.3 !important; /* 优化行高 */
                 }
 
-                .nav-dropdown-link:hover {
-                    background: rgba(255,255,255,0.1);
-                    transform: none;
+                .nav-dropdown-link:last-child {
+                    border-bottom: none !important;
                 }
 
+                .nav-dropdown-link:hover,
+                .nav-dropdown-link:active {
+                    background: #e9ecef !important;
+                    color: #007bff !important;
+                    transform: none !important;
+                }
+
+                /* 当前页面高亮 */
+                .nav-dropdown-link.current-page {
+                    background: #e3f2fd !important;
+                    color: #007bff !important;
+                    font-weight: 600 !important;
+                }
+
+                /* 移动端用户信息显示区域 */
                 #userInfoDisplay {
                     right: 10px;
                     left: 10px;
                     width: auto;
                     min-width: auto;
+                }
+
+                /* 确保下拉菜单项在移动端菜单中可见 */
+                .nav-dropdown {
+                    width: 100% !important;
+                }
+
+                /* 移动端菜单项边框优化 */
+                .nav-item.nav-dropdown {
+                    border-bottom: none !important; /* 下拉菜单项不需要底部边框 */
+                }
+
+                /* 移动端登录按钮 - 确保可见 */
+                #authNavItem {
+                    display: block !important;
+                    width: 100% !important;
+                }
+
+                #authNavLink {
+                    display: block !important;
+                    padding: 12px 20px !important; /* 与其他链接保持一致 */
+                    color: #007bff !important;
+                    font-weight: 600 !important;
+                    text-align: center !important;
+                    font-size: 0.95rem !important;
+                    line-height: 1.4 !important;
+                }
+
+                #authNavLink:hover {
+                    background: #f0f7ff !important;
+                    color: #0056b3 !important;
+                }
+
+                /* 移动端菜单项样式统一 */
+                .nav-item {
+                    display: block !important;
+                    width: 100% !important;
+                }
+
+                .nav-link {
+                    display: block !important;
+                    width: 100% !important;
+                    padding: 12px 20px !important; /* 统一内边距 */
+                    font-size: 0.95rem !important;
+                    line-height: 1.4 !important;
                 }
             }
         `;
