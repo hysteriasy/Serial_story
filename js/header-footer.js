@@ -146,6 +146,9 @@ class HeaderFooterManager {
         // 初始化滚动效果
         this.initScrollEffects();
 
+        // 初始化移动端触摸优化
+        this.initMobileTouchOptimization();
+
         // 等待auth系统加载
         this.waitForAuth(() => {
             this.updateAuthNavigation();
@@ -307,6 +310,85 @@ class HeaderFooterManager {
         }
 
         console.log('✅ 滚动效果初始化完成');
+    }
+
+    // 初始化移动端触摸优化
+    initMobileTouchOptimization() {
+        console.log('📱 初始化移动端触摸优化...');
+
+        // 检测是否为触摸设备
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        if (!isTouchDevice) {
+            console.log('🖥️ 非触摸设备，跳过触摸优化');
+            return;
+        }
+
+        // 优化下拉菜单的触摸交互
+        const dropdownTriggers = document.querySelectorAll('.dropdown-trigger');
+        dropdownTriggers.forEach(trigger => {
+            const dropdown = trigger.closest('.nav-dropdown');
+            const menu = dropdown.querySelector('.nav-dropdown-menu');
+
+            if (dropdown && menu) {
+                // 移除hover效果，改为点击切换
+                trigger.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+
+                    // 关闭其他下拉菜单
+                    document.querySelectorAll('.nav-dropdown.active').forEach(activeDropdown => {
+                        if (activeDropdown !== dropdown) {
+                            activeDropdown.classList.remove('active');
+                        }
+                    });
+
+                    // 切换当前下拉菜单
+                    dropdown.classList.toggle('active');
+                }, { passive: false });
+            }
+        });
+
+        // 点击外部区域关闭下拉菜单
+        document.addEventListener('touchstart', function(e) {
+            if (!e.target.closest('.nav-dropdown')) {
+                document.querySelectorAll('.nav-dropdown.active').forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        }, { passive: true });
+
+        // 优化触摸反馈
+        const touchElements = document.querySelectorAll('.nav-link, .btn, .nav-toggle');
+        touchElements.forEach(element => {
+            element.addEventListener('touchstart', function() {
+                this.style.opacity = '0.7';
+                this.style.transform = 'scale(0.98)';
+            }, { passive: true });
+
+            element.addEventListener('touchend', function() {
+                setTimeout(() => {
+                    this.style.opacity = '';
+                    this.style.transform = '';
+                }, 150);
+            }, { passive: true });
+
+            element.addEventListener('touchcancel', function() {
+                this.style.opacity = '';
+                this.style.transform = '';
+            }, { passive: true });
+        });
+
+        // 防止iOS Safari的双击缩放
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        console.log('✅ 移动端触摸优化初始化完成');
     }
 
     // 初始化平滑滚动
@@ -487,6 +569,86 @@ class HeaderFooterManager {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
                 transform: translateX(5px);
+            }
+
+            /* 移动端下拉菜单优化 */
+            @media (max-width: 768px) {
+                .nav-dropdown-menu {
+                    position: static;
+                    opacity: 1;
+                    visibility: visible;
+                    transform: none;
+                    box-shadow: none;
+                    border: none;
+                    border-radius: 0;
+                    background: #f8f9fa;
+                    margin-top: 10px;
+                }
+
+                .nav-dropdown:hover .nav-dropdown-menu {
+                    display: block;
+                }
+
+                .nav-dropdown-link {
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #e9ecef;
+                    font-size: 1rem;
+                }
+
+                .nav-dropdown-link:hover {
+                    background: #667eea;
+                    transform: none;
+                }
+
+                /* 移动端导航栏触摸优化 */
+                .nav-toggle {
+                    min-height: 44px;
+                    min-width: 44px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    -webkit-tap-highlight-color: transparent;
+                }
+
+                .nav-link {
+                    min-height: 44px;
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 20px;
+                    -webkit-tap-highlight-color: transparent;
+                }
+
+                /* 移动端用户信息区域优化 */
+                #userInfoDisplay {
+                    position: fixed;
+                    top: 70px;
+                    left: 0;
+                    right: 0;
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(10px);
+                    padding: 15px;
+                    border-bottom: 1px solid #e9ecef;
+                    z-index: 999;
+                }
+            }
+
+            /* 触摸设备特定优化 */
+            @media (hover: none) and (pointer: coarse) {
+                .nav-dropdown:hover .nav-dropdown-menu {
+                    opacity: 0;
+                    visibility: hidden;
+                }
+
+                .nav-dropdown.active .nav-dropdown-menu {
+                    opacity: 1;
+                    visibility: visible;
+                    transform: translateY(0);
+                }
+
+                .nav-dropdown-link {
+                    padding: 16px 20px; /* 增大触摸目标 */
+                }
             }
 
             /* 用户信息显示区域动画 */

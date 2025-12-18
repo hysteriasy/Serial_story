@@ -5,30 +5,36 @@ class TrackingProtectionHandler {
   constructor() {
     this.storageBlocked = false;
     this.lastStorageTest = 0;
-    this.testInterval = 300000; // 5分钟测试一次，减少日志噪音
+    this.testInterval = 600000; // 10分钟测试一次，进一步减少日志噪音
     this.errorCount = 0;
-    this.maxErrors = 5; // 最大错误次数
+    this.maxErrors = 3; // 减少最大错误次数
     this.fallbackMode = false;
     this.userNotified = false;
+    this.silentMode = false; // 静默模式标志
 
-    // 日志级别控制
+    // 日志级别控制（更严格）
     this.logLevel = this.getLogLevel();
     this.messageCache = new Map(); // 消息去重缓存
-    this.maxCacheSize = 100;
+    this.maxCacheSize = 50; // 减少缓存大小
+    this.suppressionActive = false; // 抑制标志
 
     // 存储访问统计
     this.accessStats = {
       attempts: 0,
       successes: 0,
       failures: 0,
-      lastFailure: null
+      lastFailure: null,
+      suppressedMessages: 0
     };
 
     // 检查环境配置
     this.checkEnvironmentConfig();
 
+    // 根据环境决定是否启用静默模式
+    this.configureSilentMode();
+
     // 只在调试模式下输出初始化日志
-    if (this.logLevel >= 3) {
+    if (this.logLevel >= 3 && !this.silentMode) {
       console.log('🛡️ 跟踪保护处理器初始化');
     }
     this.initializeHandler();
@@ -44,6 +50,19 @@ class TrackingProtectionHandler {
         case 'error': this.logLevel = 1; break;
         default: this.logLevel = 0; break;
       }
+    }
+  }
+
+  // 配置静默模式
+  configureSilentMode() {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    // 在生产环境或文件协议下启用静默模式
+    if (hostname.includes('github.io') || protocol === 'file:') {
+      this.silentMode = true;
+      this.logLevel = 0;
+      this.suppressionActive = true;
     }
   }
 
@@ -213,14 +232,19 @@ class TrackingProtectionHandler {
     return trackingKeywords.some(keyword => message.includes(keyword));
   }
 
-  // 处理跟踪保护错误
+  // 处理跟踪保护错误（优化版本）
   handleTrackingProtectionError(error, operation, key) {
-    console.warn(`🛡️ 跟踪保护阻止了存储访问: ${operation}(${key})`, error.message);
+    // 只在非静默模式下输出警告
+    if (!this.silentMode && this.logLevel >= 2) {
+      console.warn(`🛡️ 跟踪保护阻止了存储访问: ${operation}(${key})`, error.message);
+    }
 
     this.storageBlocked = true;
     this.fallbackMode = true;
+    this.accessStats.suppressedMessages++;
 
-    if (!this.userNotified) {
+    // 只在开发环境下通知用户
+    if (!this.userNotified && !this.silentMode && this.logLevel >= 2) {
       this.showTrackingProtectionNotification();
       this.userNotified = true;
     }
@@ -407,16 +431,23 @@ class TrackingProtectionHandler {
     return normalErrorPatterns.some(pattern => pattern.test(message));
   }
 
-  // 处理跟踪保护相关的控制台消息（带去重）
+  // 处理跟踪保护相关的控制台消息（优化版本）
   handleTrackingProtectionConsoleMessage(message, level) {
-    // 消息去重处理
-    const messageKey = `${level}:${message.substring(0, 100)}`;
+    // 在静默模式下直接返回，不处理任何消息
+    if (this.silentMode || this.suppressionActive) {
+      this.accessStats.suppressedMessages++;
+      return;
+    }
+
+    // 消息去重处理（延长去重时间）
+    const messageKey = `${level}:${message.substring(0, 50)}`;
     const now = Date.now();
 
     if (this.messageCache.has(messageKey)) {
       const lastTime = this.messageCache.get(messageKey);
-      // 5分钟内的重复消息不再输出
-      if (now - lastTime < 300000) {
+      // 10分钟内的重复消息不再输出
+      if (now - lastTime < 600000) {
+        this.accessStats.suppressedMessages++;
         return;
       }
     }
@@ -424,17 +455,18 @@ class TrackingProtectionHandler {
     // 更新缓存
     this.messageCache.set(messageKey, now);
 
-    // 清理过期缓存
+    // 清理过期缓存（更积极的清理）
     if (this.messageCache.size > this.maxCacheSize) {
       const entries = Array.from(this.messageCache.entries());
       entries.sort((a, b) => a[1] - b[1]);
-      // 删除最旧的一半
-      for (let i = 0; i < entries.length / 2; i++) {
+      // 删除最旧的70%
+      const deleteCount = Math.floor(entries.length * 0.7);
+      for (let i = 0; i < deleteCount; i++) {
         this.messageCache.delete(entries[i][0]);
       }
     }
 
-    // 根据日志级别决定是否输出
+    // 根据日志级别决定是否输出（更严格的控制）
     if (this.logLevel >= 3) {
       console.info(`🛡️ [跟踪保护] ${level.toUpperCase()}: ${message}`);
     } else if (this.logLevel >= 2 && level === 'error') {
@@ -445,8 +477,8 @@ class TrackingProtectionHandler {
     this.storageBlocked = true;
     this.fallbackMode = true;
 
-    // 只在首次检测到时通知用户
-    if (!this.userNotified) {
+    // 只在开发环境且首次检测到时通知用户
+    if (!this.userNotified && this.logLevel >= 2) {
       this.showTrackingProtectionNotification();
       this.userNotified = true;
     }

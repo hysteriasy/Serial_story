@@ -564,12 +564,19 @@
     /* 页脚下拉菜单样式已移至页眉页脚组件 */
 
     /* 文件上传区域样式优化 */
+    .file-upload-area {
+      position: relative;
+      margin-bottom: 15px;
+    }
+
     .file-upload-area input[type="file"] {
       padding: 15px;
       border: 2px dashed #dee2e6;
       border-radius: 8px;
       background: #f8f9fa;
       transition: all 0.3s ease;
+      width: 100%;
+      font-size: 16px; /* 防止iOS自动缩放 */
     }
 
     .file-upload-area input[type="file"]:hover {
@@ -581,6 +588,72 @@
       outline: none;
       border-color: #007bff;
       box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+    }
+
+    /* 移动端文件上传优化 */
+    @media (max-width: 768px) {
+      .file-upload-area input[type="file"] {
+        padding: 20px 15px;
+        font-size: 16px;
+        min-height: 60px;
+        border-radius: 12px;
+        -webkit-appearance: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .file-upload-area {
+        margin-bottom: 20px;
+      }
+
+      .file-upload-hint {
+        font-size: 0.9rem;
+        margin-top: 8px;
+        padding: 0 5px;
+      }
+
+      /* 改善移动端文件选择体验 */
+      .file-upload-area input[type="file"]::file-selector-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-right: 15px;
+        cursor: pointer;
+        -webkit-appearance: none;
+      }
+
+      .file-upload-area input[type="file"]::-webkit-file-upload-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-right: 15px;
+        cursor: pointer;
+        -webkit-appearance: none;
+      }
+    }
+
+    /* 触摸设备特定优化 */
+    @media (hover: none) and (pointer: coarse) {
+      .file-upload-area input[type="file"] {
+        min-height: 64px; /* 增大触摸目标 */
+        padding: 20px;
+      }
+
+      .file-upload-area input[type="file"]:hover {
+        border-color: #dee2e6; /* 移除hover效果 */
+        background: #f8f9fa;
+      }
+
+      .file-upload-area input[type="file"]:active {
+        border-color: #007bff;
+        background: #e3f2fd;
+        transform: scale(0.98);
+      }
     }
 
     /* 表单验证样式 */

@@ -323,13 +323,112 @@ class WorkUploader {
       });
     }
 
-    // 文件输入验证
+    // 文件输入验证和移动端优化
     const fileInput = document.getElementById(`${category}File`);
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
         this.validateMediaFile(e.target, category);
       });
+
+      // 移动端文件上传优化
+      this.setupMobileFileUpload(fileInput, category);
     }
+  }
+
+  // 设置移动端文件上传优化
+  setupMobileFileUpload(fileInput, category) {
+    const uploadArea = fileInput.closest('.file-upload-area');
+    if (!uploadArea) return;
+
+    // 检测是否为移动设备
+    const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+
+    if (isMobile) {
+      // 移动端特定优化
+      fileInput.style.fontSize = '16px'; // 防止iOS自动缩放
+
+      // 添加触摸反馈
+      fileInput.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.98)';
+        this.style.transition = 'transform 0.1s ease';
+      }, { passive: true });
+
+      fileInput.addEventListener('touchend', function() {
+        setTimeout(() => {
+          this.style.transform = '';
+        }, 150);
+      }, { passive: true });
+
+      // 改善文件选择提示
+      const hint = uploadArea.querySelector('.file-upload-hint');
+      if (hint) {
+        hint.innerHTML += '<br><small>📱 点击选择文件或使用相机拍摄</small>';
+      }
+    }
+
+    // 添加拖拽支持（桌面端）
+    if (!isMobile) {
+      this.setupDragAndDrop(uploadArea, fileInput, category);
+    }
+
+    // 文件选择后的视觉反馈
+    fileInput.addEventListener('change', function() {
+      const fileName = this.files[0]?.name;
+      if (fileName) {
+        uploadArea.style.borderColor = '#28a745';
+        uploadArea.style.backgroundColor = '#d4edda';
+
+        // 显示文件名
+        let fileNameDisplay = uploadArea.querySelector('.selected-file-name');
+        if (!fileNameDisplay) {
+          fileNameDisplay = document.createElement('div');
+          fileNameDisplay.className = 'selected-file-name';
+          fileNameDisplay.style.cssText = `
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #28a745;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+          `;
+          uploadArea.appendChild(fileNameDisplay);
+        }
+        fileNameDisplay.textContent = `✅ 已选择: ${fileName}`;
+      }
+    });
+  }
+
+  // 设置拖拽上传（桌面端）
+  setupDragAndDrop(uploadArea, fileInput, category) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, () => {
+        uploadArea.style.borderColor = '#007bff';
+        uploadArea.style.backgroundColor = '#e3f2fd';
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      uploadArea.addEventListener(eventName, () => {
+        uploadArea.style.borderColor = '#dee2e6';
+        uploadArea.style.backgroundColor = '#f8f9fa';
+      });
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        fileInput.files = files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
+    });
   }
 
   // 首字母大写

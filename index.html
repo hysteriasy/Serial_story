@@ -35,11 +35,19 @@
                     message.includes('ERR_BLOCKED_BY_CLIENT') ||
                     message.includes('-ms-high-contrast') ||
                     message.includes('deprecated') ||
+                    message.includes('storage access denied') ||
+                    message.includes('privacy protection') ||
+                    message.includes('cross-site tracking') ||
+                    message.includes('third-party storage') ||
+                    message.includes('QuotaExceededError') ||
                     (isProduction && (
                         message.includes('跟踪保护') ||
                         message.includes('iOS特定修复') ||
                         message.includes('初始化部分失败') ||
-                        message.includes('Firebase 不可用')
+                        message.includes('Firebase 不可用') ||
+                        message.includes('未配置有效的 Firebase') ||
+                        message.includes('存储访问失败') ||
+                        message.includes('GitHub token未配置')
                     ));
 
                 if (shouldFilter) {
@@ -63,10 +71,17 @@
                     message.includes('ERR_NAME_NOT_RESOLVED') ||
                     message.includes('ERR_BLOCKED_BY_CLIENT') ||
                     message.includes('Failed to load resource') ||
+                    message.includes('Tracking Prevention') ||
+                    message.includes('blocked access to storage') ||
+                    message.includes('storage access denied') ||
+                    message.includes('QuotaExceededError') ||
+                    message.includes('SecurityError') ||
                     (isProduction && (
                         message.includes('网络连接问题') ||
                         message.includes('Firebase 初始化失败') ||
-                        message.includes('存储访问失败')
+                        message.includes('存储访问失败') ||
+                        message.includes('GitHub API 访问失败') ||
+                        message.includes('跟踪保护阻止了存储访问')
                     ));
 
                 if (shouldFilter) {
@@ -401,7 +416,54 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
+    <!-- Firebase 配置优化脚本 -->
+    <script>
+        // Firebase 配置优化 - 减少未配置警告
+        (function() {
+            // 检查环境，决定是否初始化 Firebase
+            const hostname = window.location.hostname;
+            const isProduction = hostname.includes('github.io');
+            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+            const isFile = window.location.protocol === 'file:';
 
+            // 在生产环境或文件协议下，静默处理 Firebase
+            if (isProduction || isFile) {
+                // 创建一个静默的 Firebase 配置
+                window.firebaseConfig = {
+                    initialized: false,
+                    available: false,
+                    mode: 'offline',
+                    reason: isFile ? 'file_protocol' : 'production_mode'
+                };
+
+                // 静默模式下不输出 Firebase 相关日志
+                if (window.console && window.console.warn) {
+                    const originalWarn = window.console.warn;
+                    window.console.warn = function(...args) {
+                        const message = args.join(' ');
+                        if (message.includes('Firebase') ||
+                            message.includes('firebase') ||
+                            message.includes('未配置有效的 Firebase')) {
+                            return; // 静默处理 Firebase 警告
+                        }
+                        originalWarn.apply(console, args);
+                    };
+                }
+            } else {
+                // 开发环境下正常处理 Firebase
+                window.firebaseConfig = {
+                    initialized: false,
+                    available: true,
+                    mode: 'development'
+                };
+            }
+        })();
+    </script>
+
+
+
+    <!-- 环境适配器 - 必须在最早加载，优化GitHub Pages兼容性 -->
+    <script src="js/environment-adapter.js"></script>
 
     <!-- 环境配置管理器 - 必须在最早加载 -->
     <script src="js/environment-config.js"></script>

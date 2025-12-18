@@ -56,9 +56,11 @@ class SmartFileLoader {
 
     switch (this.environment) {
       case 'github_pages':
-        return ['github', 'localStorage', 'firebase'];
+        // 在GitHub Pages环境中，跳过github数据源避免404错误
+        // 使用专门的githubUploads数据源来扫描user-uploads目录
+        return ['localStorage', 'githubUploads', 'firebase'];
       case 'local_dev':
-        return ['localStorage', 'localFiles', 'firebase'];
+        return ['localStorage', 'localFiles', 'firebase', 'github'];
       case 'file_system':
         return ['localStorage', 'firebase'];
       default:
@@ -135,6 +137,8 @@ class SmartFileLoader {
     switch (source) {
       case 'github':
         return await this._loadFromGitHub(category);
+      case 'githubUploads':
+        return await this._loadFromGitHubUploads(category);
       case 'localStorage':
         return await this._loadFromLocalStorage(category);
       case 'firebase':
@@ -160,9 +164,20 @@ class SmartFileLoader {
 
       // 在生产环境中，先检查索引文件是否存在，避免404请求
       const isProduction = window.location.hostname.includes('github.io');
+
+      // 调试信息：输出环境检测结果
+      const isDebug = window.location.search.includes('debug=true');
+      if (!isProduction || isDebug) {
+        console.log(`🔍 环境检测 - hostname: ${window.location.hostname}, isProduction: ${isProduction}`);
+        console.log(`📋 尝试加载索引文件: ${indexKey}`);
+      }
+
       if (isProduction) {
         // 生产环境中跳过索引文件加载，直接使用user-uploads扫描
         // 这避免了不必要的404请求
+        if (!isProduction || isDebug) {
+          console.log('⏭️ 生产环境：跳过索引文件加载');
+        }
         throw new Error('生产环境跳过索引文件加载');
       }
 
@@ -222,6 +237,26 @@ class SmartFileLoader {
     }
 
     return files;
+  }
+
+  // 从 GitHub user-uploads 目录加载（专用于GitHub Pages环境）
+  async _loadFromGitHubUploads(category) {
+    const isProduction = window.location.hostname.includes('github.io');
+    const isDebug = window.location.search.includes('debug=true');
+
+    if (isDebug) {
+      console.log(`📁 GitHub Pages环境：直接扫描user-uploads目录 (${category})`);
+    }
+
+    try {
+      // 直接调用user-uploads扫描功能
+      return await this._loadFromUserUploads(category);
+    } catch (error) {
+      if (!isProduction || isDebug) {
+        console.warn(`⚠️ GitHub user-uploads扫描失败:`, error);
+      }
+      return [];
+    }
   }
 
   // 从本地存储加载

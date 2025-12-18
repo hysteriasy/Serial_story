@@ -358,3 +358,65 @@ a {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.5);
 }
+
+/* 微信浏览器移动端特定修复 */
+@media (max-width: 768px) {
+    /* 确保导航栏在微信浏览器中可见 */
+    .navbar {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+    }
+
+    /* 确保汉堡菜单按钮在微信浏览器中可见和可点击 */
+    .nav-toggle {
+        display: flex !important;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 10001;
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* 确保汉堡菜单的三条线在微信浏览器中可见 */
+    .nav-toggle .bar {
+        display: block !important;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+
+    /* 确保登录按钮在移动端可见 */
+    #authNavItem,
+    #authNavLink {
+        display: block !important;
+        -webkit-tap-highlight-color: rgba(0, 123, 255, 0.1);
+    }
+
+    /* 移动端菜单展开时的样式 */
+    .nav-menu.active {
+        display: flex !important;
+        flex-direction: column;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 确保移动端菜单项可点击 */
+    .nav-link {
+        -webkit-tap-highlight-color: rgba(0, 123, 255, 0.1);
+        min-height: 44px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 微信浏览器中的触摸优化 */
+    .nav-toggle,
+    .nav-link,
+    .btn {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+}

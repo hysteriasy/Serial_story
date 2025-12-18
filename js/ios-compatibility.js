@@ -215,13 +215,61 @@
         }
     }
 
+    // Android浏览器特定优化
+    function isAndroid() {
+        return /Android/i.test(navigator.userAgent);
+    }
+
+    function isAndroidChrome() {
+        return isAndroid() && /Chrome/i.test(navigator.userAgent) && !/Edge/i.test(navigator.userAgent);
+    }
+
+    function isSamsungBrowser() {
+        return /SamsungBrowser/i.test(navigator.userAgent);
+    }
+
+    if (isAndroid()) {
+        console.log('🤖 检测到Android设备，应用Android特定优化...');
+
+        // Android Chrome特定优化
+        if (isAndroidChrome()) {
+            // 修复Android Chrome的滚动性能
+            document.documentElement.style.scrollBehavior = 'smooth';
+
+            // 优化Android Chrome的触摸响应
+            document.body.style.touchAction = 'manipulation';
+        }
+
+        // Samsung Browser特定优化
+        if (isSamsungBrowser()) {
+            // Samsung Browser的特殊处理
+            document.body.style.webkitTapHighlightColor = 'transparent';
+        }
+
+        // Android通用优化
+        // 修复Android软键盘问题
+        const viewport = document.querySelector('meta[name=viewport]');
+        if (viewport) {
+            const originalContent = viewport.content;
+            window.addEventListener('resize', function() {
+                if (window.innerHeight < window.outerHeight * 0.75) {
+                    // 软键盘可能已打开
+                    viewport.content = originalContent.replace('user-scalable=no', 'user-scalable=yes');
+                } else {
+                    // 软键盘已关闭
+                    viewport.content = originalContent;
+                }
+            });
+        }
+    }
+
     // 通用移动端优化（适用于所有移动设备）
     if (window.innerWidth <= 768) {
         console.log('📱 应用移动端通用优化...');
-        
+
         // 优化触摸滚动
         document.body.style.webkitOverflowScrolling = 'touch';
-        
+
         // 禁用双击缩放
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function(event) {

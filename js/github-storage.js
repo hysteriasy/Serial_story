@@ -3,27 +3,39 @@ class EnvironmentManager {
   constructor() {
     this.environment = this.detectEnvironment();
     this.storageStrategy = this.determineStorageStrategy();
-    console.log(`🌍 环境检测: ${this.environment}, 存储策略: ${this.storageStrategy}`);
+    this.storageAvailable = this.checkStorageAvailability();
+
+    // 优化日志输出，减少控制台噪音
+    if (this.shouldLogEnvironmentInfo()) {
+      console.log(`🌍 环境检测: ${this.environment}, 存储策略: ${this.storageStrategy}, 存储可用: ${this.storageAvailable}`);
+    }
   }
 
-  // 检测当前运行环境
+  // 检测当前运行环境（优化版本）
   detectEnvironment() {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
     const pathname = window.location.pathname;
+    const userAgent = navigator.userAgent;
 
     // 检测是否为本地文件访问
     if (protocol === 'file:') {
       return 'local_file';
     }
 
-    // 检测是否为GitHub Pages
-    if (hostname === 'hysteriasy.github.io' && pathname.startsWith('/Serial_story')) {
+    // 检测是否为GitHub Pages（更精确的检测）
+    if (hostname === 'hysteriasy.github.io' ||
+        (hostname.includes('github.io') && pathname.includes('Serial_story'))) {
       return 'github_pages';
     }
 
-    // 检测是否为本地开发服务器
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')) {
+    // 检测是否为本地开发服务器（扩展检测范围）
+    if (hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.endsWith('.local') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('172.')) {
       return 'local_server';
     }
 
@@ -31,17 +43,59 @@ class EnvironmentManager {
     return 'production';
   }
 
-  // 根据环境确定存储策略
+  // 检查是否应该输出环境信息日志
+  shouldLogEnvironmentInfo() {
+    // 在开发环境或调试模式下输出详细日志
+    return this.environment === 'local_server' ||
+           this.environment === 'local_file' ||
+           window.location.search.includes('debug=true');
+  }
+
+  // 检查存储可用性
+  checkStorageAvailability() {
+    try {
+      const testKey = '__storage_test__';
+      const testValue = 'test';
+
+      localStorage.setItem(testKey, testValue);
+      const retrieved = localStorage.getItem(testKey);
+      localStorage.removeItem(testKey);
+
+      return retrieved === testValue;
+    } catch (error) {
+      // 存储被跟踪保护阻止
+      return false;
+    }
+  }
+
+  // 根据环境确定存储策略（优化版本）
   determineStorageStrategy() {
+    // 如果存储不可用，强制使用本地存储模式
+    if (!this.storageAvailable) {
+      return 'local_storage_fallback';
+    }
+
     switch (this.environment) {
       case 'local_file':
       case 'local_server':
         return 'local_storage'; // 本地环境使用本地存储
       case 'github_pages':
       case 'production':
-        return 'github_storage'; // 线上环境使用GitHub存储
+        // 检查GitHub token是否可用
+        const hasGitHubToken = this.checkGitHubTokenAvailability();
+        return hasGitHubToken ? 'github_storage' : 'local_storage'; // 有token时使用GitHub存储
       default:
         return 'local_storage'; // 默认使用本地存储
+    }
+  }
+
+  // 检查GitHub token可用性
+  checkGitHubTokenAvailability() {
+    try {
+      const token = localStorage.getItem('github_token');
+      return token && token.length > 0;
+    } catch (error) {
+      return false;
     }
   }
 
@@ -65,14 +119,48 @@ class EnvironmentManager {
     return this.environment === 'local_file' || this.environment === 'local_server';
   }
 
-  // 是否应该使用GitHub存储
+  // 是否应该使用GitHub存储（优化版本）
   shouldUseGitHubStorage() {
-    return this.storageStrategy === 'github_storage';
+    return this.storageStrategy === 'github_storage' &&
+           this.storageAvailable &&
+           this.checkGitHubTokenAvailability();
   }
 
   // 是否应该使用本地存储
   shouldUseLocalStorage() {
-    return this.storageStrategy === 'local_storage';
+    return this.storageStrategy === 'local_storage' ||
+           this.storageStrategy === 'local_storage_fallback' ||
+           !this.storageAvailable;
+  }
+
+  // 获取存储状态信息
+  getStorageStatus() {
+    return {
+      environment: this.environment,
+      strategy: this.storageStrategy,
+      storageAvailable: this.storageAvailable,
+      hasGitHubToken: this.checkGitHubTokenAvailability(),
+      shouldUseGitHub: this.shouldUseGitHubStorage(),
+      shouldUseLocal: this.shouldUseLocalStorage()
+    };
+  }
+
+  // 重新检测环境和存储策略
+  redetect() {
+    const oldEnvironment = this.environment;
+    const oldStrategy = this.storageStrategy;
+
+    this.environment = this.detectEnvironment();
+    this.storageAvailable = this.checkStorageAvailability();
+    this.storageStrategy = this.determineStorageStrategy();
+
+    const changed = oldEnvironment !== this.environment || oldStrategy !== this.storageStrategy;
+
+    if (changed && this.shouldLogEnvironmentInfo()) {
+      console.log(`🔄 环境重新检测: ${oldEnvironment} → ${this.environment}, ${oldStrategy} → ${this.storageStrategy}`);
+    }
+
+    return changed;
   }
 }
 

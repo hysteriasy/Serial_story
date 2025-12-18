@@ -6,12 +6,25 @@ class EnvironmentConfig {
     this.environment = this.detectEnvironment();
     this.config = this.loadConfig();
     this.features = this.loadFeatures();
-    
+
     // 设置全局环境变量
     window.ENV_CONFIG = this.config;
     window.ENV_FEATURES = this.features;
-    
+
+    // 设置静默模式标志
+    this.silentMode = this.shouldUseSilentMode();
+
     this.init();
+  }
+
+  // 检查是否应该使用静默模式
+  shouldUseSilentMode() {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+
+    return hostname.includes('github.io') ||
+           protocol === 'file:' ||
+           this.environment === 'production';
   }
   
   // 检测当前环境
@@ -207,15 +220,16 @@ class EnvironmentConfig {
   init() {
     // 设置全局CSS变量
     this.setCSSVariables();
-    
+
     // 配置控制台行为
     this.configureConsole();
-    
+
     // 配置性能监控
     this.configurePerformance();
-    
-    // 在调试模式下显示环境信息
-    if (this.environment === 'debug') {
+
+    // 只在调试模式或开发环境下显示环境信息
+    if (this.environment === 'debug' ||
+        (this.environment === 'development' && !this.silentMode)) {
       this.showEnvironmentInfo();
     }
   }

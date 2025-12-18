@@ -15,9 +15,14 @@ class DataManager {
       setTimeout(() => this.init(), 100);
       return;
     }
-    
+
     this.initialized = true;
-    console.log('📊 数据管理器初始化完成');
+
+    // 只在开发环境下输出初始化日志
+    const env = this.environmentManager.getEnvironment();
+    if (env === 'local_server' || env === 'local_file' || window.location.search.includes('debug=true')) {
+      console.log('📊 数据管理器初始化完成');
+    }
   }
 
   // 检查是否应该使用GitHub存储
