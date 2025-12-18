@@ -262,6 +262,83 @@
             console.warn('⚠️ 微信浏览器网络已断开');
             showWechatOfflineMessage();
         });
+
+        // 检测 GitHub Pages 连接问题
+        checkGitHubPagesConnection();
+    }
+
+    // 检测 GitHub Pages 连接
+    function checkGitHubPagesConnection() {
+        // 延迟检测，等待页面加载
+        setTimeout(() => {
+            const testUrl = window.location.origin + '/favicon.ico?t=' + Date.now();
+
+            fetch(testUrl, {
+                method: 'HEAD',
+                cache: 'no-cache',
+                mode: 'no-cors'
+            })
+            .then(() => {
+                console.log('✅ GitHub Pages 连接正常');
+            })
+            .catch(error => {
+                console.warn('⚠️ GitHub Pages 连接可能存在问题:', error);
+                // 显示连接引导（仅在微信浏览器中）
+                if (wechatEnv.isWechat) {
+                    showConnectionGuide();
+                }
+            });
+        }, 2000);
+    }
+
+    // 显示连接引导
+    function showConnectionGuide() {
+        const guide = document.createElement('div');
+        guide.id = 'wechat-connection-guide';
+        guide.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 10001;
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+        `;
+
+        guide.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 15px;">🌐</div>
+            <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">连接提示</h3>
+            <p style="color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+                检测到网络连接可能存在问题。<br>
+                建议您点击右上角 "···" 菜单，<br>
+                选择 "在浏览器中打开" 以获得更好的体验。
+            </p>
+            <button onclick="document.getElementById('wechat-connection-guide').remove()"
+                    style="background: #667eea; color: white; border: none; padding: 12px 30px;
+                           border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%; margin-bottom: 10px;">
+                我知道了
+            </button>
+            <button onclick="window.location.href='wechat-guide.html'"
+                    style="background: #28a745; color: white; border: none; padding: 12px 30px;
+                           border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%;">
+                查看详细引导
+            </button>
+        `;
+
+        document.body.appendChild(guide);
+
+        // 10秒后自动关闭
+        setTimeout(() => {
+            const guideElement = document.getElementById('wechat-connection-guide');
+            if (guideElement) {
+                guideElement.remove();
+            }
+        }, 10000);
     }
 
     // 显示离线消息
