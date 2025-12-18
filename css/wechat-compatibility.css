@@ -1,0 +1,166 @@
+/* 微信浏览器兼容性样式 */
+
+/* 微信浏览器特定样式 - 使用媒体查询和特征检测 */
+
+/* 1. 修复微信浏览器的视口高度问题 */
+.welcome-overlay,
+.modal-overlay {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+}
+
+/* 2. 微信浏览器的安全区域适配 */
+@supports (padding: max(0px)) {
+    .navbar {
+        padding-top: max(10px, env(safe-area-inset-top));
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+
+    .container {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+
+    .modal-content {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+}
+
+/* 3. 微信浏览器的字体优化 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 4. 微信浏览器的触摸优化 */
+a, button, .btn, .nav-link, .category-link {
+    -webkit-tap-highlight-color: rgba(0, 123, 255, 0.1);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* 5. 微信浏览器的滚动优化 */
+.modal,
+.essays-content,
+.novels-content,
+.poetry-content {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+}
+
+/* 6. 微信浏览器的输入框优化 */
+input, textarea, select {
+    font-size: 16px !important; /* 防止微信浏览器自动缩放 */
+    -webkit-appearance: none;
+    border-radius: 6px;
+}
+
+/* 7. 微信浏览器的按钮优化 */
+button, .btn {
+    -webkit-appearance: none;
+    border-radius: 6px;
+    min-height: 44px; /* 微信推荐的最小触摸目标 */
+    min-width: 44px;
+}
+
+/* 8. 微信浏览器的图片优化 */
+img {
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    max-width: 100%;
+    height: auto;
+}
+
+/* 9. 微信浏览器的视频优化 */
+video {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+/* 10. 微信浏览器的动画性能优化 */
+.category-card,
+.project-card,
+.btn,
+.nav-link,
+.welcome-animation {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* 11. 微信浏览器的backdrop-filter支持 */
+.modal,
+.nav-dropdown-menu,
+.card-content {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+/* 如果不支持backdrop-filter，提供fallback */
+@supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
+    .modal,
+    .nav-dropdown-menu,
+    .card-content {
+        background-color: rgba(255, 255, 255, 0.95) !important;
+    }
+}
+
+/* 12. 微信浏览器移动端特定样式 */
+@media (max-width: 768px) {
+    /* 确保导航栏在微信浏览器中正常显示 */
+    .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+
+    /* 汉堡菜单按钮优化 */
+    .nav-toggle {
+        display: flex !important;
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+        align-items: center;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+
+    /* 移动端菜单优化 */
+    .nav-menu {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-menu.active {
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    /* 移动端链接优化 */
+    .nav-link {
+        min-height: 44px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        -webkit-tap-highlight-color: rgba(0, 123, 255, 0.1);
+    }
+
+    /* 移动端表单优化 */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    input, textarea {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px !important;
+    }
+}
+
